@@ -651,7 +651,7 @@ def nexit(code=0):
 
 
 try:
-    print('MailDownloader', 'Desingned by Litrix(Alcohol3)',
+    print('MailDownloader', 'Desingned by Litrix',
           '版本:'+version, '', sep='\n')
     config_load_state = operation_load_config()
     while True:
