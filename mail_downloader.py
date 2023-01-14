@@ -74,7 +74,6 @@ def init(reset_imaps=False, reset_msgs=False):
         file_download_count_global = 0
         file_name_raw_list_global = []
         file_name_list_global = []
-        # bigfile_downloadable_link_list_global=[]
         bigfile_undownloadable_link_list_global = []
         for i in range(len(host)):
             msgs_with_undownloadable_attachments_list_global.append([])
@@ -84,7 +83,6 @@ def init(reset_imaps=False, reset_msgs=False):
             subject_with_undownloadable_attachments_list_global.append([])
             file_name_raw_list_global.append([])
             file_name_list_global.append([])
-            # bigfile_downloadable_link_list_global.append([])
             bigfile_undownloadable_link_list_global.append([])
 
 
@@ -344,7 +342,7 @@ def program_download():
                 print(
                     'E: 无法连接至', address[imap_index_int], ',已跳过.', flush=True)
                 imap_connect_failed_index_list[0].append(
-                    copy.copy(imap_list[imap_index_int]))
+                    imap_index_int)
                 imap_succeed_index_list.remove(imap_index_int)
                 continue
         msgs_processed_count = 0
@@ -390,7 +388,7 @@ def program_download():
                     print(
                         'E: 无法连接至', address[imap_index_int], ',已跳过.', flush=True)
                     imap_connect_failed_index_list[1].append(
-                        copy.copy(imap_list[imap_index_int]))
+                        imap_index_int)
                     imap_succeed_index_list.remove(imap_index_int)
                     break
             download_state_last_global = -1
