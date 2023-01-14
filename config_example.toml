@@ -1,0 +1,22 @@
+#示例配置文件,在使用前请重命名为config.toml
+
+#邮箱数据;host:主机名,address:邮箱地址,password:邮箱密码或授权码(如果需要)
+mail=[
+    {host='imap.example.com',address='name@example.com',password='your_password'}
+]
+#允许手动输入搜索日期
+allow_manual_input_search_time=true
+#起始搜索日期([年,月,日]);若不需要,设为false
+#仅在allow_manual_input_search_time为true时生效
+min_search_time=false
+#截止搜索日期([年,月,日]);若不需要,设为false
+#仅在allow_manual_input_search_time为true时生效
+max_search_time=false
+#仅搜索未读邮件
+only_search_unseen_mails=true
+#在成功下载附件后对该邮件设置已读标签
+sign_unseen_tag_after_downloading=true
+#断开连接后最大重连次数
+reconnect_max_times=3
+#下载文件夹路径,推荐使用绝对路径
+download_path='path'
