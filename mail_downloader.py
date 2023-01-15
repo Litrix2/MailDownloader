@@ -410,7 +410,6 @@ def operation_download():
                 header.decode_header(data_msg.get('Date'))))[5:]
             if send_time.find('(') != -1:
                 send_time = send_time[:send_time.find(' (')]
-            # print('\n'+send_time,flush=True)
             send_time = str(datetime.datetime.strptime(
                 send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))
             try:
@@ -540,7 +539,6 @@ def operation_download():
             else:
                 if has_downloadable_attachments:
                     download_state_last_global = 0
-            print(download_state_last_global)
             if download_state_last_global == 0:
                 if has_downloadable_attachments:
                     msg_with_downloadable_attachments_list_global[imap_index_int].append(
