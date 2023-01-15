@@ -5,7 +5,7 @@ ___
 # Mail Downloader
 Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议.
 
-**版本:1.0.1**
+**版本:1.0.1-Alpha**
 
 **使用前请关闭代理!**
 
