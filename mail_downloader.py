@@ -709,7 +709,7 @@ def nexit(code=0):
 
 try:
     print('Mail Downloader', 'Desingned by Litrix',
-          '版本:'+version, '', sep='\n')
+          '版本:'+version, '获取更多信息,请访问 https://github.com/Litrix2/MailDownloader','', sep='\n')
     config_load_state = operation_load_config()
     while True:
         command = input_option(
