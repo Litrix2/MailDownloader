@@ -11,12 +11,13 @@ import rtoml
 import pytz
 from bs4 import BeautifulSoup
 import requests
-version = '1.0.1-Alpha'
+version = '1.0.1'
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
     'wx.mail.qq.com', 'mail.qq.com']  # 先后顺序不要动!
-unavailable_bigfile_website_list = ['dashi.163.com','mail.163.com']
-website_blacklist=['u.163.com']
+unavailable_bigfile_website_list = ['dashi.163.com', 'mail.163.com']
+website_blacklist = ['u.163.com']
+
 
 class Time():
     __month_dict = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
@@ -448,7 +449,7 @@ def operation_download():
                             eachdata_msg_data_raw, eachdata_msg_charset)
                         html_fetcher = BeautifulSoup(eachdata_msg_data, 'lxml')
                         if eachdata_msg_data.find('附件') != -1:
-                            with open(os.path.join(os.path.dirname(__file__),'test/mail2.html'),'wb') as a:
+                            with open(os.path.join(os.path.dirname(__file__), 'test/mail2.html'), 'wb') as a:
                                 a.write(eachdata_msg_data_raw)
                             href_list = html_fetcher.find_all('a')
                             for href in href_list:
