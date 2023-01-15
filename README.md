@@ -23,7 +23,7 @@ Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议
     - host:邮箱服务器主机名
     - address:邮箱地址
     - password:邮箱密码
-        - 如有特殊规定,使用邮箱授权码
+        - 如有特殊规定,使用邮箱授权码.
 - allow_manual_input_search_time:允许手动输入搜索日期
 - min_search_time:自动搜索起始日期
     - **仅在allow_manual_input_search_time为false时生效**
