@@ -8,13 +8,15 @@ import os
 import socket
 import copy
 import rtoml
+import pytz
 from bs4 import BeautifulSoup
 import requests
 version = '1.0.1-Alpha'
 authentication = ['name', 'MailDownloader', 'version', version]
-available_bigfile_website_list = ['wx.mail.qq.com', 'mail.qq.com','maisl.163.com']
-unavailable_bigfile_website_list = ['dashi.163.com']
-
+available_bigfile_website_list = [
+    'wx.mail.qq.com', 'mail.qq.com']  # 先后顺序不要动!
+unavailable_bigfile_website_list = ['dashi.163.com','mail.163.com']
+website_blacklist=['u.163.com']
 
 class Time():
     __month_dict = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
@@ -51,11 +53,11 @@ config_primary_data = {
 
 
 def init(reset_imaps=False, reset_msg=False):
-    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global,imap_download_failed_index_int_list_global
+    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_download_failed_index_int_list_global
     global download_state_last_global
     global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_download_failed_list_global
-    global send_time_list_global,send_time_with_undownloadable_attachments_list_global,send_time_download_failed_list_global
-    global subject_list_global, subject_with_undownloadable_attachments_list_global,subject_download_failed_list_global
+    global send_time_with_undownloadable_attachments_list_global, send_time_download_failed_list_global
+    global subject_with_undownloadable_attachments_list_global, subject_download_failed_list_global
     global file_download_count_global, file_name_raw_list_global, file_name_list_global
     global bigfile_undownloadable_link_list_global
     if reset_imaps:
@@ -64,28 +66,27 @@ def init(reset_imaps=False, reset_msg=False):
         imap_succeed_index_int_list_global = []
         imap_connect_failed_index_int_list_global = [[], []]
         imap_with_undownloadable_attachments_index_int_list_global = []
-        imap_download_failed_index_int_list_global=[]
+        imap_download_failed_index_int_list_global = []
     if reset_msg:
         download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的文件;2:附件全部过期
         msg_processed_count_global = 0
         msg_with_undownloadable_attachments_list_global = []
         msg_with_downloadable_attachments_list_global = []
         msg_download_failed_list_global = []
-        send_time_list_global=[]
-        send_time_with_undownloadable_attachments_list_global=[]
-        send_time_download_failed_list_global=[]
-        subject_list_global = []
+        send_time_with_undownloadable_attachments_list_global = []
+        send_time_download_failed_list_global = []
         subject_with_undownloadable_attachments_list_global = []
-        subject_download_failed_list_global=[]
+        subject_download_failed_list_global = []
         file_download_count_global = 0
         file_name_raw_list_global = []
         file_name_list_global = []
-        bigfile_undownloadable_link_list_global = [] # 2级下载链接
+        bigfile_undownloadable_link_list_global = []  # 2级下载链接
         for i in range(len(host)):
             msg_with_undownloadable_attachments_list_global.append([])
             msg_with_downloadable_attachments_list_global.append([])
             msg_download_failed_list_global.append([])
-            subject_list_global.append([])
+            send_time_with_undownloadable_attachments_list_global.append([])
+            send_time_download_failed_list_global.append([])
             subject_with_undownloadable_attachments_list_global.append([])
             subject_download_failed_list_global.append([])
             file_name_raw_list_global.append([])
@@ -334,7 +335,7 @@ def operation_download():
     global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global
     global download_state_last_global
     global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_download_failed_list_global
-    global subject_list_global, subject_with_undownloadable_attachments_list_global
+    global subject_with_undownloadable_attachments_list_global
     global file_download_count_global, file_name_raw_list_global, file_name_list_global
     global bigfile_undownloadable_link_list_global
     if not (settings_mail_min_time.enabled or settings_mail_max_time.enabled):
@@ -404,20 +405,20 @@ def operation_download():
                 data_msg_raw[0][1])
             subject = str(header.make_header(
                 header.decode_header(data_msg.get('Subject'))))
-            send_time=str(header.make_header(
-                header.decode_header(data_msg.get('Date'))))
-            if send_time.find('(')!=-1:
-                send_time=send_time[:-6]
-            a=datetime.datetime.strptime(send_time,'%a, %d %b %Y %H:%M:%S %z')
-            print(a)
-            print(datetime.datetime.astimezone(a,'+08:00'))
+            send_time = str(header.make_header(
+                header.decode_header(data_msg.get('Date'))))[5:]
+            if send_time.find('(') != -1:
+                send_time = send_time[:send_time.find(' (')]
+            # print('\n'+send_time,flush=True)
+            send_time = str(datetime.datetime.strptime(
+                send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))
             try:
                 for eachdata_msg in data_msg.walk():
                     file_name = None
                     bigfile_name = None
                     if eachdata_msg.get_content_disposition():
                         if not has_downloadable_attachments:
-                            print('\r', indent(1), len(extract_nested_list(msg_with_downloadable_attachments_list_global))+1, ' ', subject,
+                            print('\r', indent(1), len(extract_nested_list(msg_with_downloadable_attachments_list_global))+1, ' ', subject, ' - ', send_time,
                                   indent(8), sep='')
                         has_downloadable_attachments_in_mail = True
                         has_downloadable_attachments = True
@@ -447,8 +448,8 @@ def operation_download():
                             eachdata_msg_data_raw, eachdata_msg_charset)
                         html_fetcher = BeautifulSoup(eachdata_msg_data, 'lxml')
                         if eachdata_msg_data.find('附件') != -1:
-                            # with open(os.path.join(os.path.dirname(__file__),'test/mail.html'),'wb') as a:
-                            #     a.write(eachdata_msg_data_raw)
+                            with open(os.path.join(os.path.dirname(__file__),'test/mail2.html'),'wb') as a:
+                                a.write(eachdata_msg_data_raw)
                             href_list = html_fetcher.find_all('a')
                             for href in href_list:
                                 if href.get_text().find('下载') != -1:
@@ -473,7 +474,7 @@ def operation_download():
                                                     '\\x26', '&')
                                                 bigfile_downloadable_link_list.append(
                                                     bigfile_downloadable_link)
-                                        # mail.qq.com
+                                        # mail.qq.com;mail.163.com
                                         elif bigfile_link.find(available_bigfile_website_list[1]) != -1:
                                             bigfile_downloadable_link = html_fetcher_2.select_one(
                                                 '#main > div.ft_d_mainWrapper > div > div > div.ft_d_fileToggle.default > a.ft_d_btnDownload.btn_blue')
@@ -486,12 +487,14 @@ def operation_download():
                                         bigfile_undownloadable_link_list.append(
                                             bigfile_link)
                                         download_state_last_global = 1
+                                    elif find_childstr_to_list(website_blacklist, bigfile_link):
+                                        continue
                                     else:
-                                        download_state_last_global=-2
+                                        download_state_last_global = -2
                                     if bigfile_downloadable_link:
                                         if not has_downloadable_attachments:
-                                            print('\r', indent(1), len(extract_nested_list(msg_with_downloadable_attachments_list_global))+1, ' ', subject,
-                                                indent(8), sep='')
+                                            print('\r', indent(1), len(extract_nested_list(msg_with_downloadable_attachments_list_global))+1, ' ', subject, ' - ', send_time,
+                                                  indent(8), sep='')
                                         print('\r正在获取链接(2)...', indent(
                                             3), sep='', end='', flush=True)
                                         has_downloadable_attachments_in_mail = True
@@ -536,32 +539,43 @@ def operation_download():
             else:
                 if has_downloadable_attachments:
                     download_state_last_global = 0
-            if download_state_last_global==0:
+            print(download_state_last_global)
+            if download_state_last_global == 0:
                 if has_downloadable_attachments:
                     msg_with_downloadable_attachments_list_global[imap_index_int].append(
                         msg_list[msg_index_int])
-                    file_name_list_global[imap_index_int].append(file_name_list)
+                    file_name_list_global[imap_index_int].append(
+                        file_name_list)
                 if settings_sign_unseen_tag_after_downloading:
-                    is_reconnect_succeed = operation_check_connection(imap_index_int)
+                    is_reconnect_succeed = operation_check_connection(
+                        imap_index_int)
                     if not is_reconnect_succeed:
                         break
                     if settings_sign_unseen_tag_after_downloading and download_state_last_global == 0:
                         imap_list_global[imap_index_int].store(msg_list[msg_index_int],
-                                                'flags', '\\seen')
+                                                               'flags', '\\seen')
             elif download_state_last_global == 1:
                 if safe_list_find(imap_with_undownloadable_attachments_index_int_list_global, imap_index_int) == -1:
-                    imap_with_undownloadable_attachments_index_int_list_global.append(imap_index_int)
+                    imap_with_undownloadable_attachments_index_int_list_global.append(
+                        imap_index_int)
                 msg_with_undownloadable_attachments_list_global[imap_index_int].append(
                     msg_list[msg_index_int])
+                send_time_with_undownloadable_attachments_list_global[imap_index_int].append(
+                    send_time)
                 subject_with_undownloadable_attachments_list_global[imap_index_int].append(
                     subject)
                 bigfile_undownloadable_link_list_global[imap_index_int].append(
                     bigfile_undownloadable_link_list)
-            elif download_state_last_global==-2:
+            elif download_state_last_global == -2:
                 if safe_list_find(imap_download_failed_index_int_list_global, imap_index_int) == -1:
-                    imap_download_failed_index_int_list_global.append(imap_index_int)
-                msg_download_failed_list_global[imap_index_int].append(msg_list[msg_index_int])
-                subject_download_failed_list_global[imap_index_int].append(subject)
+                    imap_download_failed_index_int_list_global.append(
+                        imap_index_int)
+                msg_download_failed_list_global[imap_index_int].append(
+                    msg_list[msg_index_int])
+                send_time_download_failed_list_global[imap_index_int].append(
+                    send_time)
+                subject_download_failed_list_global[imap_index_int].append(
+                    subject)
             msg_processed_count += 1
             msg_processed_count_global += 1
         if not is_reconnect_succeed:
@@ -587,17 +601,17 @@ def operation_download():
                 indent(1), address[imap_connect_failed_2_index_int], sep='', flush=True)
         print(indent(1), '请尝试重新下载.', sep='', flush=True)
     if len(extract_nested_list(msg_download_failed_list_global)):
-        msg_download_failed_counted_count=0
+        msg_download_failed_counted_count = 0
         print('E: 以下邮件有无法识别的超大附件,请尝试手动下载:', flush=True)
         for imap_download_failed_index_int in imap_download_failed_index_int_list_global:
             print(indent(
                 1), '邮箱: ', address[imap_download_failed_index_int_list_global[imap_download_failed_index_int]], sep='', flush=True)
             for subject_index_int in range(len(subject_download_failed_list_global[imap_download_failed_index_int])):
                 print(indent(2), msg_download_failed_counted_count+1, ' ',
-                    subject_download_failed_list_global[imap_download_failed_index_int][subject_index_int], sep='', flush=True)
-                msg_download_failed_counted_count+=1
+                      subject_download_failed_list_global[imap_download_failed_index_int][subject_index_int], ' - ', send_time_download_failed_list_global[imap_download_failed_index_int][subject_index_int], sep='', flush=True)
+                msg_download_failed_counted_count += 1
     if len(extract_nested_list(msg_with_undownloadable_attachments_list_global)):
-        msg_with_undownloadable_attachments_counted_count=0
+        msg_with_undownloadable_attachments_counted_count = 0
         bigfile_undownloadable_link_counted_count = 0
         print('W:以下邮件的超大附件无法直接下载,但仍可获取链接,请尝试手动下载:', flush=True)
         for imap_with_undownloadable_attachments_index_int in imap_with_undownloadable_attachments_index_int_list_global:
@@ -605,12 +619,12 @@ def operation_download():
                 1), '邮箱: ', address[imap_with_undownloadable_attachments_index_int_list_global[imap_with_undownloadable_attachments_index_int]], sep='', flush=True)
             for subject_index_int in range(len(subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int])):
                 print(indent(2), msg_with_undownloadable_attachments_counted_count+1, ' ',
-                      subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int], sep='', flush=True)
+                      subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int], ' - ', send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int], sep='', flush=True)
                 for link_index_int in range(len(bigfile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int])):
                     print(indent(3), bigfile_undownloadable_link_counted_count+1, ' ',
                           bigfile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int], sep='', flush=True)
                     bigfile_undownloadable_link_counted_count += 1
-                msg_with_undownloadable_attachments_counted_count+=1
+                msg_with_undownloadable_attachments_counted_count += 1
         if settings_sign_unseen_tag_after_downloading:
             if input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='y', end=':') == 'y':
                 msg_with_downloadable_attachments_signed_count = 0
@@ -623,7 +637,7 @@ def operation_download():
                         print('\r正在标记... (', msg_with_downloadable_attachments_signed_count+1, '/', len(extract_nested_list(
                             msg_with_undownloadable_attachments_list_global)), ')', sep='', end='', flush=True)
                         imap_list_global[imap_index_int].store(msg_index,
-                                                        'flags', '\\seen')
+                                                               'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
 
 
@@ -699,6 +713,7 @@ try:
     while True:
         command = input_option(
             '\r请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;q:退出]', 'd', 't', 'r', 'n', 'q', default_option='d', end=':')
+        # command='d'
         if command == 'd' or command == 't':
             if not config_load_state:
                 print('E: 配置文件错误,请在重新加载后执行该操作.', flush=True)
