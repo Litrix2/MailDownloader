@@ -10,7 +10,7 @@ import copy
 import rtoml
 from bs4 import BeautifulSoup
 import requests
-version = '1.0'
+version = '1.0.1'
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = ['wx.mail.qq.com', 'mail.qq.com']
 unavailable_bigfile_website_list = ['dashi.163.com']
