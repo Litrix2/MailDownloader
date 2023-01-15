@@ -64,7 +64,7 @@ def init(reset_imaps=False, reset_msgs=False):
         imap_connect_failed_index_list = [[], []]
         imap_wrong_index_list = []
     if reset_msgs:
-        download_state_last_global = -1  # 0:正常;1:有无法下载的文件;2:下载失败
+        download_state_last_global = -1  # -1:下载时强行终止;0:正常;1:有无法直接下载的文件;2:下载失败
         msgs_processed_count_global = 0
         msgs_with_undownloadable_attachments_list_global = []
         msgs_with_downloadable_attachments_list_global = []
@@ -259,6 +259,29 @@ def operation_parse_file_name(file_name_raw):
     return file_name
 
 
+def operation_check_connection(imap_index_int):
+    is_reconnect_succeed = False
+    try:
+        imap_list[imap_index_int].noop()
+        is_reconnect_succeed = True
+    except imaplib.IMAP4_SSL.abort:
+        print('\rW: 连接已断开,正在尝试重连...', flush=True)
+        for i in range(settings_reconnect_max_times):
+            imap_list[imap_index_int] = operation_login_imap_server(
+                host[imap_index_int], address[imap_index_int], password[imap_index_int])
+            if imap_list[imap_index_int] != None:
+                is_reconnect_succeed = True
+                break
+        if not is_reconnect_succeed:
+            imap_list[imap_index_int] = None
+            print(
+                'E: 无法连接至', address[imap_index_int], ',已跳过.', flush=True)
+            imap_connect_failed_index_list[0].append(
+                imap_index_int)
+            imap_succeed_index_list.remove(imap_index_int)
+    return is_reconnect_succeed
+
+
 def operation_close_all_connection():
     try:
         for imap_index_int in range(len(imap_list)):
@@ -327,26 +350,9 @@ def operation_download():
         if imap_list[imap_index_int] == None:
             continue
         file_download_count = 0
-        is_reconnect_succeed = False
-        try:
-            imap_list[imap_index_int].noop()
-            is_reconnect_succeed = True
-        except imaplib.IMAP4_SSL.abort:
-            print('\rW: 连接已断开,正在尝试重连...', flush=True)
-            for i in range(settings_reconnect_max_times):
-                imap_list[imap_index_int] = operation_login_imap_server(
-                    host[imap_index_int], address[imap_index_int], password[imap_index_int])
-                if imap_list[imap_index_int] != None:
-                    is_reconnect_succeed = True
-                    break
-            if not is_reconnect_succeed:
-                imap_list[imap_index_int] = None
-                print(
-                    'E: 无法连接至', address[imap_index_int], ',已跳过.', flush=True)
-                imap_connect_failed_index_list[0].append(
-                    imap_index_int)
-                imap_succeed_index_list.remove(imap_index_int)
-                continue
+        is_reconnect_succeed = operation_check_connection(imap_index_int)
+        if not is_reconnect_succeed:
+            continue
         msgs_processed_count = 0
         has_downloadable_attachments_in_mail = False
         print(
@@ -374,25 +380,9 @@ def operation_download():
         msg_list = list(reversed(data_msg_index_raw[0].split()))
         print(indent(1), '共 ', len(msg_list), ' 封邮件', sep='', flush=True)
         for msg_index_int in range(len(msg_list)):
-            try:
-                imap_list[imap_index_int].noop()
-                is_reconnect_succeed = True
-            except imaplib.IMAP4_SSL.abort:
-                print('\rW: 连接已断开,正在尝试重连...', flush=True)
-                for i in range(settings_reconnect_max_times):
-                    imap_list[imap_index_int] = operation_login_imap_server(
-                        host[imap_index_int], address[imap_index_int], password[imap_index_int])
-                    if imap_list[imap_index_int] != None:
-                        is_reconnect_succeed = True
-                        break
-                if not is_reconnect_succeed:
-                    imap_list[imap_index_int] = None
-                    print(
-                        'E: 无法连接至', address[imap_index_int], ',已跳过.', flush=True)
-                    imap_connect_failed_index_list[1].append(
-                        imap_index_int)
-                    imap_succeed_index_list.remove(imap_index_int)
-                    break
+            is_reconnect_succeed = operation_check_connection(imap_index_int)
+            if not is_reconnect_succeed:
+                break
             download_state_last_global = -1
             has_downloadable_attachments = False
             file_name_list = []
@@ -534,9 +524,6 @@ def operation_download():
                 msgs_with_downloadable_attachments_list_global[imap_index_int].append(
                     msg_list[msg_index_int])
                 file_name_list_global[imap_index_int].append(file_name_list)
-            if settings_sign_unseen_tag_after_downloading and download_state_last_global == 0:
-                imap_list[imap_index_int].store(msg_list[msg_index_int],
-                                                'flags', '\\seen')
             if download_state_last_global == 1:
                 if safe_list_find(imap_wrong_index_list, imap_index_int) == -1:
                     imap_wrong_index_list.append(imap_index_int)
@@ -546,6 +533,9 @@ def operation_download():
                     subject)
                 bigfile_undownloadable_link_list_global[imap_index_int].append(
                     bigfile_undownloadable_link_list)
+            if settings_sign_unseen_tag_after_downloading and download_state_last_global == 0:
+                imap_list[imap_index_int].store(msg_list[msg_index_int],
+                                                'flags', '\\seen')
             msgs_processed_count += 1
             msgs_processed_count_global += 1
         if not is_reconnect_succeed:
@@ -572,7 +562,7 @@ def operation_download():
         print(indent(1), '请尝试重新下载.', sep='', flush=True)
     if len(extract_nested_list(msgs_with_undownloadable_attachments_list_global)):
         bigfile_undownloadable_link_counted_count = 0
-        print('W:以下邮件的超大附件无法直接下载,但仍可获取链接:', flush=True)
+        print('W:以下邮件的超大附件无法直接下载,但仍可获取链接,请尝试手动下载:', flush=True)
         for imap_wrong_index_int in imap_wrong_index_list:
             print(indent(
                 1), '邮箱: ', address[imap_wrong_index_list[imap_wrong_index_int]], sep='', flush=True)
@@ -583,7 +573,26 @@ def operation_download():
                     print(indent(3), bigfile_undownloadable_link_counted_count+1, ' ',
                           bigfile_undownloadable_link_list_global[imap_wrong_index_int][subject_index_int][link_index_int], sep='', flush=True)
                     bigfile_undownloadable_link_counted_count += 1
-        print(indent(1), '请尝试手动下载.', sep='', flush=True)
+        if settings_sign_unseen_tag_after_downloading:
+            if input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='y', end=':') == 'y':
+                msgs_with_downloadable_attachments_signed_count = 0
+                for imap_index_int in range(len(imap_list)):
+                    if imap_list[imap_index_int] == None:
+                        continue
+                    is_reconnect_succeed = operation_check_connection(
+                        imap_index_int)
+                    if not is_reconnect_succeed:
+                        continue
+                    for msg_index in msgs_with_undownloadable_attachments_list_global[imap_index_int]:
+                        is_reconnect_succeed = operation_check_connection(
+                            imap_index_int)
+                        if not is_reconnect_succeed:
+                            break
+                        print('\r正在标记... (', msgs_with_downloadable_attachments_signed_count+1, '/', len(extract_nested_list(
+                            msgs_with_undownloadable_attachments_list_global)), ')', sep='', end='', flush=True)
+                        imap_list[imap_index_int].store(msg_index,
+                                                        'flags', '\\seen')
+                        msgs_with_downloadable_attachments_signed_count += 1
 
 
 def indent(count, unit=4, char=' '):
@@ -657,7 +666,7 @@ try:
     config_load_state = operation_load_config()
     while True:
         command = input_option(
-            '请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;q:退出]', 'd', 't', 'r', 'n', 'q', default_option='d', end=':')
+            '\r请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;q:退出]', 'd', 't', 'r', 'n', 'q', default_option='d', end=':')
         if command == 'd' or command == 't':
             if not config_load_state:
                 print('E: 配置文件错误,请在重新加载后执行该操作.', flush=True)
