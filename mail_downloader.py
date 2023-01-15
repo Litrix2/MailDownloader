@@ -130,7 +130,7 @@ def operation_load_config():
             settings_reconnect_max_times = config_file_data['reconnect_max_times']
             settings_download_path = config_file_data['download_path']
     except:
-        print('E:配置文件错误.', flush=True)
+        print('E: 配置文件错误.', flush=True)
         return False
     else:
         print('配置加载成功.', flush=True)
@@ -284,19 +284,20 @@ def operation_login_all_imapserver():
             file_name_raw_list_global.append([])
         else:
             imap_connect_failed_index_list[0].append(imap_index_int)
-    if len(imap_succeed_index_list):
-        print('已成功连接的邮箱:', flush=True)
-        for imap_succeed_index_int in imap_succeed_index_list:
-            print('    ', address[imap_succeed_index_int], sep='')
-        if len(imap_list) < len(host):
-            print('E:', '以下邮箱未能连接:', flush=True)
-            for imap_connect_failed_index_int in imap_connect_failed_index_list[0]:
-                print('    ', address[imap_connect_failed_index_int],
-                      sep='', flush=True)
-            print('    请尝试重新连接.', flush=True)
+    if len(host):
+        if len(imap_succeed_index_list):
+            print('已成功连接的邮箱:', flush=True)
+            for imap_succeed_index_int in imap_succeed_index_list:
+                print('    ', address[imap_succeed_index_int], sep='')
+            if len(imap_list) < len(host):
+                print('E: 以下邮箱未能连接:', flush=True)
+                for imap_connect_failed_index_int in imap_connect_failed_index_list[0]:
+                    print('    ', address[imap_connect_failed_index_int],
+                        sep='', flush=True)
+        else:
+            print('E: 没有成功连接的邮箱.', flush=True)
     else:
-        print('E:', '没有成功连接的邮箱,请尝试重新连接.', flush=True)
-
+        print('E: 没有邮箱.')
 
 def operation_download():
     global imap_list, imap_succeed_index_list, imap_connect_failed_index_list, imap_wrong_index_list
@@ -658,12 +659,12 @@ try:
             '请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;q:退出]', 'd', 't', 'r', 'n', 'q', default_option='d', end=':')
         if command == 'd' or command == 't':
             if not config_load_state:
-                print('E:配置文件错误,请在重新加载后执行该操作.', flush=True)
+                print('E: 配置文件错误,请在重新加载后执行该操作.', flush=True)
             else:
                 if command == 'd':
                     operation_login_all_imapserver()
                     if not len(imap_list):
-                        print('E: 无可用邮箱,请在重新连接后执行该操作.', flush=True)
+                        print('E: 无法执行该操作.原因:没有可用邮箱.', flush=True)
                         continue
                     if settings_allow_manual_input_search_time:
                         operation_set_time()
