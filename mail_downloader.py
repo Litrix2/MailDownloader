@@ -11,7 +11,7 @@ import rtoml
 import pytz
 from bs4 import BeautifulSoup
 import requests
-version = '1.0.1'
+version = '1.1'
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
     'wx.mail.qq.com', 'mail.qq.com']  # 先后顺序不要动!
