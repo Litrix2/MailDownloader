@@ -640,7 +640,7 @@ def operation_download():
                         imap_list_global[imap_index_int].store(msg_index,
                                                                'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
-
+    print()
 
 def indent(count, unit=4, char=' '):
     placeholder_str = ''
