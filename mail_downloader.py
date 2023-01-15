@@ -272,7 +272,7 @@ def operation_close_all_connection():
         return
 
 
-def program_login_all_imapserver():
+def operation_login_all_imapserver():
     init(True, True)
     for imap_index_int in range(len(host)):
         imap = operation_login_imap_server(
@@ -298,7 +298,7 @@ def program_login_all_imapserver():
         print('E:', '没有成功连接的邮箱,请尝试重新连接.', flush=True)
 
 
-def program_download():
+def operation_download():
     global imap_list, imap_succeed_index_list, imap_connect_failed_index_list, imap_wrong_index_list
     global download_state_last_global
     global msgs_processed_count_global, msgs_with_undownloadable_attachments_list_global, msgs_with_downloadable_attachments_list_global, msgs_failed_list
@@ -655,19 +655,21 @@ try:
     config_load_state = operation_load_config()
     while True:
         command = input_option(
-            '请选择操作 [d:下载;r:重载配置文件;n:新建配置文件;q:退出]', 'd', 'r', 'n', 'q', default_option='d', end=':')
-        if command == 'd':
+            '请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;q:退出]', 'd', 't', 'r', 'n', 'q', default_option='d', end=':')
+        if command == 'd' or command == 't':
             if not config_load_state:
                 print('E:配置文件错误,请在重新加载后执行该操作.', flush=True)
             else:
                 if command == 'd':
-                    program_login_all_imapserver()
+                    operation_login_all_imapserver()
                     if not len(imap_list):
                         print('E: 无可用邮箱,请在重新连接后执行该操作.', flush=True)
                         continue
                     if settings_allow_manual_input_search_time:
                         operation_set_time()
-                    program_download()
+                    operation_download()
+                elif command == 't':
+                    operation_login_all_imapserver()
         elif command == 'r':
             config_load_state = operation_load_config()
         elif command == 'n':
