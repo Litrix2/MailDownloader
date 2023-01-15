@@ -10,6 +10,7 @@ import requests
 import rtoml
 import socket
 import time
+import traceback
 import urllib.parse
 
 version = '1.1'
@@ -744,4 +745,8 @@ try:
 except KeyboardInterrupt:
     print('\n强制退出', flush=True)
     operation_close_all_connection()
+    nexit(1)
+except Exception as e:
+    print('E: 遇到无法解决的错误.信息如下:',flush=True)
+    traceback.print_exc()
     nexit(1)
