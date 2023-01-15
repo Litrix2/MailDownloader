@@ -712,7 +712,7 @@ try:
     config_load_state = operation_load_config()
     while True:
         command = input_option(
-            '\r请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;q:退出]', 'd', 't', 'r', 'n', 'q', default_option='d', end=':')
+            '\r请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'r', 'n', 'c','q', default_option='d', end=':')
         if command == 'd' or command == 't':
             if not config_load_state:
                 print('E: 配置文件错误,请在重新加载后执行该操作.', flush=True)
@@ -734,6 +734,8 @@ try:
                 with open(os.path.join(os.path.dirname(__file__), 'config_new.toml'), 'w') as config_new_file:
                     rtoml.dump(config_primary_data, config_new_file)
                 print('操作成功完成.', flush=True)
+        elif command=='c':
+            os.system('cls')
         elif command == 'q':
             break
     print('正在关闭连接...', flush=True)
