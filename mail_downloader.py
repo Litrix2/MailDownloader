@@ -713,7 +713,6 @@ try:
     while True:
         command = input_option(
             '\r请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;q:退出]', 'd', 't', 'r', 'n', 'q', default_option='d', end=':')
-        # command='d'
         if command == 'd' or command == 't':
             if not config_load_state:
                 print('E: 配置文件错误,请在重新加载后执行该操作.', flush=True)
