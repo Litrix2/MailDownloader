@@ -698,7 +698,7 @@ def input_option(prompt, *options, allow_undefind_input=False, default_option=''
             if not allow_undefind_input:
                 if safe_list_find(options, result) == -1:
                     print('无效选项,请重新输入.', flush=True)
-                    continue
+                    continue 
             return result
 
 
