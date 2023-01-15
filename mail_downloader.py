@@ -526,7 +526,8 @@ def program_download():
                             settings_download_path, file_mixed_name_tmp))
                 raise KeyboardInterrupt
             else:
-                download_state_last_global = 0
+                if has_downloadable_attachments:
+                    download_state_last_global = 0
             if has_downloadable_attachments:
                 msgs_with_downloadable_attachments_list_global[imap_index_int].append(
                     msg_list[msg_index_int])
