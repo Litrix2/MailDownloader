@@ -698,7 +698,7 @@ def input_option(prompt, *options, allow_undefind_input=False, default_option=''
             if not allow_undefind_input:
                 if safe_list_find(options, result) == -1:
                     print('无效选项,请重新输入.', flush=True)
-                    continue 
+                    continue
             return result
 
 
@@ -713,7 +713,7 @@ try:
     config_load_state = operation_load_config()
     while True:
         command = input_option(
-            '\r请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'r', 'n', 'c','q', default_option='d', end=':')
+            '\r请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'r', 'n', 'c', 'q', default_option='d', end=':')
         if command == 'd' or command == 't':
             if not config_load_state:
                 print('E: 配置文件错误,请在重新加载后执行该操作.', flush=True)
@@ -735,7 +735,7 @@ try:
                 with open(os.path.join(os.path.dirname(__file__), 'config_new.toml'), 'w') as config_new_file:
                     rtoml.dump(config_primary_data, config_new_file)
                 print('操作成功完成.', flush=True)
-        elif command=='c':
+        elif command == 'c':
             os.system('cls')
         elif command == 'q':
             break
@@ -747,6 +747,6 @@ except KeyboardInterrupt:
     operation_close_all_connection()
     nexit(1)
 except Exception as e:
-    print('E: 遇到无法解决的错误.信息如下:',flush=True)
+    print('E: 遇到无法解决的错误.信息如下:', flush=True)
     traceback.print_exc()
     nexit(1)
