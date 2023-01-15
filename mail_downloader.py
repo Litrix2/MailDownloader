@@ -177,6 +177,34 @@ def operation_login_imap_server(host, address, password):
         return None
 
 
+def operation_login_all_imapserver():
+    init(True, True)
+    for imap_index_int in range(len(host)):
+        imap = operation_login_imap_server(
+            host[imap_index_int], address[imap_index_int], password[imap_index_int])
+        imap_list_global.append(imap)
+        if imap != None:
+            imap_succeed_index_int_list_global.append(imap_index_int)
+            msg_with_downloadable_attachments_list_global.append([])
+            file_name_raw_list_global.append([])
+        else:
+            imap_connect_failed_index_int_list_global[0].append(imap_index_int)
+    if len(host):
+        if len(imap_succeed_index_int_list_global):
+            print('已成功连接的邮箱:', flush=True)
+            for imap_succeed_index_int in imap_succeed_index_int_list_global:
+                print('    ', address[imap_succeed_index_int], sep='')
+            if len(imap_list_global) < len(host):
+                print('E: 以下邮箱未能连接:', flush=True)
+                for imap_connect_failed_index_int in imap_connect_failed_index_int_list_global[0]:
+                    print('    ', address[imap_connect_failed_index_int],
+                          sep='', flush=True)
+        else:
+            print('E: 没有成功连接的邮箱.', flush=True)
+    else:
+        print('E: 没有邮箱.')
+
+
 def operation_set_time():
     settings_mail_min_time.enabled = False
     settings_mail_max_time.enabled = False
@@ -302,34 +330,6 @@ def operation_close_all_connection():
                 continue
     except NameError:
         return
-
-
-def operation_login_all_imapserver():
-    init(True, True)
-    for imap_index_int in range(len(host)):
-        imap = operation_login_imap_server(
-            host[imap_index_int], address[imap_index_int], password[imap_index_int])
-        imap_list_global.append(imap)
-        if imap != None:
-            imap_succeed_index_int_list_global.append(imap_index_int)
-            msg_with_downloadable_attachments_list_global.append([])
-            file_name_raw_list_global.append([])
-        else:
-            imap_connect_failed_index_int_list_global[0].append(imap_index_int)
-    if len(host):
-        if len(imap_succeed_index_int_list_global):
-            print('已成功连接的邮箱:', flush=True)
-            for imap_succeed_index_int in imap_succeed_index_int_list_global:
-                print('    ', address[imap_succeed_index_int], sep='')
-            if len(imap_list_global) < len(host):
-                print('E: 以下邮箱未能连接:', flush=True)
-                for imap_connect_failed_index_int in imap_connect_failed_index_int_list_global[0]:
-                    print('    ', address[imap_connect_failed_index_int],
-                          sep='', flush=True)
-        else:
-            print('E: 没有成功连接的邮箱.', flush=True)
-    else:
-        print('E: 没有邮箱.')
 
 
 def operation_download():
