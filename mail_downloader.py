@@ -293,11 +293,12 @@ def operation_login_all_imapserver():
                 print('E: 以下邮箱未能连接:', flush=True)
                 for imap_connect_failed_index_int in imap_connect_failed_index_list[0]:
                     print('    ', address[imap_connect_failed_index_int],
-                        sep='', flush=True)
+                          sep='', flush=True)
         else:
             print('E: 没有成功连接的邮箱.', flush=True)
     else:
         print('E: 没有邮箱.')
+
 
 def operation_download():
     global imap_list, imap_succeed_index_list, imap_connect_failed_index_list, imap_wrong_index_list
