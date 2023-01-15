@@ -1,16 +1,17 @@
-import urllib.parse
-import time
-from email import header
-import email
-import imaplib
-import datetime
-import os
-import socket
-import copy
-import rtoml
-import pytz
 from bs4 import BeautifulSoup
+import copy
+import datetime
+import email
+from email import header
+import imaplib
+import os
+import pytz
 import requests
+import rtoml
+import socket
+import time
+import urllib.parse
+
 version = '1.1'
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
