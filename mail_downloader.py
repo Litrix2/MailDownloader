@@ -14,10 +14,10 @@ import time
 import traceback
 import urllib.parse
 
-version = '1.2.1'
+version = '1.2.2'
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
-    'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com']  # 先后顺序不要动!
+    'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
 unavailable_bigfile_website_list = []
 website_blacklist = ['u.163.com']
 
@@ -446,7 +446,8 @@ def operation_download():
                 for eachdata_msg in data_msg.walk():
                     file_name = None
                     bigfile_name = None
-                    if eachdata_msg.get_content_disposition():
+                    # print(eachdata_msg)
+                    if eachdata_msg.get_content_disposition() and eachdata_msg.get_content_disposition().find('attachment') != -1:
                         if not has_downloadable_attachments:
                             print('\r', indent(1), len(extract_nested_list(msg_with_downloadable_attachments_list_global))+1, ' ', subject, ' - ', send_time,
                                   indent(8), sep='')
@@ -488,7 +489,6 @@ def operation_download():
                                     bigfile_downloadable_link = None
                                     bigfile_link = href.get('href')
                                     if find_childstr_to_list(available_bigfile_website_list, bigfile_link):
-                                        # wx.mail.qq.com
                                         download_page = requests.get(
                                             bigfile_link)
                                         html_fetcher_2 = BeautifulSoup(
@@ -502,7 +502,9 @@ def operation_download():
                                                     'https://gzc-download.ftn.qq.com'):-1]
                                                 bigfile_downloadable_link = bigfile_downloadable_link.replace(
                                                     '\\x26', '&')
-                                        # mail.qq.com
+                                                bigfile_download_method = 0  # get
+                                            else:
+                                                download_state_last_global = 2
                                         elif bigfile_link.find('mail.qq.com') != -1:
                                             download_page = requests.get(
                                                 bigfile_link)
@@ -513,6 +515,9 @@ def operation_download():
                                             if bigfile_downloadable_link:
                                                 bigfile_downloadable_link = bigfile_downloadable_link.get(
                                                     'href')
+                                                bigfile_download_method = 0  # get
+                                            else:
+                                                download_state_last_global = 2
                                         elif bigfile_link.find('dashi.163.com') != -1:
                                             link_key = urllib.parse.parse_qs(
                                                 urllib.parse.urlparse(bigfile_link).query)['key'][0]
@@ -521,6 +526,7 @@ def operation_download():
                                             bigfile_download_code = fetch_result['code']
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
+                                                bigfile_download_method = 0  # get
                                             elif bigfile_download_code == 404 or bigfile_download_code == 601:
                                                 if not has_downloadable_attachments and download_state_last_global != 1:
                                                     download_state_last_global = 2
@@ -538,6 +544,7 @@ def operation_download():
                                             bigfile_download_code = fetch_result['code']
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
+                                                bigfile_download_method = 0  # get
                                             elif bigfile_download_code == -17 or bigfile_download_code == -3:
                                                 if not has_downloadable_attachments and download_state_last_global != 1:
                                                     download_state_last_global = 2
@@ -547,6 +554,18 @@ def operation_download():
                                                 bigfile_undownloadable_code_list.append(
                                                     bigfile_download_code)
                                                 download_state_last_global = 1
+                                        elif bigfile_link.find('mail.sina.com.cn') != -1:
+                                            download_page = requests.get(
+                                                bigfile_link)
+                                            html_fetcher_2 = BeautifulSoup(
+                                                download_page.text, 'lxml')
+                                            can_download = len(
+                                                html_fetcher_2.find_all('input'))
+                                            if can_download:
+                                                bigfile_downloadable_link = bigfile_link
+                                                bigfile_download_method = 1  # post
+                                            else:
+                                                download_state_last_global = 2
                                     elif find_childstr_to_list(unavailable_bigfile_website_list, bigfile_link):
                                         bigfile_undownloadable_link_list.append(
                                             bigfile_link)
@@ -567,14 +586,18 @@ def operation_download():
                                             3), sep='', end='', flush=True)
                                         has_downloadable_attachments_in_mail = True
                                         has_downloadable_attachments = True
-                                        bigfile_data = requests.get(
-                                            bigfile_downloadable_link, stream=True)
+                                        if bigfile_download_method == 0:
+                                            bigfile_data = requests.get(
+                                                bigfile_downloadable_link, stream=True)
+                                        else:
+                                            bigfile_data = requests.post(
+                                                bigfile_downloadable_link, stream=True)
                                         bigfile_name_raw = bigfile_data.headers.get(
                                             'Content-Disposition')
                                         bigfile_name_raw = bigfile_name_raw.encode(
                                             'ISO-8859-1').decode('utf8')  # 转码
-                                        if bigfile_name_raw.find(';')!=-1:
-                                            bigfile_name_raw=bigfile_name_raw[:bigfile_name_raw.find(';')]
+                                        bigfile_name_raw = bigfile_name_raw.split('; ')[
+                                            1]
                                         bigfile_name_raw = (bigfile_name_raw[bigfile_name_raw.find(
                                             'filename="')+len(
                                             'filename="'):])[:-1]
