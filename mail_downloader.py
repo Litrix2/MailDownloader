@@ -715,6 +715,8 @@ def operation_download():
                 print(indent(2), msg_download_failed_counted_count+1, ' ',
                       subject_download_failed_list_global[imap_download_failed_index_int][subject_index_int], ' - ', send_time_download_failed_list_global[imap_download_failed_index_int][subject_index_int], sep='', flush=True)
                 msg_download_failed_counted_count += 1
+    if not settings_sign_unseen_tag_after_downloading and not len(extract_nested_list(msg_with_undownloadable_attachments_list_global)) and not len(extract_nested_list(msg_overdueanddeleted_list_global)):
+        print(flush=True)
     if len(extract_nested_list(msg_with_undownloadable_attachments_list_global)):
         msg_with_undownloadable_attachments_counted_count = 0
         bigfile_undownloadable_link_counted_count = 0
@@ -753,6 +755,10 @@ def operation_download():
                                                                'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
                 print('\r', indent(6), sep='', end='', flush=True)
+                if not len(extract_nested_list(msg_overdueanddeleted_list_global)):
+                    print(flush=True)
+            else:
+                print(flush=True)
     if len(extract_nested_list(msg_overdueanddeleted_list_global)):
         msg_overdueanddeleted_counted_count = 0
         print('\rN: 以下邮件的超大附件全部过期或被删除:', flush=True)
@@ -778,8 +784,8 @@ def operation_download():
                                                                'flags', '\\seen')
                         msg_overdueanddeleted_signed_count += 1
                 print('\r', indent(6), sep='', flush=True)
-    if not settings_sign_unseen_tag_after_downloading:
-        print(flush=True)
+            else:
+                print(flush=True)
 
 
 def get_path():
