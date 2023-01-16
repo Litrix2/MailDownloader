@@ -37,7 +37,7 @@ Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议
 - download_path: 文件下载路径
     - **请使用绝对路径!**
 
-## 依赖库
+## 额外依赖库
 - bs4
 - rtoml
 - pytz
