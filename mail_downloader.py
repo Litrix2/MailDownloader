@@ -57,11 +57,11 @@ config_primary_data = {
 
 
 def init(reset_imaps=False, reset_msg=False):
-    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global,imap_overdueanddeleted_index_int_list_global, imap_download_failed_index_int_list_global
+    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_overdueanddeleted_index_int_list_global, imap_download_failed_index_int_list_global
     global download_state_last_global
-    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global,msg_overdueanddeleted_list_global, msg_download_failed_list_global
-    global send_time_with_undownloadable_attachments_list_global, send_time_overdueanddeleted_list_global,send_time_download_failed_list_global
-    global subject_with_undownloadable_attachments_list_global,subject_overdueanddeleted_list_global,subject_download_failed_list_global
+    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_download_failed_list_global
+    global send_time_with_undownloadable_attachments_list_global, send_time_overdueanddeleted_list_global, send_time_download_failed_list_global
+    global subject_with_undownloadable_attachments_list_global, subject_overdueanddeleted_list_global, subject_download_failed_list_global
     global file_download_count_global, file_name_raw_list_global, file_name_list_global
     global bigfile_undownloadable_link_list_global
     global bigfile_undownloadable_code_list_global
@@ -71,20 +71,20 @@ def init(reset_imaps=False, reset_msg=False):
         imap_succeed_index_int_list_global = []
         imap_connect_failed_index_int_list_global = [[], []]
         imap_with_undownloadable_attachments_index_int_list_global = []
-        imap_overdueanddeleted_index_int_list_global=[]
+        imap_overdueanddeleted_index_int_list_global = []
         imap_download_failed_index_int_list_global = []
     if reset_msg:
         download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的附件;2:附件全部过期或不存在
         msg_processed_count_global = 0
         msg_with_undownloadable_attachments_list_global = []
         msg_with_downloadable_attachments_list_global = []
-        msg_overdueanddeleted_list_global=[]
+        msg_overdueanddeleted_list_global = []
         msg_download_failed_list_global = []
         send_time_with_undownloadable_attachments_list_global = []
-        send_time_overdueanddeleted_list_global=[]
+        send_time_overdueanddeleted_list_global = []
         send_time_download_failed_list_global = []
         subject_with_undownloadable_attachments_list_global = []
-        subject_overdueanddeleted_list_global=[]
+        subject_overdueanddeleted_list_global = []
         subject_download_failed_list_global = []
         file_download_count_global = 0
         file_name_raw_list_global = []
@@ -508,7 +508,7 @@ def operation_download():
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
                                             elif bigfile_download_code == 404 or bigfile_download_code == 601:
                                                 if not has_downloadable_attachments:
-                                                    download_state_last_global=2
+                                                    download_state_last_global = 2
                                             else:
                                                 bigfile_undownloadable_link_list.append(
                                                     bigfile_link)
@@ -525,7 +525,7 @@ def operation_download():
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
                                             elif bigfile_download_code == -17 or bigfile_download_code == -3:
                                                 if not has_downloadable_attachments:
-                                                    download_state_last_global=2
+                                                    download_state_last_global = 2
                                             else:
                                                 bigfile_undownloadable_link_list.append(
                                                     bigfile_link)
@@ -576,8 +576,8 @@ def operation_download():
                                             ' <- '+bigfile_name_raw)if bigfile_name != bigfile_name_raw else '', indent(2), sep='', flush=True)
                                         file_download_count_global += 1
                                         file_download_count += 1
-                                        if download_state_last_global==2:
-                                            download_state_last_global==0
+                                        if download_state_last_global == 2:
+                                            download_state_last_global == 0
                                         file_name_list.append(bigfile_name)
             except KeyboardInterrupt as e:
                 print('\n回滚操作...', flush=True)
@@ -625,7 +625,7 @@ def operation_download():
                     bigfile_undownloadable_link_list)
                 bigfile_undownloadable_code_list_global[imap_index_int].append(
                     bigfile_undownloadable_code_list)
-            elif download_state_last_global==2:
+            elif download_state_last_global == 2:
                 if safe_list_find(imap_overdueanddeleted_index_int_list_global, imap_index_int) == -1:
                     imap_overdueanddeleted_index_int_list_global.append(
                         imap_index_int)
@@ -716,9 +716,9 @@ def operation_download():
                         imap_list_global[imap_index_int].store(msg_index,
                                                                'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
-                print('\r',indent(6),sep='',flush=True)
+                print('\r', indent(6), sep='', flush=True)
     if len(extract_nested_list(msg_overdueanddeleted_list_global)):
-        msg_overdueanddeleted_counted_count=0
+        msg_overdueanddeleted_counted_count = 0
         print('N: 以下邮件的超大附件全部过期或被删除:', flush=True)
         for imap_overdueanddeleted_index_int in imap_overdueanddeleted_index_int_list_global:
             print(indent(
@@ -741,7 +741,7 @@ def operation_download():
                         imap_list_global[imap_index_int].store(msg_index,
                                                                'flags', '\\seen')
                         msg_overdueanddeleted_signed_count += 1
-                print('\r',indent(6),sep='',flush=True)
+                print('\r', indent(6), sep='', flush=True)
     if not settings_sign_unseen_tag_after_downloading:
         print(flush=True)
 
