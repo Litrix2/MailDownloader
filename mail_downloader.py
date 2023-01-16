@@ -19,7 +19,7 @@ authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
     'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
 unavailable_bigfile_website_list = []
-website_blacklist = ['https://fs.163.com', 'u.163.com']
+website_blacklist = ['fs.163.com', 'u.163.com']
 
 
 class Time():
