@@ -507,7 +507,7 @@ def operation_download():
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
                                             elif bigfile_download_code == 404 or bigfile_download_code == 601:
-                                                if not has_downloadable_attachments:
+                                                if not has_downloadable_attachments and download_state_last_global != 1:
                                                     download_state_last_global = 2
                                             else:
                                                 bigfile_undownloadable_link_list.append(
@@ -524,7 +524,7 @@ def operation_download():
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
                                             elif bigfile_download_code == -17 or bigfile_download_code == -3:
-                                                if not has_downloadable_attachments:
+                                                if not has_downloadable_attachments and download_state_last_global != 1:
                                                     download_state_last_global = 2
                                             else:
                                                 bigfile_undownloadable_link_list.append(
