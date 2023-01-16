@@ -728,7 +728,7 @@ def operation_download():
                 print('\r', indent(6), sep='', end='', flush=True)
     if len(extract_nested_list(msg_overdueanddeleted_list_global)):
         msg_overdueanddeleted_counted_count = 0
-        print('N: 以下邮件的超大附件全部过期或被删除:', flush=True)
+        print('\rN: 以下邮件的超大附件全部过期或被删除:', flush=True)
         for imap_overdueanddeleted_index_int in imap_overdueanddeleted_index_int_list_global:
             print(indent(
                 1), '邮箱: ', address[imap_overdueanddeleted_index_int_list_global[imap_overdueanddeleted_index_int]], sep='', flush=True)
