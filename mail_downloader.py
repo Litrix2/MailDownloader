@@ -716,7 +716,9 @@ def operation_download():
                         imap_list_global[imap_index_int].store(msg_index,
                                                                'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
-                print('\r', indent(6), sep='', flush=True)
+                print('\r', indent(6), sep='',end='' ,flush=True)
+                if not len(extract_nested_list(msg_overdueanddeleted_list_global)):
+                    print(flush=True)
     if len(extract_nested_list(msg_overdueanddeleted_list_global)):
         msg_overdueanddeleted_counted_count = 0
         print('N: 以下邮件的超大附件全部过期或被删除:', flush=True)
