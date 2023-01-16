@@ -73,7 +73,7 @@ def init(reset_imaps=False, reset_msg=False):
         imap_with_undownloadable_attachments_index_int_list_global = []
         imap_download_failed_index_int_list_global = []
     if reset_msg:
-        download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的文件;2:附件全部过期
+        download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的文件;
         msg_processed_count_global = 0
         msg_with_undownloadable_attachments_list_global = []
         msg_with_downloadable_attachments_list_global = []
