@@ -4,6 +4,7 @@ import datetime
 import email
 from email import header
 import imaplib
+import json
 import os
 import pytz
 import requests
@@ -13,11 +14,11 @@ import time
 import traceback
 import urllib.parse
 
-version = '1.1'
+version = '1.2'
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
-    'wx.mail.qq.com', 'mail.qq.com']  # 先后顺序不要动!
-unavailable_bigfile_website_list = ['dashi.163.com', 'mail.163.com']
+    'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com']  # 先后顺序不要动!
+unavailable_bigfile_website_list = []
 website_blacklist = ['u.163.com']
 
 
@@ -63,6 +64,7 @@ def init(reset_imaps=False, reset_msg=False):
     global subject_with_undownloadable_attachments_list_global, subject_download_failed_list_global
     global file_download_count_global, file_name_raw_list_global, file_name_list_global
     global bigfile_undownloadable_link_list_global
+    global bigfile_undownloadable_code_list_global
     if reset_imaps:
         imaplib.Commands['ID'] = ('AUTH')
         imap_list_global = []
@@ -84,6 +86,7 @@ def init(reset_imaps=False, reset_msg=False):
         file_name_raw_list_global = []
         file_name_list_global = []
         bigfile_undownloadable_link_list_global = []  # 2级下载链接
+        bigfile_undownloadable_code_list_global = []
         for i in range(len(host)):
             msg_with_undownloadable_attachments_list_global.append([])
             msg_with_downloadable_attachments_list_global.append([])
@@ -95,6 +98,7 @@ def init(reset_imaps=False, reset_msg=False):
             file_name_raw_list_global.append([])
             file_name_list_global.append([])
             bigfile_undownloadable_link_list_global.append([])
+            bigfile_undownloadable_code_list_global.append([])
 
 
 def operation_load_config():
@@ -106,7 +110,7 @@ def operation_load_config():
     global settings_download_path
     print('正在读取配置文件...', flush=True)
     try:
-        with open(os.path.join(os.path.dirname(__file__), 'config.toml'), 'rb') as config_file:
+        with open(os.path.join(get_path(), 'config.toml'), 'rb') as config_file:
             config_file_data = rtoml.load(
                 bytes.decode(config_file.read(), 'utf-8'))
 
@@ -395,9 +399,11 @@ def operation_download():
             if not is_reconnect_succeed:
                 break
             download_state_last_global = -1
+            bigfile_undownloadable_code_list = []
             has_downloadable_attachments = False
             file_name_list = []
             bigfile_downloadable_link_list = []
+            bigfile_download_code = 0
             bigfile_undownloadable_link_list = []
             file_name_raw_list_global[imap_index_int].append([])
             print('\r正在读取邮件数据... (', msg_processed_count+1, ',', msg_processed_count_global+1,
@@ -450,8 +456,8 @@ def operation_download():
                             eachdata_msg_data_raw, eachdata_msg_charset)
                         html_fetcher = BeautifulSoup(eachdata_msg_data, 'lxml')
                         if eachdata_msg_data.find('附件') != -1:
-                            with open(os.path.join(os.path.dirname(__file__), 'test/mail2.html'), 'wb') as a:
-                                a.write(eachdata_msg_data_raw)
+                            # with open(os.path.join(get_path(), 'test/mail2.html'), 'wb') as a:
+                            #     a.write(eachdata_msg_data_raw)
                             href_list = html_fetcher.find_all('a')
                             for href in href_list:
                                 if href.get_text().find('下载') != -1:
@@ -459,13 +465,13 @@ def operation_download():
                                           sep='', end='', flush=True)
                                     bigfile_downloadable_link = None
                                     bigfile_link = href.get('href')
-                                    download_page_html = requests.get(
-                                        bigfile_link)
-                                    html_fetcher_2 = BeautifulSoup(
-                                        download_page_html.text, 'lxml')
                                     if find_childstr_to_list(available_bigfile_website_list, bigfile_link):
                                         # wx.mail.qq.com
-                                        if bigfile_link.find(available_bigfile_website_list[0]) != -1:
+                                        download_page = requests.get(
+                                            bigfile_link)
+                                        html_fetcher_2 = BeautifulSoup(
+                                            download_page.text, 'lxml')
+                                        if bigfile_link.find('wx.mail.qq.com') != -1:
                                             script = html_fetcher_2.select_one(
                                                 'body > script:nth-child(2)')
                                             if script.find('var url = ""') == -1:
@@ -474,26 +480,49 @@ def operation_download():
                                                     'https://gzc-download.ftn.qq.com'):-1]
                                                 bigfile_downloadable_link = bigfile_downloadable_link.replace(
                                                     '\\x26', '&')
-                                                bigfile_downloadable_link_list.append(
-                                                    bigfile_downloadable_link)
-                                        # mail.qq.com;mail.163.com
-                                        elif bigfile_link.find(available_bigfile_website_list[1]) != -1:
+                                        # mail.qq.com
+                                        elif bigfile_link.find('mail.qq.com') != -1:
+                                            download_page = requests.get(
+                                                bigfile_link)
+                                            html_fetcher_2 = BeautifulSoup(
+                                                download_page.text, 'lxml')
                                             bigfile_downloadable_link = html_fetcher_2.select_one(
                                                 '#main > div.ft_d_mainWrapper > div > div > div.ft_d_fileToggle.default > a.ft_d_btnDownload.btn_blue')
                                             if bigfile_downloadable_link:
                                                 bigfile_downloadable_link = bigfile_downloadable_link.get(
                                                     'href')
-                                            bigfile_downloadable_link_list.append(
-                                                bigfile_downloadable_link)
+                                        elif bigfile_link.find('dashi.163.com') != -1:
+                                            link_key = urllib.parse.parse_qs(
+                                                urllib.parse.urlparse(bigfile_link).query)['key'][0]
+                                            fetch_result = json.loads(requests.post('https://dashi.163.com/filehub-master/file/dl/prepare2', json={"fid": "","linkKey": link_key}).text)
+                                            bigfile_download_code = fetch_result['code']
+                                        elif bigfile_link.find('mail.163.com') != -1:
+                                            link_key = urllib.parse.parse_qs(
+                                                urllib.parse.urlparse(bigfile_link).query)['file'][0]
+                                            fetch_result = json.loads(requests.get(
+                                            'https://fs.mail.163.com/fs/service', params={'f': link_key, 'op': 'fs_dl_f_a'}).text)
+                                            bigfile_download_code = fetch_result['code']
+                                        if bigfile_download_code == 200:
+                                            bigfile_downloadable_link = fetch_result['result']['downloadUrl']
+                                        elif bigfile_download_code == 602:
+                                            bigfile_undownloadable_link_list.append(
+                                                bigfile_link)
+                                            bigfile_undownloadable_code_list.append(
+                                                bigfile_download_code)
+                                            download_state_last_global = 1
                                     elif find_childstr_to_list(unavailable_bigfile_website_list, bigfile_link):
                                         bigfile_undownloadable_link_list.append(
                                             bigfile_link)
+                                        bigfile_undownloadable_code_list.append(
+                                            bigfile_download_code)
                                         download_state_last_global = 1
                                     elif find_childstr_to_list(website_blacklist, bigfile_link):
                                         continue
                                     else:
                                         download_state_last_global = -2
                                     if bigfile_downloadable_link:
+                                        bigfile_downloadable_link_list.append(
+                                            bigfile_downloadable_link)
                                         if not has_downloadable_attachments:
                                             print('\r', indent(1), len(extract_nested_list(msg_with_downloadable_attachments_list_global))+1, ' ', subject, ' - ', send_time,
                                                   indent(8), sep='')
@@ -505,8 +534,11 @@ def operation_download():
                                             bigfile_downloadable_link, stream=True)
                                         bigfile_name_raw = bigfile_data.headers.get(
                                             'Content-Disposition')
-                                        bigfile_name_raw = urllib.parse.unquote(bigfile_name_raw[bigfile_name_raw.find(
-                                            'filename*=utf-8\'\'')+len('filename*=utf-8\'\''):len(bigfile_name_raw)])
+                                        bigfile_name_raw = bigfile_name_raw.encode(
+                                            'ISO-8859-1').decode('utf8')  # 转码
+                                        bigfile_name_raw = (bigfile_name_raw[bigfile_name_raw.find(
+                                            'filename="')+len(
+                                            'filename="'):])[:-1]
                                         bigfile_name = operation_parse_file_name(
                                             bigfile_name_raw)
                                         bigfile_name_tmp = operation_parse_file_name(
@@ -567,6 +599,8 @@ def operation_download():
                     subject)
                 bigfile_undownloadable_link_list_global[imap_index_int].append(
                     bigfile_undownloadable_link_list)
+                bigfile_undownloadable_code_list_global[imap_index_int].append(
+                    bigfile_undownloadable_code_list)
             elif download_state_last_global == -2:
                 if safe_list_find(imap_download_failed_index_int_list_global, imap_index_int) == -1:
                     imap_download_failed_index_int_list_global.append(
@@ -624,6 +658,10 @@ def operation_download():
                 for link_index_int in range(len(bigfile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int])):
                     print(indent(3), bigfile_undownloadable_link_counted_count+1, ' ',
                           bigfile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int], sep='', flush=True)
+                    if bigfile_undownloadable_code_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int] != 0:
+                        print(indent(4), '错误代码: ', bigfile_undownloadable_code_list_global[
+                              imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int], sep='', flush=True)
+
                     bigfile_undownloadable_link_counted_count += 1
                 msg_with_undownloadable_attachments_counted_count += 1
         if settings_sign_unseen_tag_after_downloading:
@@ -641,6 +679,11 @@ def operation_download():
                                                                'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
     print()
+
+
+def get_path():
+    return os.path.dirname(__file__)
+
 
 def indent(count, unit=4, char=' '):
     placeholder_str = ''
@@ -709,7 +752,7 @@ def nexit(code=0):
 
 try:
     print('Mail Downloader', 'Desingned by Litrix',
-          '版本:'+version, '获取更多信息,请访问 https://github.com/Litrix2/MailDownloader','', sep='\n')
+          '版本:'+version, '获取更多信息,请访问 https://github.com/Litrix2/MailDownloader', '', sep='\n')
     config_load_state = operation_load_config()
     while True:
         command = input_option(
@@ -732,7 +775,7 @@ try:
             config_load_state = operation_load_config()
         elif command == 'n':
             if input_option('此操作将生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
-                with open(os.path.join(os.path.dirname(__file__), 'config_new.toml'), 'w') as config_new_file:
+                with open(os.path.join(get_path(), 'config_new.toml'), 'w') as config_new_file:
                     rtoml.dump(config_primary_data, config_new_file)
                 print('操作成功完成.', flush=True)
         elif command == 'c':
@@ -747,6 +790,6 @@ except KeyboardInterrupt:
     operation_close_all_connection()
     nexit(1)
 except Exception as e:
-    print('E: 遇到无法解决的错误.信息如下:', flush=True)
+    print('\nE: 遇到无法解决的错误.信息如下:', flush=True)
     traceback.print_exc()
     nexit(1)
