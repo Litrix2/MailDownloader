@@ -499,7 +499,7 @@ def operation_download():
                                             bigfile_download_code = fetch_result['code']
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
-                                            elif bigfile_download_code != 404:
+                                            elif bigfile_download_code != 404 and bigfile_download_code != 601:
                                                 bigfile_undownloadable_link_list.append(
                                                     bigfile_link)
                                                 bigfile_undownloadable_code_list.append(
@@ -691,7 +691,9 @@ def operation_download():
                         imap_list_global[imap_index_int].store(msg_index,
                                                                'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
-    print()
+                print('\r',indent(4),sep='',flush=True)
+    if not settings_sign_unseen_tag_after_downloading:
+        print(flush=True)
 
 
 def get_path():
