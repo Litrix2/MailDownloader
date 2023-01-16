@@ -308,7 +308,20 @@ def operation_parse_file_name(file_name_raw):
             i += 1
     return file_name
 
-
+def operation_rollback(file_name,bigfile_name,file_name_list):
+    print('\n回滚操作...', flush=True)
+    if file_name:
+        file_name_list.append(file_name)
+    if bigfile_name:
+        file_name_list.append(bigfile_name)
+    for file_mixed_name in file_name_list:
+        file_mixed_name_tmp = file_mixed_name+'.tmp'
+        if os.path.isfile(os.path.join(settings_download_path, file_mixed_name)):
+            os.remove(os.path.join(
+                settings_download_path, file_mixed_name))
+        if os.path.isfile(os.path.join(settings_download_path, file_mixed_name_tmp)):
+            os.remove(os.path.join(
+                settings_download_path, file_mixed_name_tmp))
 def operation_check_connection(imap_index_int):
     is_reconnect_succeed = False
     try:
@@ -581,19 +594,12 @@ def operation_download():
                                         file_name_list.append(bigfile_name)
             except KeyboardInterrupt as e:
                 print('\n回滚操作...', flush=True)
-                if file_name:
-                    file_name_list.append(file_name)
-                if bigfile_name:
-                    file_name_list.append(bigfile_name)
-                for file_mixed_name in file_name_list:
-                    file_mixed_name_tmp = file_mixed_name+'.tmp'
-                    if os.path.isfile(os.path.join(settings_download_path, file_mixed_name)):
-                        os.remove(os.path.join(
-                            settings_download_path, file_mixed_name))
-                    if os.path.isfile(os.path.join(settings_download_path, file_mixed_name_tmp)):
-                        os.remove(os.path.join(
-                            settings_download_path, file_mixed_name_tmp))
+                operation_rollback(file_name,bigfile_name,file_name_list)
                 raise KeyboardInterrupt
+            except TimeoutError:
+                print('E: 有附件下载失败,该邮件已跳过.',flush=True)
+                operation_rollback()
+                download_state_last_global = -2
             else:
                 if has_downloadable_attachments:
                     download_state_last_global = 0
@@ -671,7 +677,7 @@ def operation_download():
         print(indent(1), '请尝试重新下载.', sep='', flush=True)
     if len(extract_nested_list(msg_download_failed_list_global)):
         msg_download_failed_counted_count = 0
-        print('E: 以下邮件有无法识别的超大附件,请尝试手动下载:', flush=True)
+        print('E: 以下邮件有无法识别的超大附件或超大附件下载失败,请尝试手动下载:', flush=True)
         for imap_download_failed_index_int in imap_download_failed_index_int_list_global:
             print(indent(
                 1), '邮箱: ', address[imap_download_failed_index_int_list_global[imap_download_failed_index_int]], sep='', flush=True)
@@ -716,7 +722,7 @@ def operation_download():
                         imap_list_global[imap_index_int].store(msg_index,
                                                                'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
-                print('\r', indent(6), sep='' ,flush=True)
+                print('\r', indent(6), sep='', end='',flush=True)
     if len(extract_nested_list(msg_overdueanddeleted_list_global)):
         msg_overdueanddeleted_counted_count = 0
         print('N: 以下邮件的超大附件全部过期或被删除:', flush=True)
