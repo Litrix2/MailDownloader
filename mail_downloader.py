@@ -57,11 +57,11 @@ config_primary_data = {
 
 
 def init(reset_imaps=False, reset_msg=False):
-    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_download_failed_index_int_list_global
+    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global,imap_overdueandeleted_index_int_list_global, imap_download_failed_index_int_list_global
     global download_state_last_global
-    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global,msg_overdue_list_global, msg_download_failed_list_global
-    global send_time_with_undownloadable_attachments_list_global, send_time_download_failed_list_global
-    global subject_with_undownloadable_attachments_list_global, subject_download_failed_list_global
+    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global,msg_overdueandeleted_list_global, msg_download_failed_list_global
+    global send_time_with_undownloadable_attachments_list_global, send_time_overdueandeleted_list_global,send_time_download_failed_list_global
+    global subject_with_undownloadable_attachments_list_global,subject_overdueandeleted_list_global,subject_download_failed_list_global
     global file_download_count_global, file_name_raw_list_global, file_name_list_global
     global bigfile_undownloadable_link_list_global
     global bigfile_undownloadable_code_list_global
@@ -71,17 +71,20 @@ def init(reset_imaps=False, reset_msg=False):
         imap_succeed_index_int_list_global = []
         imap_connect_failed_index_int_list_global = [[], []]
         imap_with_undownloadable_attachments_index_int_list_global = []
+        imap_overdueandeleted_index_int_list_global=[]
         imap_download_failed_index_int_list_global = []
     if reset_msg:
         download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的附件;2:附件全部过期或不存在
         msg_processed_count_global = 0
         msg_with_undownloadable_attachments_list_global = []
         msg_with_downloadable_attachments_list_global = []
-        msg_overdue_list_global=[]
+        msg_overdueandeleted_list_global=[]
         msg_download_failed_list_global = []
         send_time_with_undownloadable_attachments_list_global = []
+        send_time_overdueandeleted_list_global=[]
         send_time_download_failed_list_global = []
         subject_with_undownloadable_attachments_list_global = []
+        subject_overdueandeleted_list_global=[]
         subject_download_failed_list_global = []
         file_download_count_global = 0
         file_name_raw_list_global = []
@@ -91,7 +94,7 @@ def init(reset_imaps=False, reset_msg=False):
         for i in range(len(host)):
             msg_with_undownloadable_attachments_list_global.append([])
             msg_with_downloadable_attachments_list_global.append([])
-            msg_overdue_list_global.append()
+            msg_overdueandeleted_list_global.append()
             msg_download_failed_list_global.append([])
             send_time_with_undownloadable_attachments_list_global.append([])
             send_time_download_failed_list_global.append([])
@@ -503,7 +506,7 @@ def operation_download():
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
                                             elif bigfile_download_code == 404 and bigfile_download_code == 601:
                                                 download_state_last_global=2
-                                            elif bigfile_download_code != 404 and bigfile_download_code != 601:
+                                            else:
                                                 bigfile_undownloadable_link_list.append(
                                                     bigfile_link)
                                                 bigfile_undownloadable_code_list.append(
@@ -517,7 +520,9 @@ def operation_download():
                                             bigfile_download_code = fetch_result['code']
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
-                                            elif bigfile_download_code != 404:
+                                            elif bigfile_download_code == -17 and bigfile_download_code == -3:
+                                                download_state_last_global=2
+                                            else:
                                                 bigfile_undownloadable_link_list.append(
                                                     bigfile_link)
                                                 bigfile_undownloadable_code_list.append(
@@ -616,6 +621,16 @@ def operation_download():
                     bigfile_undownloadable_link_list)
                 bigfile_undownloadable_code_list_global[imap_index_int].append(
                     bigfile_undownloadable_code_list)
+            elif download_state_last_global==2:
+                if safe_list_find(imap_overdueandeleted_index_int_list_global, imap_index_int) == -1:
+                    imap_overdueandeleted_index_int_list_global.append(
+                        imap_index_int)
+                msg_overdueandeleted_list_global[imap_index_int].append(
+                    msg_list[msg_index_int])
+                send_time_overdueandeleted_list_global[imap_index_int].append(
+                    send_time)
+                subject_overdueandeleted_list_global[imap_index_int].append(
+                    subject)
             elif download_state_last_global == -2:
                 if safe_list_find(imap_download_failed_index_int_list_global, imap_index_int) == -1:
                     imap_download_failed_index_int_list_global.append(
