@@ -691,7 +691,7 @@ def operation_download():
                         imap_list_global[imap_index_int].store(msg_index,
                                                                'flags', '\\seen')
                         msg_with_downloadable_attachments_signed_count += 1
-                print('\r',indent(4),sep='',flush=True)
+                print('\r',indent(5),sep='',flush=True)
     if not settings_sign_unseen_tag_after_downloading:
         print(flush=True)
 
