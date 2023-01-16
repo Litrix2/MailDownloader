@@ -573,6 +573,8 @@ def operation_download():
                                             'Content-Disposition')
                                         bigfile_name_raw = bigfile_name_raw.encode(
                                             'ISO-8859-1').decode('utf8')  # 转码
+                                        if bigfile_name_raw.find(';')!=-1:
+                                            bigfile_name_raw=bigfile_name_raw[:bigfile_name_raw.find(';')]
                                         bigfile_name_raw = (bigfile_name_raw[bigfile_name_raw.find(
                                             'filename="')+len(
                                             'filename="'):])[:-1]
