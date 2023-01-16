@@ -361,12 +361,15 @@ def operation_close_all_connection():
 
 
 def operation_download():
-    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global
+    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_overdueanddeleted_index_int_list_global, imap_download_failed_index_int_list_global
     global download_state_last_global
-    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_download_failed_list_global
-    global subject_with_undownloadable_attachments_list_global
+    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_download_failed_list_global
+    global send_time_with_undownloadable_attachments_list_global, send_time_overdueanddeleted_list_global, send_time_download_failed_list_global
+    global subject_with_undownloadable_attachments_list_global, subject_overdueanddeleted_list_global, subject_download_failed_list_global
     global file_download_count_global, file_name_raw_list_global, file_name_list_global
     global bigfile_undownloadable_link_list_global
+    global bigfile_undownloadable_code_list_global
+    
     if not (settings_mail_min_time.enabled or settings_mail_max_time.enabled):
         if settings_only_search_unseen_mails:
             print('仅检索未读邮件', flush=True)
