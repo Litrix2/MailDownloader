@@ -678,7 +678,7 @@ def operation_download():
                     bigfile_undownloadable_link_counted_count += 1
                 msg_with_undownloadable_attachments_counted_count += 1
         if settings_sign_unseen_tag_after_downloading:
-            if input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='y', end=':') == 'y':
+            if input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='n', end=':') == 'y':
                 msg_with_downloadable_attachments_signed_count = 0
                 for imap_index_int in range(len(imap_list_global)):
                     for msg_index in msg_with_undownloadable_attachments_list_global[imap_index_int]:
