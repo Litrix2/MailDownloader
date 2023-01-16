@@ -369,7 +369,7 @@ def operation_download():
     global file_download_count_global, file_name_raw_list_global, file_name_list_global
     global bigfile_undownloadable_link_list_global
     global bigfile_undownloadable_code_list_global
-    
+
     if not (settings_mail_min_time.enabled or settings_mail_max_time.enabled):
         if settings_only_search_unseen_mails:
             print('仅检索未读邮件', flush=True)
@@ -599,7 +599,7 @@ def operation_download():
                                             'Content-Disposition')
                                         bigfile_name_raw = bigfile_name_raw.encode(
                                             'ISO-8859-1').decode('utf8')  # 转码
-                                        bigfile_name_raw = bigfile_name_raw.split('; ')[
+                                        bigfile_name_raw = bigfile_name_raw.split(';')[
                                             1]
                                         bigfile_name_raw = (bigfile_name_raw[bigfile_name_raw.find(
                                             'filename="')+len(
@@ -835,7 +835,8 @@ def input_option(prompt, *options, allow_undefind_input=False, default_option=''
         prompt += ')'
     prompt += end
     while True:
-        result = input(prompt)
+        print(prompt, end='', flush=True)
+        result = input()
         if not len(result) and len(default_option):
             return default_option
         else:
