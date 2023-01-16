@@ -661,7 +661,8 @@ def operation_download():
                     if bigfile_undownloadable_code_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int] != 0:
                         print(indent(4), '错误代码: ', bigfile_undownloadable_code_list_global[
                               imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int], sep='', flush=True)
-
+                        if bigfile_undownloadable_code_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int]==602:
+                            print(indent(4), '原因: 文件下载次数已用完.', sep='', flush=True)
                     bigfile_undownloadable_link_counted_count += 1
                 msg_with_undownloadable_attachments_counted_count += 1
         if settings_sign_unseen_tag_after_downloading:
