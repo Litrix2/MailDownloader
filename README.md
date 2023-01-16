@@ -2,7 +2,7 @@
 
 ___
 
-# Mail Downloader 1.2.1-Alpha
+# Mail Downloader 1.2.1
 Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议.
 
 **使用前请关闭代理!**
@@ -44,6 +44,10 @@ Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议
 ___
 
 # 更新日志
+## 1.2.1
+- 新增: 显示附件全部不存在或过期的邮件
+    - 如果sign_unseen_tag_after_downloading为true,则提示是否设置"已读"标签
+
 ## 1.2
 - 新增: 添加对163邮箱及网易邮箱大师的超大附件下载支持
 - 新增: 遇到无法下载的超大附件时会显示错误代码与原因
