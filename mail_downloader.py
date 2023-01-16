@@ -499,7 +499,7 @@ def operation_download():
                                             bigfile_download_code = fetch_result['code']
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
-                                            elif bigfile_download_code == 602:
+                                            elif bigfile_download_code != 404:
                                                 bigfile_undownloadable_link_list.append(
                                                     bigfile_link)
                                                 bigfile_undownloadable_code_list.append(
@@ -513,7 +513,7 @@ def operation_download():
                                             bigfile_download_code = fetch_result['code']
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
-                                            elif bigfile_download_code == 602:
+                                            elif bigfile_download_code != 404:
                                                 bigfile_undownloadable_link_list.append(
                                                     bigfile_link)
                                                 bigfile_undownloadable_code_list.append(
@@ -667,10 +667,12 @@ def operation_download():
                 for link_index_int in range(len(bigfile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int])):
                     print(indent(3), bigfile_undownloadable_link_counted_count+1, ' ',
                           bigfile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int], sep='', flush=True)
-                    if bigfile_undownloadable_code_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int] != 0:
-                        print(indent(4), '错误代码: ', bigfile_undownloadable_code_list_global[
-                              imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int], sep='', flush=True)
-                        if bigfile_undownloadable_code_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int] == 602:
+                    bigfile_download_code = bigfile_undownloadable_code_list_global[
+                        imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int]
+                    if bigfile_download_code != 0:
+                        print(indent(4), '错误代码: ',
+                              bigfile_download_code, sep='', flush=True)
+                        if bigfile_download_code == 602 or bigfile_download_code == -4:
                             print(indent(4), '原因: 文件下载次数已用完.',
                                   sep='', flush=True)
                     bigfile_undownloadable_link_counted_count += 1
