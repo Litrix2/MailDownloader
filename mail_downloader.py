@@ -419,7 +419,7 @@ def operation_download():
             if send_time.find('(') != -1:
                 send_time = send_time[:send_time.find(' (')]
             send_time = str(datetime.datetime.strptime(
-                send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))
+                send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
             try:
                 for eachdata_msg in data_msg.walk():
                     file_name = None
