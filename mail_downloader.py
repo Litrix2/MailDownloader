@@ -461,7 +461,7 @@ def operation_download():
                             href_list = html_fetcher.find_all('a')
                             for href in href_list:
                                 if href.get_text().find('下载') != -1:
-                                    print('\r正在获取链接... (1/2)', indent(3),
+                                    print('\r正在获取链接... (1)', indent(3),
                                           sep='', end='', flush=True)
                                     bigfile_downloadable_link = None
                                     bigfile_link = href.get('href')
@@ -535,7 +535,7 @@ def operation_download():
                                         if not has_downloadable_attachments:
                                             print('\r', indent(1), len(extract_nested_list(msg_with_downloadable_attachments_list_global))+1, ' ', subject, ' - ', send_time,
                                                   indent(8), sep='')
-                                        print('\r正在获取链接... (2/2)', indent(
+                                        print('\r正在获取链接... (2)', indent(
                                             3), sep='', end='', flush=True)
                                         has_downloadable_attachments_in_mail = True
                                         has_downloadable_attachments = True
