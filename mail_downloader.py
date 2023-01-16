@@ -310,7 +310,6 @@ def operation_parse_file_name(file_name_raw):
 
 
 def operation_rollback(file_name, bigfile_name, file_name_list):
-    print('\n回滚操作...', flush=True)
     if file_name:
         file_name_list.append(file_name)
     if bigfile_name:
