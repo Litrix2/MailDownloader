@@ -494,22 +494,31 @@ def operation_download():
                                         elif bigfile_link.find('dashi.163.com') != -1:
                                             link_key = urllib.parse.parse_qs(
                                                 urllib.parse.urlparse(bigfile_link).query)['key'][0]
-                                            fetch_result = json.loads(requests.post('https://dashi.163.com/filehub-master/file/dl/prepare2', json={"fid": "","linkKey": link_key}).text)
+                                            fetch_result = json.loads(requests.post(
+                                                'https://dashi.163.com/filehub-master/file/dl/prepare2', json={"fid": "", "linkKey": link_key}).text)
                                             bigfile_download_code = fetch_result['code']
+                                            if bigfile_download_code == 200:
+                                                bigfile_downloadable_link = fetch_result['result']['downloadUrl']
+                                            elif bigfile_download_code != 404:
+                                                bigfile_undownloadable_link_list.append(
+                                                    bigfile_link)
+                                                bigfile_undownloadable_code_list.append(
+                                                    bigfile_download_code)
+                                                download_state_last_global = 1
                                         elif bigfile_link.find('mail.163.com') != -1:
                                             link_key = urllib.parse.parse_qs(
                                                 urllib.parse.urlparse(bigfile_link).query)['file'][0]
                                             fetch_result = json.loads(requests.get(
-                                            'https://fs.mail.163.com/fs/service', params={'f': link_key, 'op': 'fs_dl_f_a'}).text)
+                                                'https://fs.mail.163.com/fs/service', params={'f': link_key, 'op': 'fs_dl_f_a'}).text)
                                             bigfile_download_code = fetch_result['code']
-                                        if bigfile_download_code == 200:
-                                            bigfile_downloadable_link = fetch_result['result']['downloadUrl']
-                                        elif bigfile_download_code == 602:
-                                            bigfile_undownloadable_link_list.append(
-                                                bigfile_link)
-                                            bigfile_undownloadable_code_list.append(
-                                                bigfile_download_code)
-                                            download_state_last_global = 1
+                                            if bigfile_download_code == 200:
+                                                bigfile_downloadable_link = fetch_result['result']['downloadUrl']
+                                            elif bigfile_download_code != 404:
+                                                bigfile_undownloadable_link_list.append(
+                                                    bigfile_link)
+                                                bigfile_undownloadable_code_list.append(
+                                                    bigfile_download_code)
+                                                download_state_last_global = 1
                                     elif find_childstr_to_list(unavailable_bigfile_website_list, bigfile_link):
                                         bigfile_undownloadable_link_list.append(
                                             bigfile_link)
@@ -661,8 +670,9 @@ def operation_download():
                     if bigfile_undownloadable_code_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int] != 0:
                         print(indent(4), '错误代码: ', bigfile_undownloadable_code_list_global[
                               imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int], sep='', flush=True)
-                        if bigfile_undownloadable_code_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int]==602:
-                            print(indent(4), '原因: 文件下载次数已用完.', sep='', flush=True)
+                        if bigfile_undownloadable_code_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int][link_index_int] == 602:
+                            print(indent(4), '原因: 文件下载次数已用完.',
+                                  sep='', flush=True)
                     bigfile_undownloadable_link_counted_count += 1
                 msg_with_undownloadable_attachments_counted_count += 1
         if settings_sign_unseen_tag_after_downloading:
