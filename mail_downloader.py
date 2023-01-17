@@ -721,7 +721,7 @@ def operation_download():
         print('E: 以下邮件有超大附件无法识别或下载失败,请尝试手动下载:', flush=True)
         for imap_download_failed_index_int in imap_download_failed_index_int_list_global:
             print(indent(
-                1), '邮箱: ', address[imap_download_failed_index_int_list_global[imap_download_failed_index_int]], sep='', flush=True)
+                1), '邮箱: ', address[imap_download_failed_index_int], sep='', flush=True)
             for subject_index_int in range(len(subject_download_failed_list_global[imap_download_failed_index_int])):
                 print(indent(2), msg_download_failed_counted_count+1, ' ',
                       subject_download_failed_list_global[imap_download_failed_index_int][subject_index_int], ' - ', send_time_download_failed_list_global[imap_download_failed_index_int][subject_index_int], sep='', flush=True)
@@ -732,7 +732,7 @@ def operation_download():
         print('W: 以下邮件的超大附件无法直接下载,但仍可获取链接,请尝试手动下载:', flush=True)
         for imap_with_undownloadable_attachments_index_int in imap_with_undownloadable_attachments_index_int_list_global:
             print(indent(
-                1), '邮箱: ', address[imap_with_undownloadable_attachments_index_int_list_global[imap_with_undownloadable_attachments_index_int]], sep='', flush=True)
+                1), '邮箱: ', address[imap_with_undownloadable_attachments_index_int], sep='', flush=True)
             for subject_index_int in range(len(subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int])):
                 print(indent(2), msg_with_undownloadable_attachments_counted_count+1, ' ',
                       subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int], ' - ', send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][subject_index_int], sep='', flush=True)
@@ -780,7 +780,7 @@ def operation_download():
         print('\rN: 以下邮件的超大附件全部过期或被删除:', flush=True)
         for imap_overdueanddeleted_index_int in imap_overdueanddeleted_index_int_list_global:
             print(indent(
-                1), '邮箱: ', address[imap_overdueanddeleted_index_int_list_global[imap_overdueanddeleted_index_int]], sep='', flush=True)
+                1), '邮箱: ', address[imap_overdueanddeleted_index_int], sep='', flush=True)
             for subject_index_int in range(len(subject_overdueanddeleted_list_global[imap_overdueanddeleted_index_int])):
                 print(indent(2), msg_overdueanddeleted_counted_count+1, ' ',
                       subject_overdueanddeleted_list_global[imap_overdueanddeleted_index_int][subject_index_int], ' - ', send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index_int][subject_index_int], sep='', flush=True)
