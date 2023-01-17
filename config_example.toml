@@ -1,25 +1,25 @@
 #示例配置文件,在使用前请重命名为config.toml
 
 #邮箱数据;host:主机名,address:邮箱地址,password:邮箱密码或授权码(如果需要)
-mail=[
-    {host='imap.example.com',address='name_1@example.com',password='your_password_1'},
-    {host='imap.example.com',address='name_2@example.com',password='your_password_2'}
+mail = [
+    { host = 'imap.example.com', address = 'name_1@example.com', password = 'your_password_1' },
+    { host = 'imap.example.com', address = 'name_2@example.com', password = 'your_password_2' },
 ]
 #允许手动输入搜索日期
-allow_manual_input_search_time=true
+allow_manual_input_search_date = true
 #起始搜索日期([年,月,日]);若不需要,设为false
 #仅在allow_manual_input_search_time为false时生效
-min_search_time=false
+min_search_date = false
 #截止搜索日期([年,月,日]);若不需要,设为false
 #仅在allow_manual_input_search_time为false时生效
-max_search_time=false
+max_search_date = false
 #仅搜索未读邮件
-only_search_unseen_mails=true
+only_search_unseen_mails = true
 #当邮件中任意附件下载错误时,删除该邮件中所有已下载的附件
-rollback_when_download_failed=true
+rollback_when_download_failed = true
 #在成功下载附件后对该邮件设置已读标签
-sign_unseen_tag_after_downloading=true
+sign_unseen_tag_after_downloading = true
 #断开连接后最大重连次数
-reconnect_max_times=3
+reconnect_max_times = 3
 #下载文件夹路径,推荐使用绝对路径
-download_path='path'
+download_path = 'path'

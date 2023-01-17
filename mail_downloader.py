@@ -24,7 +24,7 @@ unavailable_bigfile_website_list = []
 website_blacklist = ['fs.163.com', 'u.163.com']
 
 
-class Time():
+class Date():
     __month_dict = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
                     6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
     year = 1
@@ -48,9 +48,9 @@ class Time():
 config_load_state = False
 config_primary_data = {
     'mail': [],
-    'allow_manual_input_search_time': True,
-    'min_search_time': False,
-    'max_search_time': False,
+    'allow_manual_input_search_date': True,
+    'min_search_date': False,
+    'max_search_date': False,
     'only_search_unseen_mails': True,
     'rollback_when_download_failed': True,
     'sign_unseen_tag_after_downloading': True,
@@ -61,7 +61,7 @@ config_primary_data = {
 
 def operation_load_config():
     global host, address, password
-    global settings_allow_manual_input_search_time, settings_mail_min_time, settings_mail_max_time
+    global settings_allow_manual_input_search_date, settings_mail_min_date, settings_mail_max_date
     global settings_only_search_unseen_mails
     global settings_rollback_when_download_failed
     global settings_sign_unseen_tag_after_downloading
@@ -80,24 +80,24 @@ def operation_load_config():
                 host.append(eachdata_mail['host'])
                 address.append(eachdata_mail['address'])
                 password.append(eachdata_mail['password'])
-            settings_allow_manual_input_search_time = config_file_data[
-                'allow_manual_input_search_time']
-            settings_mail_min_time = Time()
-            if config_file_data['min_search_time'] == False:
-                settings_mail_min_time.enabled = False
+            settings_allow_manual_input_search_date = config_file_data[
+                'allow_manual_input_search_date']
+            settings_mail_min_date = Date()
+            if config_file_data['min_search_date'] == False:
+                settings_mail_min_date.enabled = False
             else:
-                settings_mail_min_time.enabled = True
-                settings_mail_min_time.year = config_file_data['min_search_time'][0]
-                settings_mail_min_time.month = config_file_data['min_search_time'][1]
-                settings_mail_min_time.day = config_file_data['min_search_time'][1]
-            settings_mail_max_time = Time()
-            if config_file_data['max_search_time'] == False:
-                settings_mail_max_time.enabled = False
+                settings_mail_min_date.enabled = True
+                settings_mail_min_date.year = config_file_data['min_search_date'][0]
+                settings_mail_min_date.month = config_file_data['min_search_date'][1]
+                settings_mail_min_date.day = config_file_data['min_search_date'][1]
+            settings_mail_max_date = Date()
+            if config_file_data['max_search_date'] == False:
+                settings_mail_max_date.enabled = False
             else:
-                settings_mail_max_time.enabled = True
-                settings_mail_max_time.year = config_file_data['max_search_time'][0]
-                settings_mail_max_time.month = config_file_data['max_search_time'][1]
-                settings_mail_max_time.day = config_file_data['max_search_time'][1]
+                settings_mail_max_date.enabled = True
+                settings_mail_max_date.year = config_file_data['max_search_date'][0]
+                settings_mail_max_date.month = config_file_data['max_search_date'][1]
+                settings_mail_max_date.day = config_file_data['max_search_date'][1]
             settings_only_search_unseen_mails = config_file_data['only_search_unseen_mails']
             settings_rollback_when_download_failed = config_file_data[
                 'rollback_when_download_failed']
@@ -225,15 +225,15 @@ def operation_login_all_imapserver():
 
 
 def operation_set_time():
-    settings_mail_min_time.enabled = False
-    settings_mail_max_time.enabled = False
+    settings_mail_min_date.enabled = False
+    settings_mail_max_date.enabled = False
     if input_option('是否设置检索开始日期?', 'y', 'n', default_option='y', end=':') == 'y':
-        settings_mail_min_time.enabled = True
+        settings_mail_min_date.enabled = True
         while True:
             try:
-                settings_mail_min_time.year = int(input_option(
+                settings_mail_min_date.year = int(input_option(
                     '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year), end=':'))
-                if settings_mail_min_time.year < 0:
+                if settings_mail_min_date.year < 0:
                     raise Exception
                 else:
                     break
@@ -241,9 +241,9 @@ def operation_set_time():
                 print('无效选项,请重新输入.', flush=True)
         while True:
             try:
-                settings_mail_min_time.month = int(input_option(
+                settings_mail_min_date.month = int(input_option(
                     '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month), end=':'))
-                if settings_mail_min_time.month < 1 or settings_mail_min_time.month > 12:
+                if settings_mail_min_date.month < 1 or settings_mail_min_date.month > 12:
                     raise Exception
                 else:
                     break
@@ -251,9 +251,9 @@ def operation_set_time():
                 print('无效选项,请重新输入.', flush=True)
         while True:
             try:
-                settings_mail_min_time.day = int(input_option(
+                settings_mail_min_date.day = int(input_option(
                     '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day), end=':'))
-                if settings_mail_min_time.day < 1 or settings_mail_min_time.day > 31:
+                if settings_mail_min_date.day < 1 or settings_mail_min_date.day > 31:
                     raise Exception
                 else:
                     break
@@ -261,12 +261,12 @@ def operation_set_time():
                 print('无效选项,请重新输入.', flush=True)
 
     if input_option('是否设置检索截止日期?', 'y', 'n', default_option='n', end=':') == 'y':
-        settings_mail_max_time.enabled = True
+        settings_mail_max_date.enabled = True
         while True:
             try:
-                settings_mail_max_time.year = int(input_option(
+                settings_mail_max_date.year = int(input_option(
                     '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year), end=':'))
-                if settings_mail_max_time.year < 0:
+                if settings_mail_max_date.year < 0:
                     print('无效选项,请重新输入.', flush=True)
                 else:
                     break
@@ -274,9 +274,9 @@ def operation_set_time():
                 print('无效选项,请重新输入.', flush=True)
         while True:
             try:
-                settings_mail_max_time.month = int(input_option(
+                settings_mail_max_date.month = int(input_option(
                     '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month), end=':'))
-                if settings_mail_max_time.month < 1 or settings_mail_max_time.month > 12:
+                if settings_mail_max_date.month < 1 or settings_mail_max_date.month > 12:
                     print('无效选项,请重新输入.', flush=True)
                 else:
                     break
@@ -284,9 +284,9 @@ def operation_set_time():
                 print('无效选项,请重新输入.', flush=True)
         while True:
             try:
-                settings_mail_max_time.day = int(input_option(
+                settings_mail_max_date.day = int(input_option(
                     '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day), end=':'))
-                if settings_mail_max_time.day < 1 or settings_mail_max_time.day > 31:
+                if settings_mail_max_date.day < 1 or settings_mail_max_date.day > 31:
                     print('无效选项,请重新输入.', flush=True)
                 else:
                     break
@@ -376,7 +376,7 @@ def operation_download():
     global bigfile_undownloadable_link_list_global
     global bigfile_undownloadable_code_list_global
 
-    if not (settings_mail_min_time.enabled or settings_mail_max_time.enabled):
+    if not (settings_mail_min_date.enabled or settings_mail_max_date.enabled):
         if settings_only_search_unseen_mails:
             print('仅检索未读邮件', flush=True)
         else:
@@ -384,11 +384,11 @@ def operation_download():
     else:
         prompt = ''
         prompt += '仅检索日期'
-        prompt += ('从 '+settings_mail_min_time.time()
-                   ) if settings_mail_min_time.enabled else '在 ' if settings_mail_max_time else ''
-        prompt += ' 开始' if settings_mail_min_time.enabled and not settings_mail_max_time.enabled else (str(
-            settings_mail_max_time.time()+' 截止')) if not settings_mail_min_time.enabled and settings_mail_max_time.enabled else ' 到 '
-        prompt += settings_mail_max_time.time() if settings_mail_min_time.enabled and settings_mail_max_time.enabled else ''
+        prompt += ('从 '+settings_mail_min_date.time()
+                   ) if settings_mail_min_date.enabled else '在 ' if settings_mail_max_date else ''
+        prompt += ' 开始' if settings_mail_min_date.enabled and not settings_mail_max_date.enabled else (str(
+            settings_mail_max_date.time()+' 截止')) if not settings_mail_min_date.enabled and settings_mail_max_date.enabled else ' 到 '
+        prompt += settings_mail_max_date.time() if settings_mail_min_date.enabled and settings_mail_max_date.enabled else ''
         prompt += '的未读邮件' if settings_only_search_unseen_mails else '的邮件'
         print(prompt, sep='', flush=True)
     start_time = time.time()
@@ -403,7 +403,7 @@ def operation_download():
         has_downloadable_attachments_in_mail = False
         print(
             '\r邮箱: ', address[imap_index_int], indent(3), sep='', flush=True)
-        if not (settings_mail_min_time.enabled or settings_mail_max_time.enabled):
+        if not (settings_mail_min_date.enabled or settings_mail_max_date.enabled):
             search_command = ''
             if settings_only_search_unseen_mails:
                 search_command = 'unseen'
@@ -413,13 +413,13 @@ def operation_download():
                 None, search_command)
         else:
             search_command = ''
-            search_command += ('since '+settings_mail_min_time.time()
-                               ) if settings_mail_min_time.enabled else ''
-            search_command += ' ' if settings_mail_min_time.enabled and settings_mail_max_time.enabled else ''
-            search_command += ('before ' + settings_mail_max_time.time()
-                               ) if settings_mail_max_time.enabled else ''
+            search_command += ('since '+settings_mail_min_date.time()
+                               ) if settings_mail_min_date.enabled else ''
+            search_command += ' ' if settings_mail_min_date.enabled and settings_mail_max_date.enabled else ''
+            search_command += ('before ' + settings_mail_max_date.time()
+                               ) if settings_mail_max_date.enabled else ''
             search_command += ' ' if (
-                settings_mail_max_time.enabled or settings_mail_min_time.enabled) and settings_only_search_unseen_mails else ''
+                settings_mail_max_date.enabled or settings_mail_min_date.enabled) and settings_only_search_unseen_mails else ''
             search_command += 'unseen' if settings_only_search_unseen_mails else ''
             typ, data_msg_index_raw = imap_list_global[imap_index_int].search(
                 None, search_command)
@@ -900,7 +900,7 @@ try:
                     if not len(imap_list_global):
                         print('E: 无法执行该操作.原因:没有可用邮箱.', flush=True)
                         continue
-                    if settings_allow_manual_input_search_time:
+                    if settings_allow_manual_input_search_date:
                         operation_set_time()
                     operation_download()
                 elif command == 't':
