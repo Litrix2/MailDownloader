@@ -509,7 +509,8 @@ def operation_download():
                                                     '\\x26', '&')
                                                 bigfile_download_method = 0  # get
                                             else:
-                                                download_state_last_global = 2
+                                                if not has_downloadable_attachments and download_state_last_global != 1:
+                                                    download_state_last_global = 2
                                         elif bigfile_link.find('mail.qq.com') != -1:
                                             download_page = requests.get(
                                                 bigfile_link)
@@ -522,7 +523,8 @@ def operation_download():
                                                     'href')
                                                 bigfile_download_method = 0  # get
                                             else:
-                                                download_state_last_global = 2
+                                                if not has_downloadable_attachments and download_state_last_global != 1:
+                                                    download_state_last_global = 2
                                         elif bigfile_link.find('dashi.163.com') != -1:
                                             link_key = urllib.parse.parse_qs(
                                                 urllib.parse.urlparse(bigfile_link).query)['key'][0]
@@ -570,7 +572,8 @@ def operation_download():
                                                 bigfile_downloadable_link = bigfile_link
                                                 bigfile_download_method = 1  # post
                                             else:
-                                                download_state_last_global = 2
+                                                if not has_downloadable_attachments and download_state_last_global != 1:
+                                                    download_state_last_global = 2
                                     elif find_childstr_to_list(unavailable_bigfile_website_list, bigfile_link):
                                         bigfile_undownloadable_link_list.append(
                                             bigfile_link)
@@ -736,7 +739,7 @@ def operation_download():
                         print(indent(4), '错误代码: ',
                               bigfile_download_code, sep='', flush=True)
                         if bigfile_download_code == 602 or bigfile_download_code == -4:
-                            print(indent(4), '原因: 文件下载次数已用完.',
+                            print(indent(4), '原因: 文件下载次数达到最大限制.',
                                   sep='', flush=True)
                     bigfile_undownloadable_link_counted_count += 1
                 msg_with_undownloadable_attachments_counted_count += 1
@@ -915,6 +918,6 @@ except KeyboardInterrupt:
     operation_close_all_connection()
     nexit(1)
 except Exception as e:
-    print('\nE: 遇到无法解决的错误.信息如下:', flush=True)
+    print('\nF: 遇到无法解决的错误.信息如下:', flush=True)
     traceback.print_exc()
     nexit(1)
