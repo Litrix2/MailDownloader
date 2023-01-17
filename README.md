@@ -22,13 +22,13 @@ Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议
     - address: 邮箱地址
     - password: 邮箱授权码
         - 若不需要授权码,使用邮箱密码
-- allow_manual_input_search_time: 允许手动输入搜索日期
-- min_search_time: 自动搜索起始日期
-    - **仅在allow_manual_input_search_time为false时生效.**
+- allow_manual_input_search_date: 允许手动输入搜索日期
+- min_search_date: 自动搜索起始日期
+    - **仅在allow_manual_input_search_date为false时生效.**
     - 若不需要,设为false.
     - 若需要,设为\[年,月,日\].
-- max_search_time: 自动搜索截止日期  
-    - **仅在allow_manual_input_search_time为false时生效.**
+- max_search_date: 自动搜索截止日期  
+    - **仅在allow_manual_input_search_date为false时生效.**
     - 若不需要,设为false.
     - 若需要,设为\[年,月,日\].
 - only_search_unseen_mails: 仅搜索未读邮件
