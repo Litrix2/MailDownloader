@@ -631,12 +631,12 @@ def operation_download():
                                         if download_state_last_global == 2:
                                             download_state_last_global == 0
                                         file_name_list.append(bigfile_name)
-            except KeyboardInterrupt as e:
+            except KeyboardInterrupt:
                 if settings_rollback_when_download_failed:
                     print('\n回滚操作...', flush=True)
                     operation_rollback(file_name, bigfile_name, file_name_list)
                 raise KeyboardInterrupt
-            except TimeoutError:
+            except Exception:
                 print('E: 有附件下载失败,该邮件已跳过.', flush=True)
                 if settings_rollback_when_download_failed:
                     operation_rollback(file_name, bigfile_name, file_name_list)
