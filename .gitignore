@@ -1,4 +1,5 @@
 config.toml
-note.txt
+note.md
 old/
 .vscode/
+test/
