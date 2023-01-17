@@ -9,6 +9,7 @@ import os
 import pytz
 import requests
 import rtoml
+import socks
 import socket
 import time
 import traceback
@@ -175,12 +176,12 @@ def operation_login_imap_server(host, address, password):
               '登录成功            ', sep='', flush=True)
         imap._simple_command(
             'ID', '("' + '" "'.join(authentication) + '")')  # 发送ID
-    except socket.gaierror as e:
-        print('\n服务器连接错误.', flush=True)
-    except imaplib.IMAP4.error as e:
-        print('\n用户名或密码错误.', flush=True)
+    except imaplib.IMAP4.error:
+        print('\nE: 用户名或密码错误.', flush=True)
     except (socket.timeout, TimeoutError):
-        print('\n服务器连接超时.', flush=True)
+        print('\nE: 服务器连接超时.', flush=True)
+    except Exception:
+        print('\nE: 服务器连接错误.', flush=True)
     else:
         is_login_succeed = True
     if is_login_succeed:
@@ -525,7 +526,7 @@ def operation_download():
                                             link_key = urllib.parse.parse_qs(
                                                 urllib.parse.urlparse(bigfile_link).query)['key'][0]
                                             fetch_result = json.loads(requests.post(
-                                                'https://dashi.163.com/filehub-master/file/dl/prepare2', json={"fid": "", "linkKey": link_key}).text)
+                                                'https://dashi.163.com/filehub-master/file/dl/prepare2', json={'fid': '', 'linkKey': link_key}).text)
                                             bigfile_download_code = fetch_result['code']
                                             if bigfile_download_code == 200:
                                                 bigfile_downloadable_link = fetch_result['result']['downloadUrl']
@@ -707,7 +708,7 @@ def operation_download():
         print(indent(1), '请尝试重新下载.', sep='', flush=True)
     if len(extract_nested_list(msg_download_failed_list_global)):
         msg_download_failed_counted_count = 0
-        print('E: 以下邮件有无法识别的超大附件或超大附件下载失败,请尝试手动下载:', flush=True)
+        print('E: 以下邮件有超大附件无法识别或下载失败,请尝试手动下载:', flush=True)
         for imap_download_failed_index_int in imap_download_failed_index_int_list_global:
             print(indent(
                 1), '邮箱: ', address[imap_download_failed_index_int_list_global[imap_download_failed_index_int]], sep='', flush=True)
@@ -715,8 +716,6 @@ def operation_download():
                 print(indent(2), msg_download_failed_counted_count+1, ' ',
                       subject_download_failed_list_global[imap_download_failed_index_int][subject_index_int], ' - ', send_time_download_failed_list_global[imap_download_failed_index_int][subject_index_int], sep='', flush=True)
                 msg_download_failed_counted_count += 1
-    if not settings_sign_unseen_tag_after_downloading and not len(extract_nested_list(msg_with_undownloadable_attachments_list_global)) and not len(extract_nested_list(msg_overdueanddeleted_list_global)):
-        print(flush=True)
     if len(extract_nested_list(msg_with_undownloadable_attachments_list_global)):
         msg_with_undownloadable_attachments_counted_count = 0
         bigfile_undownloadable_link_counted_count = 0
@@ -758,7 +757,14 @@ def operation_download():
                 if not len(extract_nested_list(msg_overdueanddeleted_list_global)):
                     print(flush=True)
             else:
+                if not len(extract_nested_list(msg_overdueanddeleted_list_global)):
+                    print(flush=True)
+        else:
+            if not len(extract_nested_list(msg_overdueanddeleted_list_global)):
                 print(flush=True)
+    else:
+        if not len(extract_nested_list(msg_overdueanddeleted_list_global)):
+            print(flush=True)
     if len(extract_nested_list(msg_overdueanddeleted_list_global)):
         msg_overdueanddeleted_counted_count = 0
         print('\rN: 以下邮件的超大附件全部过期或被删除:', flush=True)
@@ -786,6 +792,8 @@ def operation_download():
                 print('\r', indent(6), sep='', flush=True)
             else:
                 print(flush=True)
+        else:
+            print(flush=True)
 
 
 def get_path():
