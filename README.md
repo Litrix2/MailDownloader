@@ -2,7 +2,7 @@
 
 ___
 
-# Mail Downloader 1.2.2-Beta
+# Mail Downloader 1.2.3-Beta
 Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议.
 
 **使用前请关闭代理!**
@@ -46,6 +46,11 @@ Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议
 ___
 
 # 更新日志
+## 1.2.3
+- 新增配置: rollback_when_download_failed
+    - 说明: 当邮件中任意附件下载错误时,删除该邮件中所有已下载的附件
+    - 该功能非新增功能.
+
 ## 1.2.2 
 - 新增: 添加对新浪邮箱的超大附件下载支持
 - 紧急修复: 在某些情况下超大附件文件名解析错误的问题

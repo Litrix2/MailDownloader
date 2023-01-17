@@ -15,7 +15,7 @@ import time
 import traceback
 import urllib.parse
 
-version = '1.2.2-Beta'
+version = '1.2.3-Beta'
 mode = 2  # 0:Release;1:Alpha;2:Beta;3:Demo
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
@@ -52,6 +52,7 @@ config_primary_data = {
     'min_search_time': False,
     'max_search_time': False,
     'only_search_unseen_mails': True,
+    'rollback_when_download_failed': True,
     'sign_unseen_tag_after_downloading': True,
     'reconnect_max_times': 3,
     'download_path': ''
@@ -114,6 +115,7 @@ def operation_load_config():
     global host, address, password
     global settings_allow_manual_input_search_time, settings_mail_min_time, settings_mail_max_time
     global settings_only_search_unseen_mails
+    global settings_rollback_when_download_failed
     global settings_sign_unseen_tag_after_downloading
     global settings_reconnect_max_times
     global settings_download_path
@@ -149,6 +151,8 @@ def operation_load_config():
                 settings_mail_max_time.month = config_file_data['max_search_time'][1]
                 settings_mail_max_time.day = config_file_data['max_search_time'][1]
             settings_only_search_unseen_mails = config_file_data['only_search_unseen_mails']
+            settings_rollback_when_download_failed = config_file_data[
+                'rollback_when_download_failed']
             settings_sign_unseen_tag_after_downloading = config_file_data[
                 'sign_unseen_tag_after_downloading']
             settings_reconnect_max_times = config_file_data['reconnect_max_times']
@@ -628,12 +632,14 @@ def operation_download():
                                             download_state_last_global == 0
                                         file_name_list.append(bigfile_name)
             except KeyboardInterrupt as e:
-                print('\n回滚操作...', flush=True)
-                operation_rollback(file_name, bigfile_name, file_name_list)
+                if settings_rollback_when_download_failed:
+                    print('\n回滚操作...', flush=True)
+                    operation_rollback(file_name, bigfile_name, file_name_list)
                 raise KeyboardInterrupt
             except TimeoutError:
                 print('E: 有附件下载失败,该邮件已跳过.', flush=True)
-                operation_rollback(file_name, bigfile_name, file_name_list)
+                if settings_rollback_when_download_failed:
+                    operation_rollback(file_name, bigfile_name, file_name_list)
                 download_state_last_global = -2
             else:
                 if has_downloadable_attachments:
