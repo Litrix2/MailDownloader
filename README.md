@@ -15,7 +15,7 @@ Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议
 - 在下载附件出现问题时有较好的处理能力.
 
 ## 程序配置
-**配置文件名:config.toml**
+**配置文件名: config.toml**
 
 - mail: 配置邮箱数据
     - host: 邮箱服务器主机名
