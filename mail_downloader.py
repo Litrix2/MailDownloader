@@ -16,7 +16,7 @@ import traceback
 import urllib.parse
 
 version = '1.2.2-Beta'
-mode=2 #0:Release;1:Alpha;2:Beta;3:Demo
+mode = 2  # 0:Release;1:Alpha;2:Beta;3:Demo
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
     'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
@@ -868,14 +868,14 @@ def nexit(code=0):
 
 
 try:
-    print('Mail Downloader\nDesingned by Litrix',flush=True)
-    print('版本:',version,flush=True)
-    print('获取更多信息,请访问 https://github.com/Litrix2/MailDownloader',flush=True)
-    if mode==1:
+    print('Mail Downloader\nDesingned by Litrix', flush=True)
+    print('版本:', version, flush=True)
+    print('获取更多信息,请访问 https://github.com/Litrix2/MailDownloader', flush=True)
+    if mode == 1:
         print('W: 此版本正在开发中,可能包含严重错误,请及时跟进仓库以获取最新信息.')
-    elif mode==2:
+    elif mode == 2:
         print('W: 此版本不稳定,请及时跟进仓库以获取最新信息.')
-    elif mode==3:
+    elif mode == 3:
         print('W: 演示版本')
     print(flush=True)
     config_load_state = operation_load_config()
