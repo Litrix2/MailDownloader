@@ -316,6 +316,7 @@ def operation_parse_file_name(file_name_raw):
 
 
 def operation_rollback(file_name, bigfile_name, file_name_list):
+    global file_download_count_global
     if file_name:
         file_name_list.append(file_name)
     if bigfile_name:
@@ -325,6 +326,7 @@ def operation_rollback(file_name, bigfile_name, file_name_list):
         if os.path.isfile(os.path.join(settings_download_path, file_mixed_name)):
             os.remove(os.path.join(
                 settings_download_path, file_mixed_name))
+            file_download_count_global-=1
         if os.path.isfile(os.path.join(settings_download_path, file_mixed_name_tmp)):
             os.remove(os.path.join(
                 settings_download_path, file_mixed_name_tmp))
