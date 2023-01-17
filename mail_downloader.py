@@ -15,7 +15,7 @@ import time
 import traceback
 import urllib.parse
 
-version = '1.2.2'
+version = '1.2.2-Beta'
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
     'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
