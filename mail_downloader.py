@@ -326,7 +326,7 @@ def operation_rollback(file_name, bigfile_name, file_name_list):
         if os.path.isfile(os.path.join(settings_download_path, file_mixed_name)):
             os.remove(os.path.join(
                 settings_download_path, file_mixed_name))
-            file_download_count_global-=1
+            file_download_count_global -= 1
         if os.path.isfile(os.path.join(settings_download_path, file_mixed_name_tmp)):
             os.remove(os.path.join(
                 settings_download_path, file_mixed_name_tmp))
