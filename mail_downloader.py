@@ -885,7 +885,7 @@ try:
     elif mode == 2:
         print('W: 此版本不稳定,请及时跟进仓库以获取最新信息.')
     elif mode == 3:
-        print('W: 演示版本')
+        print('W: 此版本为演示版本.')
     print(flush=True)
     config_load_state = operation_load_config()
     while True:
