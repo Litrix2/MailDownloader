@@ -59,58 +59,6 @@ config_primary_data = {
 }
 
 
-def init(reset_imaps=False, reset_msg=False):
-    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_overdueanddeleted_index_int_list_global, imap_download_failed_index_int_list_global
-    global download_state_last_global
-    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_download_failed_list_global
-    global send_time_with_undownloadable_attachments_list_global, send_time_overdueanddeleted_list_global, send_time_download_failed_list_global
-    global subject_with_undownloadable_attachments_list_global, subject_overdueanddeleted_list_global, subject_download_failed_list_global
-    global file_download_count_global, file_name_raw_list_global, file_name_list_global
-    global bigfile_undownloadable_link_list_global
-    global bigfile_undownloadable_code_list_global
-    if reset_imaps:
-        imaplib.Commands['ID'] = ('AUTH')
-        imap_list_global = []
-        imap_succeed_index_int_list_global = []
-        imap_connect_failed_index_int_list_global = [[], []]
-        imap_with_undownloadable_attachments_index_int_list_global = []
-        imap_overdueanddeleted_index_int_list_global = []
-        imap_download_failed_index_int_list_global = []
-    if reset_msg:
-        download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的附件;2:附件全部过期或不存在
-        msg_processed_count_global = 0
-        msg_with_undownloadable_attachments_list_global = []
-        msg_with_downloadable_attachments_list_global = []
-        msg_overdueanddeleted_list_global = []
-        msg_download_failed_list_global = []
-        send_time_with_undownloadable_attachments_list_global = []
-        send_time_overdueanddeleted_list_global = []
-        send_time_download_failed_list_global = []
-        subject_with_undownloadable_attachments_list_global = []
-        subject_overdueanddeleted_list_global = []
-        subject_download_failed_list_global = []
-        file_download_count_global = 0
-        file_name_raw_list_global = []
-        file_name_list_global = []
-        bigfile_undownloadable_link_list_global = []  # 2级下载链接
-        bigfile_undownloadable_code_list_global = []
-        for i in range(len(host)):
-            msg_with_undownloadable_attachments_list_global.append([])
-            msg_with_downloadable_attachments_list_global.append([])
-            msg_overdueanddeleted_list_global.append([])
-            msg_download_failed_list_global.append([])
-            send_time_with_undownloadable_attachments_list_global.append([])
-            send_time_overdueanddeleted_list_global.append([])
-            send_time_download_failed_list_global.append([])
-            subject_with_undownloadable_attachments_list_global.append([])
-            subject_overdueanddeleted_list_global.append([])
-            subject_download_failed_list_global.append([])
-            file_name_raw_list_global.append([])
-            file_name_list_global.append([])
-            bigfile_undownloadable_link_list_global.append([])
-            bigfile_undownloadable_code_list_global.append([])
-
-
 def operation_load_config():
     global host, address, password
     global settings_allow_manual_input_search_time, settings_mail_min_time, settings_mail_max_time
@@ -163,6 +111,58 @@ def operation_load_config():
     else:
         print('配置加载成功.', flush=True)
         return True
+
+
+def init(reset_imaps=False, reset_msg=False):
+    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_overdueanddeleted_index_int_list_global, imap_download_failed_index_int_list_global
+    global download_state_last_global
+    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_download_failed_list_global
+    global send_time_with_undownloadable_attachments_list_global, send_time_overdueanddeleted_list_global, send_time_download_failed_list_global
+    global subject_with_undownloadable_attachments_list_global, subject_overdueanddeleted_list_global, subject_download_failed_list_global
+    global file_download_count_global, file_name_raw_list_global, file_name_list_global
+    global bigfile_undownloadable_link_list_global
+    global bigfile_undownloadable_code_list_global
+    if reset_imaps:
+        imaplib.Commands['ID'] = ('AUTH')
+        imap_list_global = []
+        imap_succeed_index_int_list_global = []
+        imap_connect_failed_index_int_list_global = [[], []]
+        imap_with_undownloadable_attachments_index_int_list_global = []
+        imap_overdueanddeleted_index_int_list_global = []
+        imap_download_failed_index_int_list_global = []
+    if reset_msg:
+        download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的附件;2:附件全部过期或不存在
+        msg_processed_count_global = 0
+        msg_with_undownloadable_attachments_list_global = []
+        msg_with_downloadable_attachments_list_global = []
+        msg_overdueanddeleted_list_global = []
+        msg_download_failed_list_global = []
+        send_time_with_undownloadable_attachments_list_global = []
+        send_time_overdueanddeleted_list_global = []
+        send_time_download_failed_list_global = []
+        subject_with_undownloadable_attachments_list_global = []
+        subject_overdueanddeleted_list_global = []
+        subject_download_failed_list_global = []
+        file_download_count_global = 0
+        file_name_raw_list_global = []
+        file_name_list_global = []
+        bigfile_undownloadable_link_list_global = []  # 2级下载链接
+        bigfile_undownloadable_code_list_global = []
+        for i in range(len(host)):
+            msg_with_undownloadable_attachments_list_global.append([])
+            msg_with_downloadable_attachments_list_global.append([])
+            msg_overdueanddeleted_list_global.append([])
+            msg_download_failed_list_global.append([])
+            send_time_with_undownloadable_attachments_list_global.append([])
+            send_time_overdueanddeleted_list_global.append([])
+            send_time_download_failed_list_global.append([])
+            subject_with_undownloadable_attachments_list_global.append([])
+            subject_overdueanddeleted_list_global.append([])
+            subject_download_failed_list_global.append([])
+            file_name_raw_list_global.append([])
+            file_name_list_global.append([])
+            bigfile_undownloadable_link_list_global.append([])
+            bigfile_undownloadable_code_list_global.append([])
 
 
 def operation_login_imap_server(host, address, password):
