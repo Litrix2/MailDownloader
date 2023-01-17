@@ -2,7 +2,8 @@
 
 #邮箱数据;host:主机名,address:邮箱地址,password:邮箱密码或授权码(如果需要)
 mail=[
-    {host='imap.example.com',address='name@example.com',password='your_password'}
+    {host='imap.example.com',address='name_1@example.com',password='your_password_1'},
+    {host='imap.example.com',address='name_2@example.com',password='your_password_2'}
 ]
 #允许手动输入搜索日期
 allow_manual_input_search_time=true
