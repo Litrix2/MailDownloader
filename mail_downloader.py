@@ -378,7 +378,7 @@ def operation_close_all_connection():
 
 
 def operation_download_all():
-    global thread_list_global,thread_state_list_global
+    global thread_list_global,thread_state_list_global,msg_list_raw_global
     init()
     operation_login_all_imapserver()
     if not len(imap_list_global):
@@ -434,21 +434,40 @@ def operation_download_all():
     print('共 ', len(extract_nested_list(msg_list_global)), ' 封邮件', sep='', flush=True)
     print(msg_list_global)#debug
     print('开始处理...\n',end='',flush=True)
+    msg_list_raw_global=copy.deepcopy(msg_list_global)
     thread_list_global=[]
     thread_state_list_global=[]
     for thread_id in range(settings_thread_count):
         thread_state_list_global.append(0)
-        thread=threading.Thread(target=operation_download_new,args=(thread_id,))
+        thread=threading.Thread(target=operation_download_thread,args=(thread_id,))
         thread_list_global.append(thread)
         thread.setDaemon(True)
         thread.start()
+    monitor_thread=threading.Thread(target=operation_monitor_thread)
+    monitor_thread.start()
     while True:
         # pass
         if not 0 in thread_state_list_global:
             break
+        time.sleep(0.1)
 stop=0
-def operation_download_new(thread_id):
-    global file_download_count_global
+def operation_monitor_thread():
+    global thread_state_list_global,msg_list_raw_global
+    lock=threading.Lock()
+    while True:
+        if stop:
+            break
+        if not 0 in thread_state_list_global:
+            break
+        with lock:
+            print('\r已处理 (',msg_processed_count_global,'/',len(extract_nested_list(msg_list_raw_global)),')',sep='',end='',flush=True)
+        time.sleep(0.1)
+def operation_download_thread(thread_id):
+    global file_download_count_global,msg_processed_count_global
+    if stop:
+        print(thread_id,'closed',flush=True)
+        return
+    lock=threading.Lock()
     imap_list=[]
     imap_index_int_list=[]
     for imap_index_int in range(len(imap_succeed_index_int_list_global)):
@@ -470,6 +489,7 @@ def operation_download_new(thread_id):
                     bigfile_downloadable_link_list = []
                     bigfile_download_code = 0
                     bigfile_undownloadable_link_list = []
+                    
                     typ, data_msg_raw = imap.fetch(
                         msg_index, 'BODY.PEEK[]')
                     data_msg = email.message_from_bytes(
@@ -498,30 +518,34 @@ def operation_download_new(thread_id):
                                         file_name_raw)
                                     file_name_tmp = operation_parse_file_name(
                                         file_name+'.tmp')
+                                    if stop:
+                                        print(thread_id,'closed',flush=True)
+                                        return
                                     with open(os.path.join(settings_download_path, file_name_tmp), 'wb') as file:
                                         file.write(file_data)
                                     os.renames(os.path.join(settings_download_path, file_name_tmp),
                                             os.path.join(settings_download_path, file_name))
-                                    print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
-                                        ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(2),'\n', sep='',end='', flush=True)
-                                    file_download_count_global += 1
-                                    file_download_count += 1
-                                    file_name_list.append(file_name)
+                                    with lock:
+                                        print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
+                                            ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(2),'\n',
+                                            indent(1),'邮件标题: ',subject,' - ',send_time,'\n', sep='',end='')
+                                        file_download_count_global += 1
+                                        file_download_count += 1
+                                        file_name_list.append(file_name)
                     except Exception as e:
                         print(e)
                         print('E: 有附件下载失败,该邮件已跳过.', flush=True)
                         if settings_rollback_when_download_failed:
                             operation_rollback(file_name, bigfile_name, file_name_list)
                         download_state_last = -2
-                    if stop:
-                        print(thread_id,'closed',flush=True)
-                        return
+                    with lock:
+                        msg_processed_count_global+=1
                     # print(thread_id,subject,flush=True)#debug
                 else:
                     break
     with threading.Lock():
         thread_state_list_global[thread_id]=1
-def operation_download(thread_id):
+def operation_download():
     for imap_index_int in range(len(imap_list_global)):
         if imap_list_global[imap_index_int] == None:
             continue
@@ -1046,8 +1070,8 @@ try:
             break
     nexit(0)
 except KeyboardInterrupt:
-    print('\n强制退出', flush=True)
     stop=1
+    print('\n强制退出', flush=True)
     nexit(1)
 except Exception as e:
     print('\nF: 遇到无法解决的错误.信息如下:', flush=True)
