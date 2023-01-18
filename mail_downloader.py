@@ -10,14 +10,14 @@ import platform
 import pytz
 import requests
 import rtoml
-import socks
 import socket
 import time
+import threading
 import traceback
 import urllib.parse
 
-version = '1.2.4'
-mode = 0  # 0:Release;1:Alpha;2:Beta;3:Demo
+version = '1.3'
+mode = 1  # 0:Release;1:Alpha;2:Beta;3:Demo
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
     'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
@@ -53,6 +53,7 @@ config_primary_data = {
     'min_search_date': False,
     'max_search_date': False,
     'only_search_unseen_mails': True,
+    'thread_count':1,
     'rollback_when_download_failed': True,
     'sign_unseen_tag_after_downloading': True,
     'reconnect_max_times': 3,
@@ -64,6 +65,7 @@ def operation_load_config():
     global host, address, password
     global settings_allow_manual_input_search_date, settings_mail_min_date, settings_mail_max_date
     global settings_only_search_unseen_mails
+    global settings_thread_count
     global settings_rollback_when_download_failed
     global settings_sign_unseen_tag_after_downloading
     global settings_reconnect_max_times
@@ -100,6 +102,7 @@ def operation_load_config():
                 settings_mail_max_date.month = config_file_data['max_search_date'][1]
                 settings_mail_max_date.day = config_file_data['max_search_date'][1]
             settings_only_search_unseen_mails = config_file_data['only_search_unseen_mails']
+            settings_thread_count=config_file_data['thread_count']
             settings_rollback_when_download_failed = config_file_data[
                 'rollback_when_download_failed']
             settings_sign_unseen_tag_after_downloading = config_file_data[
@@ -114,80 +117,87 @@ def operation_load_config():
         return True
 
 
-def init(reset_imaps=False, reset_msg=False):
+def init():
     global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_overdueanddeleted_index_int_list_global, imap_download_failed_index_int_list_global
     global download_state_last_global
-    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_download_failed_list_global
+    global msg_processed_count_global, msg_list_global,msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_download_failed_list_global
     global send_time_with_undownloadable_attachments_list_global, send_time_overdueanddeleted_list_global, send_time_download_failed_list_global
     global subject_with_undownloadable_attachments_list_global, subject_overdueanddeleted_list_global, subject_download_failed_list_global
     global file_download_count_global, file_name_raw_list_global, file_name_list_global
     global bigfile_undownloadable_link_list_global
     global bigfile_undownloadable_code_list_global
-    if reset_imaps:
-        imaplib.Commands['ID'] = ('AUTH')
-        imap_list_global = []
-        imap_succeed_index_int_list_global = []
-        imap_connect_failed_index_int_list_global = [[], []]
-        imap_with_undownloadable_attachments_index_int_list_global = []
-        imap_overdueanddeleted_index_int_list_global = []
-        imap_download_failed_index_int_list_global = []
-    if reset_msg:
-        download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的附件;2:附件全部过期或不存在
-        msg_processed_count_global = 0
-        msg_with_undownloadable_attachments_list_global = []
-        msg_with_downloadable_attachments_list_global = []
-        msg_overdueanddeleted_list_global = []
-        msg_download_failed_list_global = []
-        send_time_with_undownloadable_attachments_list_global = []
-        send_time_overdueanddeleted_list_global = []
-        send_time_download_failed_list_global = []
-        subject_with_undownloadable_attachments_list_global = []
-        subject_overdueanddeleted_list_global = []
-        subject_download_failed_list_global = []
-        file_download_count_global = 0
-        file_name_raw_list_global = []
-        file_name_list_global = []
-        bigfile_undownloadable_link_list_global = []  # 2级下载链接
-        bigfile_undownloadable_code_list_global = []
-        for i in range(len(host)):
-            msg_with_undownloadable_attachments_list_global.append([])
-            msg_with_downloadable_attachments_list_global.append([])
-            msg_overdueanddeleted_list_global.append([])
-            msg_download_failed_list_global.append([])
-            send_time_with_undownloadable_attachments_list_global.append([])
-            send_time_overdueanddeleted_list_global.append([])
-            send_time_download_failed_list_global.append([])
-            subject_with_undownloadable_attachments_list_global.append([])
-            subject_overdueanddeleted_list_global.append([])
-            subject_download_failed_list_global.append([])
-            file_name_raw_list_global.append([])
-            file_name_list_global.append([])
-            bigfile_undownloadable_link_list_global.append([])
-            bigfile_undownloadable_code_list_global.append([])
+    imaplib.Commands['ID'] = ('AUTH')
+    imap_list_global = []
+    imap_succeed_index_int_list_global = []
+    imap_connect_failed_index_int_list_global = [[], []]
+    imap_with_undownloadable_attachments_index_int_list_global = []
+    imap_overdueanddeleted_index_int_list_global = []
+    imap_download_failed_index_int_list_global = []
+
+    download_state_last_global = -1  # -1:下载时强行终止;-2:下载失败;0:正常;1:有无法直接下载的附件;2:附件全部过期或不存在
+    msg_processed_count_global = 0
+    msg_list_global=[]
+    msg_with_undownloadable_attachments_list_global = []
+    msg_with_downloadable_attachments_list_global = []
+    msg_overdueanddeleted_list_global = []
+    msg_download_failed_list_global = []
+    send_time_with_undownloadable_attachments_list_global = []
+    send_time_overdueanddeleted_list_global = []
+    send_time_download_failed_list_global = []
+    subject_with_undownloadable_attachments_list_global = []
+    subject_overdueanddeleted_list_global = []
+    subject_download_failed_list_global = []
+    file_download_count_global = 0
+    file_name_raw_list_global = []
+    file_name_list_global = []
+    bigfile_undownloadable_link_list_global = []  # 2级下载链接
+    bigfile_undownloadable_code_list_global = []
+    for i in range(len(host)):
+        msg_list_global.append([])
+        msg_with_undownloadable_attachments_list_global.append([])
+        msg_with_downloadable_attachments_list_global.append([])
+        msg_overdueanddeleted_list_global.append([])
+        msg_download_failed_list_global.append([])
+        send_time_with_undownloadable_attachments_list_global.append([])
+        send_time_overdueanddeleted_list_global.append([])
+        send_time_download_failed_list_global.append([])
+        subject_with_undownloadable_attachments_list_global.append([])
+        subject_overdueanddeleted_list_global.append([])
+        subject_download_failed_list_global.append([])
+        file_name_raw_list_global.append([])
+        file_name_list_global.append([])
+        bigfile_undownloadable_link_list_global.append([])
+        bigfile_undownloadable_code_list_global.append([])
 
 
-def operation_login_imap_server(host, address, password):
+def operation_login_imap_server(host, address, password,display=True):
     is_login_succeed = False
     try:
-        print('\r正在连接 ', host,
+        if display:
+            print('\r正在连接 ', host,
               '        ', end='', sep='', flush=True)
         imap = imaplib.IMAP4_SSL(
             host)
-        print('\r已连接 ', host,
-              '            ', sep='', flush=True)
-        print('\r正在登录 ', address,
-              end='', sep='', flush=True)
+        if display:
+            print('\r已连接 ', host,
+                '            ', sep='', flush=True)
+            print('\r正在登录 ', address,
+                end='', sep='', flush=True)
         imap.login(address, password)
-        print('\r', address,
-              '登录成功            ', sep='', flush=True)
+        if display:
+            print('\r', address,
+                '登录成功            ', sep='', flush=True)
         imap._simple_command(
             'ID', '("' + '" "'.join(authentication) + '")')  # 发送ID
     except imaplib.IMAP4.error:
-        print('\nE: 用户名或密码错误.', flush=True)
+        if display:
+            print('\nE: 用户名或密码错误.', flush=True)
     except (socket.timeout, TimeoutError):
-        print('\nE: 服务器连接超时.', flush=True)
+        if display:
+            print('\nE: 服务器连接超时.', flush=True)
     except Exception:
-        print('\nE: 服务器连接错误.', flush=True)
+        if display:
+            print('\nE: 服务器连接错误.', flush=True)
     else:
         is_login_succeed = True
     if is_login_succeed:
@@ -198,7 +208,6 @@ def operation_login_imap_server(host, address, password):
 
 
 def operation_login_all_imapserver():
-    init(True, True)
     for imap_index_int in range(len(host)):
         imap = operation_login_imap_server(
             host[imap_index_int], address[imap_index_int], password[imap_index_int])
@@ -214,7 +223,7 @@ def operation_login_all_imapserver():
             print('已成功连接的邮箱:', flush=True)
             for imap_succeed_index_int in imap_succeed_index_int_list_global:
                 print('    ', address[imap_succeed_index_int], sep='')
-            if len(imap_list_global) < len(host):
+            if len(imap_succeed_index_int_list_global) < len(host):
                 print('E: 以下邮箱未能连接:', flush=True)
                 for imap_connect_failed_index_int in imap_connect_failed_index_int_list_global[0]:
                     print('    ', address[imap_connect_failed_index_int],
@@ -332,7 +341,6 @@ def operation_rollback(file_name, bigfile_name, file_name_list):
             os.remove(os.path.join(
                 settings_download_path, file_mixed_name_tmp))
 
-
 def operation_check_connection(imap_index_int):
     is_reconnect_succeed = False
     try:
@@ -369,16 +377,16 @@ def operation_close_all_connection():
         return
 
 
-def operation_download():
-    global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_overdueanddeleted_index_int_list_global, imap_download_failed_index_int_list_global
-    global download_state_last_global
-    global msg_processed_count_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_download_failed_list_global
-    global send_time_with_undownloadable_attachments_list_global, send_time_overdueanddeleted_list_global, send_time_download_failed_list_global
-    global subject_with_undownloadable_attachments_list_global, subject_overdueanddeleted_list_global, subject_download_failed_list_global
-    global file_download_count_global, file_name_raw_list_global, file_name_list_global
-    global bigfile_undownloadable_link_list_global
-    global bigfile_undownloadable_code_list_global
-
+def operation_download_all():
+    global thread_list_global,thread_state_list_global
+    init()
+    operation_login_all_imapserver()
+    if not len(imap_list_global):
+        print('E: 无法执行该操作.原因:没有可用邮箱.', flush=True)
+        return
+    if settings_allow_manual_input_search_date:
+        operation_set_time()
+    start_time = time.time()
     if not (settings_mail_min_date.enabled or settings_mail_max_date.enabled):
         if settings_only_search_unseen_mails:
             print('仅检索未读邮件', flush=True)
@@ -394,7 +402,126 @@ def operation_download():
         prompt += settings_mail_max_date.time() if settings_mail_min_date.enabled and settings_mail_max_date.enabled else ''
         prompt += '的未读邮件' if settings_only_search_unseen_mails else '的邮件'
         print(prompt, sep='', flush=True)
-    start_time = time.time()
+    for imap_index_int in imap_succeed_index_int_list_global:
+        is_connect_succeed = operation_check_connection(imap_index_int)
+        if not is_connect_succeed:
+            continue
+        print(
+            '\r邮箱: ', address[imap_index_int], indent(3), sep='', flush=True)
+        if not (settings_mail_min_date.enabled or settings_mail_max_date.enabled):
+            search_command = ''
+            if settings_only_search_unseen_mails:
+                search_command = 'unseen'
+            else:
+                search_command = 'all'
+            typ, data_msg_index_raw = imap_list_global[imap_index_int].search(
+                None, search_command)
+        else:
+            search_command = ''
+            search_command += ('since '+settings_mail_min_date.time()
+                               ) if settings_mail_min_date.enabled else ''
+            search_command += ' ' if settings_mail_min_date.enabled and settings_mail_max_date.enabled else ''
+            search_command += ('before ' + settings_mail_max_date.time()
+                               ) if settings_mail_max_date.enabled else ''
+            search_command += ' ' if (
+                settings_mail_max_date.enabled or settings_mail_min_date.enabled) and settings_only_search_unseen_mails else ''
+            search_command += 'unseen' if settings_only_search_unseen_mails else ''
+            typ, data_msg_index_raw = imap_list_global[imap_index_int].search(
+                None, search_command)
+        msg_list = list(reversed(data_msg_index_raw[0].split()))
+        msg_list_global[imap_index_int]=msg_list
+        print(indent(1), '共 ', len(msg_list), ' 封邮件', sep='', flush=True)
+    print('共 ', len(extract_nested_list(msg_list_global)), ' 封邮件', sep='', flush=True)
+    print(msg_list_global)#debug
+    print('开始处理...\n',end='',flush=True)
+    thread_list_global=[]
+    thread_state_list_global=[]
+    for thread_id in range(settings_thread_count):
+        thread_state_list_global.append(0)
+        thread=threading.Thread(target=operation_download_new,args=(thread_id,))
+        thread_list_global.append(thread)
+        thread.setDaemon(True)
+        thread.start()
+    while True:
+        # pass
+        if not 0 in thread_state_list_global:
+            break
+stop=0
+def operation_download_new(thread_id):
+    global file_download_count_global
+    imap_list=[]
+    imap_index_int_list=[]
+    for imap_index_int in range(len(imap_succeed_index_int_list_global)):
+        # print(host[imap_succeed_index_int_list_global[imap_index_int]])#debug
+        imap = operation_login_imap_server(
+            host[imap_succeed_index_int_list_global[imap_index_int]], address[imap_succeed_index_int_list_global[imap_index_int]], password[imap_succeed_index_int_list_global[imap_index_int]],False)
+        imap_list.append(imap)
+        imap_index_int_list.append(imap_index_int)
+        if imap != None:
+            while True:
+                if len(msg_list_global[imap_succeed_index_int_list_global[imap_index_int]]):
+                    msg_index=msg_list_global[imap_succeed_index_int_list_global[imap_index_int]].pop(0)
+                    # print(thread_id,int(msg_index),flush=True)#debug
+                    file_download_count=0
+                    download_state_last = -1
+                    bigfile_undownloadable_code_list = []
+                    has_downloadable_attachments = False
+                    file_name_list = []
+                    bigfile_downloadable_link_list = []
+                    bigfile_download_code = 0
+                    bigfile_undownloadable_link_list = []
+                    typ, data_msg_raw = imap.fetch(
+                        msg_index, 'BODY.PEEK[]')
+                    data_msg = email.message_from_bytes(
+                        data_msg_raw[0][1])
+                    subject = str(header.make_header(
+                        header.decode_header(data_msg.get('Subject'))))
+                    send_time = str(header.make_header(
+                        header.decode_header(data_msg.get('Date'))))[5:]
+                    if '(' in send_time:
+                        send_time = send_time[:send_time.find(' (')]
+                    send_time = str(datetime.datetime.strptime(
+                        send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
+                    try:
+                        for eachdata_msg in data_msg.walk():
+                            file_name = None
+                            bigfile_name = None
+                            # print(eachdata_msg)
+                            if eachdata_msg.get_content_disposition() and 'attachment' in eachdata_msg.get_content_disposition():
+                                if not has_downloadable_attachments:
+                                    has_downloadable_attachments_in_mail = True
+                                    has_downloadable_attachments = True
+                                    file_name_raw = str(header.make_header(
+                                        header.decode_header(eachdata_msg.get_filename())))
+                                    file_data = eachdata_msg.get_payload(decode=True)
+                                    file_name = operation_parse_file_name(
+                                        file_name_raw)
+                                    file_name_tmp = operation_parse_file_name(
+                                        file_name+'.tmp')
+                                    with open(os.path.join(settings_download_path, file_name_tmp), 'wb') as file:
+                                        file.write(file_data)
+                                    os.renames(os.path.join(settings_download_path, file_name_tmp),
+                                            os.path.join(settings_download_path, file_name))
+                                    print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
+                                        ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(2),'\n', sep='',end='', flush=True)
+                                    file_download_count_global += 1
+                                    file_download_count += 1
+                                    file_name_list.append(file_name)
+                    except Exception as e:
+                        print(e)
+                        print('E: 有附件下载失败,该邮件已跳过.', flush=True)
+                        if settings_rollback_when_download_failed:
+                            operation_rollback(file_name, bigfile_name, file_name_list)
+                        download_state_last = -2
+                    if stop:
+                        print(thread_id,'closed',flush=True)
+                        return
+                    # print(thread_id,subject,flush=True)#debug
+                else:
+                    break
+    with threading.Lock():
+        thread_state_list_global[thread_id]=1
+def operation_download(thread_id):
     for imap_index_int in range(len(imap_list_global)):
         if imap_list_global[imap_index_int] == None:
             continue
@@ -807,8 +934,6 @@ def operation_download():
                 print(flush=True)
         else:
             print(flush=True)
-
-
 def get_path():
     return os.path.dirname(__file__)
 
@@ -899,13 +1024,7 @@ try:
                 print('E: 配置文件错误,请在重新加载后执行该操作.', flush=True)
             else:
                 if command == 'd':
-                    operation_login_all_imapserver()
-                    if not len(imap_list_global):
-                        print('E: 无法执行该操作.原因:没有可用邮箱.', flush=True)
-                        continue
-                    if settings_allow_manual_input_search_date:
-                        operation_set_time()
-                    operation_download()
+                    operation_download_all()
                 elif command == 't':
                     operation_login_all_imapserver()
         elif command == 'r':
@@ -925,12 +1044,10 @@ try:
                 print('E: 操作系统类型未知,无法执行该操作.', flush=True)
         elif command == 'q':
             break
-    print('正在关闭连接...', flush=True)
-    operation_close_all_connection()
     nexit(0)
 except KeyboardInterrupt:
     print('\n强制退出', flush=True)
-    operation_close_all_connection()
+    stop=1
     nexit(1)
 except Exception as e:
     print('\nF: 遇到无法解决的错误.信息如下:', flush=True)
