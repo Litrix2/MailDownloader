@@ -6,6 +6,7 @@ from email import header
 import imaplib
 import json
 import os
+import platform
 import pytz
 import requests
 import rtoml
@@ -301,7 +302,7 @@ def operation_parse_file_name(file_name_raw):
     if os.path.exists(os.path.join(settings_download_path, file_name_raw)):
         i = 2
         dot_index_int = len(
-            file_name_raw)-file_name_raw[::-1].find('.')-1 if file_name_raw.find('.') != -1 else -1
+            file_name_raw)-file_name_raw[::-1].find('.')-1 if '.' in file_name_raw else -1
         while True:
             if dot_index_int == -1:
                 file_name = file_name_raw + \
@@ -449,7 +450,7 @@ def operation_download():
                 header.decode_header(data_msg.get('Subject'))))
             send_time = str(header.make_header(
                 header.decode_header(data_msg.get('Date'))))[5:]
-            if send_time.find('(') != -1:
+            if '(' in send_time:
                 send_time = send_time[:send_time.find(' (')]
             send_time = str(datetime.datetime.strptime(
                 send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
@@ -458,7 +459,7 @@ def operation_download():
                     file_name = None
                     bigfile_name = None
                     # print(eachdata_msg)
-                    if eachdata_msg.get_content_disposition() and eachdata_msg.get_content_disposition().find('attachment') != -1:
+                    if eachdata_msg.get_content_disposition() and 'attachment' in eachdata_msg.get_content_disposition():
                         if not has_downloadable_attachments:
                             print('\r', indent(1), len(extract_nested_list(msg_with_downloadable_attachments_list_global))+1, ' ', subject, ' - ', send_time,
                                   indent(8), sep='')
@@ -489,12 +490,12 @@ def operation_download():
                         eachdata_msg_data = bytes.decode(
                             eachdata_msg_data_raw, eachdata_msg_charset)
                         html_fetcher = BeautifulSoup(eachdata_msg_data, 'lxml')
-                        if eachdata_msg_data.find('附件') != -1:
+                        if '附件' in eachdata_msg_data:
                             # with open(os.path.join(get_path(), 'test/mail2.html'), 'wb') as a:
                             #     a.write(eachdata_msg_data_raw)
                             href_list = html_fetcher.find_all('a')
                             for href in href_list:
-                                if href.get_text().find('下载') != -1:
+                                if '下载' in href.get_text():
                                     print('\r正在获取链接... (1)', indent(3),
                                           sep='', end='', flush=True)
                                     bigfile_downloadable_link = None
@@ -504,10 +505,10 @@ def operation_download():
                                             bigfile_link)
                                         html_fetcher_2 = BeautifulSoup(
                                             download_page.text, 'lxml')
-                                        if bigfile_link.find('wx.mail.qq.com') != -1:
+                                        if 'wx.mail.qq.com' in bigfile_link:
                                             script = html_fetcher_2.select_one(
                                                 'body > script:nth-child(2)')
-                                            if script.find('var url = ""') == -1:
+                                            if not 'var url = ""' in script:
                                                 script = script.get_text()
                                                 bigfile_downloadable_link = script[script.find(
                                                     'https://gzc-download.ftn.qq.com'):-1]
@@ -517,7 +518,7 @@ def operation_download():
                                             else:
                                                 if not has_downloadable_attachments and download_state_last_global != 1:
                                                     download_state_last_global = 2
-                                        elif bigfile_link.find('mail.qq.com') != -1:
+                                        elif 'mail.qq.com' in bigfile_link:
                                             download_page = requests.get(
                                                 bigfile_link)
                                             html_fetcher_2 = BeautifulSoup(
@@ -531,7 +532,7 @@ def operation_download():
                                             else:
                                                 if not has_downloadable_attachments and download_state_last_global != 1:
                                                     download_state_last_global = 2
-                                        elif bigfile_link.find('dashi.163.com') != -1:
+                                        elif 'dashi.163.com' in bigfile_link:
                                             link_key = urllib.parse.parse_qs(
                                                 urllib.parse.urlparse(bigfile_link).query)['key'][0]
                                             fetch_result = json.loads(requests.post(
@@ -549,7 +550,7 @@ def operation_download():
                                                 bigfile_undownloadable_code_list.append(
                                                     bigfile_download_code)
                                                 download_state_last_global = 1
-                                        elif bigfile_link.find('mail.163.com') != -1:
+                                        elif 'mail.163.com' in bigfile_link:
                                             link_key = urllib.parse.parse_qs(
                                                 urllib.parse.urlparse(bigfile_link).query)['file'][0]
                                             fetch_result = json.loads(requests.get(
@@ -567,7 +568,7 @@ def operation_download():
                                                 bigfile_undownloadable_code_list.append(
                                                     bigfile_download_code)
                                                 download_state_last_global = 1
-                                        elif bigfile_link.find('mail.sina.com.cn') != -1:
+                                        elif 'mail.sina.com.cn' in bigfile_link:
                                             download_page = requests.get(
                                                 bigfile_link)
                                             html_fetcher_2 = BeautifulSoup(
@@ -829,7 +830,7 @@ def safe_list_find(List, element):
 
 def find_childstr_to_list(List, Str):  # 遍历列表,判断列表中字符串是否为指定字符串的子字符串
     for j in List:
-        if Str.find(j) != -1:
+        if j in Str:
             return True
     return False
 
@@ -915,7 +916,13 @@ try:
                     rtoml.dump(config_primary_data, config_new_file)
                 print('操作成功完成.', flush=True)
         elif command == 'c':
-            os.system('cls')
+            Platform = platform.platform().lower()
+            if 'windows' in Platform:
+                os.system('cls')
+            elif 'linux' in Platform or 'macos' in Platform:
+                os.system('clear')
+            else:
+                print('E: 操作系统类型未知,无法执行该操作.', flush=True)
         elif command == 'q':
             break
     print('正在关闭连接...', flush=True)
