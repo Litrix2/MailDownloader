@@ -332,7 +332,7 @@ def operation_parse_file_name(file_name_raw):
     return file_name
 
 
-def operation_rollback(file_name_list,file_name=None, bigfile_name=None):
+def operation_rollback(file_name_list, file_name=None, bigfile_name=None):
     global file_download_count_global
     if file_name:
         file_name_list.append(file_name)
@@ -387,7 +387,7 @@ def operation_close_all_connection():
 
 
 def operation_download_all():
-    global thread_list_global, thread_state_list_global,thread_file_name_list_global
+    global thread_list_global, thread_state_list_global, thread_file_name_list_global
     global msg_list_raw_global, msg_processed_count_global
     init()
     operation_login_all_imapserver()
@@ -443,22 +443,22 @@ def operation_download_all():
         print(indent(1), '共 ', len(msg_list), ' 封邮件', sep='', flush=True)
     if len(extract_nested_list(msg_list_global)):
         print('共 ', len(extract_nested_list(msg_list_global)),
-          ' 封邮件', sep='', flush=True)
+              ' 封邮件', sep='', flush=True)
     else:
-        print('没有符合条件的邮件.',flush=True)
+        print('没有符合条件的邮件.', flush=True)
         return
     # print(msg_list_global)  # debug
-    start_time=time.time()
+    start_time = time.time()
     print('开始处理...\n', end='', flush=True)
     print('\r已处理 (0/', len(extract_nested_list(msg_list_global)), ')',
           sep='', end='', flush=True)
     msg_list_raw_global = copy.deepcopy(msg_list_global)
     thread_list_global = []
     thread_state_list_global = []
-    thread_file_name_list_global=[]
+    thread_file_name_list_global = []
     for thread_id in range(settings_thread_count):
         thread_state_list_global.append(0)
-        thread_file_name_list_global.append([[],'',''])
+        thread_file_name_list_global.append([[], '', ''])
         thread = threading.Thread(
             target=operation_download_thread, args=(thread_id,))
         thread_list_global.append(thread)
@@ -468,8 +468,10 @@ def operation_download_all():
         if not 0 in thread_state_list_global:
             break
         time.sleep(0)
-    finish_time=time.time()
-    print('\r耗时: ',round(finish_time-start_time,2),' 秒',indent(3),sep='',flush=True)
+    finish_time = time.time()
+    print('\r耗时: ', round(finish_time-start_time, 2),
+          ' 秒', indent(3), sep='', flush=True)
+
 
 def operation_download_thread(thread_id):
     global file_download_count_global, msg_processed_count_global
@@ -489,15 +491,17 @@ def operation_download_thread(thread_id):
             while True:
                 if len(msg_list_global[imap_succeed_index_int_list_global[imap_index_int]]):
                     with lock_var_global:
-                        msg_index = msg_list_global[imap_succeed_index_int_list_global[imap_index_int]].pop(0)
+                        msg_index = msg_list_global[imap_succeed_index_int_list_global[imap_index_int]].pop(
+                            0)
                     # print(thread_id,int(msg_index),flush=True)#debug
-                    file_name=None
-                    bigfile_name=None
+                    file_name = None
+                    bigfile_name = None
                     file_download_count = 0
                     download_state_last = -1
                     bigfile_undownloadable_code_list = []
                     has_downloadable_attachments = False
-                    thread_file_name_list_global[thread_id][0]=file_name_list = []
+                    thread_file_name_list_global[thread_id][0] = file_name_list = [
+                    ]
                     bigfile_downloadable_link_list = []
                     bigfile_download_code = 0
                     bigfile_undownloadable_link_list = []
@@ -527,28 +531,32 @@ def operation_download_thread(thread_id):
                                     file_data = eachdata_msg.get_payload(
                                         decode=True)
                                     lock_io_global.acquire()
-                                    thread_file_name_list_global[thread_id][1]=file_name = operation_parse_file_name(
+                                    thread_file_name_list_global[thread_id][1] = file_name = operation_parse_file_name(
                                         file_name_raw)
                                     file_name_tmp = operation_parse_file_name(
                                         file_name+'.tmp')
                                     if stop_state:
                                         with lock_io_global:
-                                            operation_rollback(file_name_list,file_name,bigfile_name)
+                                            operation_rollback(
+                                                file_name_list, file_name, bigfile_name)
                                         return
                                     with open(os.path.join(settings_download_path, file_name_tmp), 'wb') as file:
                                         lock_io_global.release()
                                         file.write(file_data)
                                     if stop_state:
                                         with lock_io_global:
-                                            operation_rollback(file_name_list,file_name,bigfile_name)
+                                            operation_rollback(
+                                                file_name_list, file_name, bigfile_name)
                                         return
                                     os.renames(os.path.join(settings_download_path, file_name_tmp),
                                                os.path.join(settings_download_path, file_name))
                                     with lock_print_global, lock_var_global:
-                                        print('\r',thread_id,' ',sep='',end='',flush=True)#debug
+                                        print('\r', thread_id, ' ', sep='',
+                                              end='', flush=True)  # debug
                                         print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
                                             ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(2), sep='', flush=True)
-                                        print(indent(1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
+                                        print(indent(
+                                            1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
                                         print(indent(1), '邮件标题: ', subject, ' - ',
                                               send_time, sep='', flush=True)
                                         print('\r已处理 (', msg_processed_count_global+1, '/', len(
@@ -686,7 +694,7 @@ def operation_download_thread(thread_id):
                                                     'filename="')+len(
                                                     'filename="'):])[:-1]
                                                 lock_io_global.acquire()
-                                                thread_file_name_list_global[thread_id][2]=bigfile_name = operation_parse_file_name(
+                                                thread_file_name_list_global[thread_id][2] = bigfile_name = operation_parse_file_name(
                                                     bigfile_name_raw)
                                                 bigfile_name_tmp = operation_parse_file_name(
                                                     bigfile_name+'.tmp')
@@ -699,15 +707,19 @@ def operation_download_thread(thread_id):
                                                             break
                                                 if stop_state:
                                                     with lock_io_global:
-                                                        operation_rollback(file_name_list,file_name,bigfile_name)
+                                                        operation_rollback(
+                                                            file_name_list, file_name, bigfile_name)
                                                     return
                                                 os.renames(
                                                     os.path.join(settings_download_path, bigfile_name_tmp), os.path.join(settings_download_path, bigfile_name))
                                                 with lock_print_global, lock_var_global:
-                                                    print('\r',thread_id,' ',sep='',end='',flush=True)#debug
+                                                    # debug
+                                                    print(
+                                                        '\r', thread_id, ' ', sep='', end='', flush=True)
                                                     print('\r', file_download_count_global+1, ' 已下载 ', bigfile_name, (
                                                         ' <- '+bigfile_name_raw)if bigfile_name != bigfile_name_raw else '', indent(2), sep='', flush=True)
-                                                    print(indent(1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
+                                                    print(indent(
+                                                        1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
                                                     print(indent(
                                                         1), '邮件标题: ', subject, ' - ', send_time, sep='', flush=True)
                                                     file_download_count_global += 1
@@ -721,9 +733,9 @@ def operation_download_thread(thread_id):
                         print('E: 有附件下载失败,该邮件已跳过.', flush=True)
                         if settings_rollback_when_download_failed:
                             operation_rollback(
-                                file_name_list,file_name, bigfile_name)
+                                file_name_list, file_name, bigfile_name)
                         download_state_last = -2
-                    with lock_print_global,lock_var_global:
+                    with lock_print_global, lock_var_global:
                         print('\r已处理 (', msg_processed_count_global+1, '/', len(
                             extract_nested_list(msg_list_raw_global)), ')', sep='', end='', flush=True)
                         msg_processed_count_global += 1
