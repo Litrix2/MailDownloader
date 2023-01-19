@@ -716,9 +716,9 @@ def download_thread_func(thread_id):
                                     lock_io_global.acquire()
                                     if stop_state:
                                         if settings_rollback_when_download_failed:
-                                            with lock_io_global:
-                                                operation_rollback(
-                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                            operation_rollback(
+                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                            lock_io_global.release()
                                         return
                                     file_name_tmp = operation_parse_file_name(
                                         file_name_raw+'.tmp')
@@ -736,6 +736,12 @@ def download_thread_func(thread_id):
                                             file_name_raw)
                                         os.renames(os.path.join(settings_download_path, file_name_tmp),
                                                    os.path.join(settings_download_path, file_name))
+                                    if stop_state:
+                                        if settings_rollback_when_download_failed:
+                                            with lock_io_global:
+                                                operation_rollback(
+                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                        return
                                     with lock_print_global, lock_var_global:
                                         print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
                                             ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(8), sep='', flush=True)
@@ -925,9 +931,9 @@ def download_thread_func(thread_id):
                                                     lock_io_global.acquire()
                                                     if stop_state:
                                                         if settings_rollback_when_download_failed:
-                                                            with lock_io_global:
-                                                                operation_rollback(
-                                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                            lock_io_global.release()
+                                                            operation_rollback(
+                                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                                         return
                                                     bigfile_name_tmp = operation_parse_file_name(
                                                         bigfile_name_raw+'.tmp')
@@ -958,6 +964,12 @@ def download_thread_func(thread_id):
                                                             bigfile_name_raw)
                                                         os.renames(
                                                             os.path.join(settings_download_path, bigfile_name_tmp), os.path.join(settings_download_path, bigfile_name))
+                                                    if stop_state:
+                                                        if settings_rollback_when_download_failed:
+                                                            with lock_io_global:
+                                                                operation_rollback(
+                                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                        return
                                                     with lock_print_global, lock_var_global:
                                                         print('\r', file_download_count_global+1, ' 已下载 ', bigfile_name, (
                                                             ' <- '+bigfile_name_raw)if bigfile_name != bigfile_name_raw else '', indent(8), sep='', flush=True)
