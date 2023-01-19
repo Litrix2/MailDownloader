@@ -34,6 +34,7 @@ Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议
 - only_search_unseen_mails: 仅搜索未读邮件
     - 为false时,搜索全部邮件.
     - 为true时,仅搜索未读邮件.
+- rollback_when_download_failed: 当邮件中任意附件下载失败时,删除该邮件中所有已下载的附件
 - sign_unseen_tag_after_downloading: 在邮件内附件全部下载成功后设置"已读"标签
 - reconnect_max_times: 邮箱断开连接后最大重连次数
 - download_path: 文件下载路径
