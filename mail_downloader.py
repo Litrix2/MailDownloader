@@ -15,7 +15,7 @@ import time
 import traceback
 import urllib.parse
 
-version = '1.2.4'
+version = '1.2.5'
 mode = 0  # 0:Release;1:Alpha;2:Beta;3:Demo
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
