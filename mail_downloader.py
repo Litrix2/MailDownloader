@@ -89,7 +89,7 @@ def operation_load_config():
                 settings_mail_min_date.enabled = True
                 settings_mail_min_date.year = config_file_data['min_search_date'][0]
                 settings_mail_min_date.month = config_file_data['min_search_date'][1]
-                settings_mail_min_date.day = config_file_data['min_search_date'][1]
+                settings_mail_min_date.day = config_file_data['min_search_date'][2]
             settings_mail_max_date = Date()
             if config_file_data['max_search_date'] == False:
                 settings_mail_max_date.enabled = False
@@ -97,7 +97,7 @@ def operation_load_config():
                 settings_mail_max_date.enabled = True
                 settings_mail_max_date.year = config_file_data['max_search_date'][0]
                 settings_mail_max_date.month = config_file_data['max_search_date'][1]
-                settings_mail_max_date.day = config_file_data['max_search_date'][1]
+                settings_mail_max_date.day = config_file_data['max_search_date'][2]
             settings_only_search_unseen_mails = config_file_data['only_search_unseen_mails']
             settings_rollback_when_download_failed = config_file_data[
                 'rollback_when_download_failed']
