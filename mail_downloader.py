@@ -972,7 +972,8 @@ def download_thread_func(thread_id):
                                                     if download_state_last == 2:
                                                         download_state_last == 0
                         except Exception as e:
-                            lock_io_global.release()
+                            if lock_io_global.locked():
+                                lock_io_global.release()
                             traceback.print_exc()
                             with lock_print_global:
                                 if not req_state_last:
