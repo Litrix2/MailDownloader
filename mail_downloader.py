@@ -715,9 +715,10 @@ def download_thread_func(thread_id):
                                         thread_state_list_global[thread_id] = 2
                                     lock_io_global.acquire()
                                     if stop_state:
-                                        with lock_io_global:
-                                            operation_rollback(
-                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                        if settings_rollback_when_download_failed:
+                                            with lock_io_global:
+                                                operation_rollback(
+                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                         return
                                     file_name_tmp = operation_parse_file_name(
                                         file_name_raw+'.tmp')
@@ -725,9 +726,10 @@ def download_thread_func(thread_id):
                                         lock_io_global.release()
                                         file.write(file_data)
                                     if stop_state:
-                                        with lock_io_global:
-                                            operation_rollback(
-                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                        if settings_rollback_when_download_failed:
+                                            with lock_io_global:
+                                                operation_rollback(
+                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                         return
                                     with lock_io_global:
                                         thread_file_name_list_global[thread_id][1] = file_name = operation_parse_file_name(
@@ -922,9 +924,10 @@ def download_thread_func(thread_id):
                                                         thread_state_list_global[thread_id] = 2
                                                     lock_io_global.acquire()
                                                     if stop_state:
-                                                        with lock_io_global:
-                                                            operation_rollback(
-                                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                        if settings_rollback_when_download_failed:
+                                                            with lock_io_global:
+                                                                operation_rollback(
+                                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                                         return
                                                     bigfile_name_tmp = operation_parse_file_name(
                                                         bigfile_name_raw+'.tmp')
@@ -945,9 +948,10 @@ def download_thread_func(thread_id):
                                                     if not req_state_last:
                                                         raise Exception
                                                     if stop_state:
-                                                        with lock_io_global:
-                                                            operation_rollback(
-                                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                        if settings_rollback_when_download_failed:
+                                                            with lock_io_global:
+                                                                operation_rollback(
+                                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                                         return
                                                     with lock_io_global:
                                                         thread_file_name_list_global[thread_id][2] = bigfile_name = operation_parse_file_name(
@@ -1163,12 +1167,13 @@ try:
     nexit(0)
 except KeyboardInterrupt:
     stop_state = 1
-    try:
-        for thread_file_name_list in thread_file_name_list_global:
-            with lock_io_global:
-                operation_rollback(thread_file_name_list[0])
-    except NameError:
-        pass
+    if settings_rollback_when_download_failed:
+        try:
+            for thread_file_name_list in thread_file_name_list_global:
+                with lock_io_global:
+                    operation_rollback(thread_file_name_list[0])
+        except NameError:
+            pass
     with lock_print_global:
         print('\n强制退出', flush=True)
         time.sleep(1)
