@@ -217,13 +217,13 @@ def operation_login_imap_server(host, address, password, display=True):
             host)
         if display:
             print('\r已连接 ', host,
-                  indent(3), sep='',end='',flush=True)
-            print('\r正在登录 ', address,indent(3),
+                  indent(3), sep='', end='', flush=True)
+            print('\r正在登录 ', address, indent(3),
                   end='', sep='', flush=True)
         imap.login(address, password)
         if display:
             print('\r', address,
-                  ' 登录成功',indent(3), sep='', flush=True)
+                  ' 登录成功', indent(3), sep='', flush=True)
         imap._simple_command(
             'ID', '("' + '" "'.join(authentication) + '")')  # 发送ID
     except imaplib.IMAP4.error:
