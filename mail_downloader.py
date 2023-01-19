@@ -520,7 +520,7 @@ def operation_download_all():
                         msg_fetch_failed_list_global[msg_list_index_int].append(
                             msg)
         if len(imap_fetch_failed_index_int_list_global):
-            print('E: 以下邮箱有处理失败的邮件:', flush=True)
+            print('E: 以下邮箱有处理失败的邮件,请尝试重新下载:', flush=True)
             for imap_fetch_failed_index_int in imap_fetch_failed_index_int_list_global:
                 print(indent(
                     1), '邮箱: ', address[imap_fetch_failed_index_int], sep='', flush=True)
@@ -972,6 +972,7 @@ def download_thread_func(thread_id):
                                                     if download_state_last == 2:
                                                         download_state_last == 0
                         except Exception as e:
+                            lock_io_global.release()
                             traceback.print_exc()
                             with lock_print_global:
                                 if not req_state_last:
