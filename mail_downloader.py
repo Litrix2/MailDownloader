@@ -562,9 +562,9 @@ def operation_download_all():
                                     break
                                 except imaplib.IMAP4.abort:
                                     for i in range(settings_reconnect_max_times):
-                                        imap = operation_login_imap_server(
+                                        imap_list_global[imap_index_int] = operation_login_imap_server(
                                             host[imap_succeed_index_int_list_global[imap_index_int]], address[imap_succeed_index_int_list_global[imap_index_int]], password[imap_succeed_index_int_list_global[imap_index_int]], False)
-                                        if imap != None:
+                                        if imap_list_global[imap_index_int] != None:
                                             break
                                 except Exception:
                                     pass
@@ -604,9 +604,9 @@ def operation_download_all():
                                     break
                                 except imaplib.IMAP4.abort:
                                     for i in range(settings_reconnect_max_times):
-                                        imap = operation_login_imap_server(
+                                        imap_list_global[imap_index_int] = operation_login_imap_server(
                                             host[imap_succeed_index_int_list_global[imap_index_int]], address[imap_succeed_index_int_list_global[imap_index_int]], password[imap_succeed_index_int_list_global[imap_index_int]], False)
-                                        if imap != None:
+                                        if imap_list_global[imap_index_int] != None:
                                             break
                                 except Exception:
                                     pass
