@@ -15,6 +15,9 @@ min_search_date = false
 max_search_date = false
 #仅搜索未读邮件
 only_search_unseen_mails = true
+#下载线程数
+#适量配置
+thread_count=4
 #当邮件中任意附件下载错误时,删除该邮件中所有已下载的附件
 rollback_when_download_failed = true
 #在成功下载附件后对该邮件设置已读标签
