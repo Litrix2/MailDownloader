@@ -212,18 +212,18 @@ def operation_login_imap_server(host, address, password, display=True):
     try:
         if display:
             print('\r正在连接 ', host,
-                  '        ', end='', sep='', flush=True)
+                  indent(3), end='', sep='', flush=True)
         imap = imaplib.IMAP4_SSL(
             host)
         if display:
             print('\r已连接 ', host,
-                  '            ', sep='', flush=True)
-            print('\r正在登录 ', address,
+                  indent(3), sep='',end='',flush=True)
+            print('\r正在登录 ', address,indent(3),
                   end='', sep='', flush=True)
         imap.login(address, password)
         if display:
             print('\r', address,
-                  '登录成功            ', sep='', flush=True)
+                  ' 登录成功',indent(3), sep='', flush=True)
         imap._simple_command(
             'ID', '("' + '" "'.join(authentication) + '")')  # 发送ID
     except imaplib.IMAP4.error:
@@ -464,7 +464,7 @@ def operation_download_all():
         print('共 ', len(extract_nested_list(msg_list_global)),
               ' 封邮件', sep='', flush=True)
     else:
-        print('没有符合条件的邮件.', flush=True)
+        print('没有符合条件的邮件.\n', flush=True)
         return
     # print(msg_list_global)  # debug
     start_time = time.time()
