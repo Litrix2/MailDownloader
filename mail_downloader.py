@@ -16,8 +16,8 @@ import threading
 import traceback
 import urllib.parse
 
-version = '1.3.0-Alpha'
-mode = 1  # 0:Release;1:Alpha;2:Beta;3:Demo
+version = '1.3.0-Beta'
+mode = 2  # 0:Release;1:Alpha;2:Beta;3:Demo
 authentication = ['name', 'MailDownloader', 'version', version]
 available_bigfile_website_list = [
     'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
@@ -57,7 +57,7 @@ config_primary_data = {
     'min_search_date': False,
     'max_search_date': False,
     'only_search_unseen_mails': True,
-    'thread_count': 1,
+    'thread_count': 4,
     'rollback_when_download_failed': True,
     'sign_unseen_tag_after_downloading': True,
     'reconnect_max_times': 3,
@@ -744,9 +744,7 @@ def download_thread_func(thread_id):
                                     os.renames(os.path.join(settings_download_path, file_name_tmp),
                                                os.path.join(settings_download_path, file_name))
                                     with lock_print_global, lock_var_global:
-                                        print('\r', thread_id, ' ', sep='',
-                                              end='', flush=True)  # debug
-                                        print(file_download_count_global+1, ' 已下载 ', file_name, (
+                                        print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
                                             ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(2), sep='', flush=True)
                                         print(indent(
                                             1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
@@ -960,11 +958,8 @@ def download_thread_func(thread_id):
                                                     os.renames(
                                                         os.path.join(settings_download_path, bigfile_name_tmp), os.path.join(settings_download_path, bigfile_name))
                                                     with lock_print_global, lock_var_global:
-                                                        # debug
-                                                        print(
-                                                            '\r', thread_id, ' ', sep='', end='', flush=True)
-                                                        print(file_download_count_global+1, ' 已下载 ', bigfile_name, (
-                                                            ' <- '+bigfile_name_raw)if bigfile_name != bigfile_name_raw else '', indent(8), sep='', flush=True)
+                                                        print('\r', file_download_count_global+1, ' 已下载 ', bigfile_name, (
+                                                            ' <- '+bigfile_name_raw)if bigfile_name != bigfile_name_raw else '', indent(16), sep='', flush=True)
                                                         print(indent(
                                                             1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
                                                         print(indent(
