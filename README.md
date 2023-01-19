@@ -2,7 +2,7 @@
 
 ___
 
-# Mail Downloader 1.3.0-Beta
+# Mail Downloader 1.3.0
 Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议.
 
 **使用前请关闭代理!**
