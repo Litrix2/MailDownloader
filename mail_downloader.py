@@ -694,14 +694,19 @@ def download_thread_func(thread_id):
                             header.decode_header(data_msg.get('Subject'))))
                         send_time = str(header.make_header(
                             header.decode_header(data_msg.get('Date'))))[5:]
-                        if '(' in send_time:
-                            send_time = send_time[:send_time.find(' (')]
-                        if '+' in send_time or '-' in send_time:
-                            send_time = str(datetime.datetime.strptime(
-                            send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
-                        elif 'GMT' in send_time:
-                            send_time = str(datetime.datetime.strptime(
-                            send_time, '%d %b %Y %H:%M:%S %Z').astimezone(pytz.timezone('Etc/GMT+8')))[:-6]
+                        try:
+                            if '(' in send_time:
+                                send_time = send_time[:send_time.find(' (')]
+                            if '+' in send_time or '-' in send_time:
+                                send_time = str(datetime.datetime.strptime(
+                                send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
+                            elif 'GMT' in send_time:
+                                send_time = str(datetime.datetime.strptime(
+                                send_time, '%d %b %Y %H:%M:%S %Z').astimezone(pytz.timezone('Etc/GMT+8')))[:-6]
+                            else:
+                                raise ValueError
+                        except ValueError:
+                            send_time='时间获取错误.'
                         try:
                             for eachdata_msg in data_msg.walk():
                                 file_name = None
