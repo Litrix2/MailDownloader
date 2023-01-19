@@ -745,7 +745,7 @@ def download_thread_func(thread_id):
                                                os.path.join(settings_download_path, file_name))
                                     with lock_print_global, lock_var_global:
                                         print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
-                                            ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(2), sep='', flush=True)
+                                            ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(16), sep='', flush=True)
                                         print(indent(
                                             1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
                                         print(indent(1), '邮件标题: ', subject, ' - ',
