@@ -400,6 +400,7 @@ def operation_check_connection(imap_index_int):
             imap_succeed_index_int_list_global.remove(imap_index_int)
     return is_reconnect_succeed
 
+
 def operation_download_all():
     global thread_state_list_global  # 0:其他;1:读取邮件数据/获取链接;2:下载文件
     global thread_list_global, thread_file_name_list_global
