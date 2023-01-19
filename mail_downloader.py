@@ -493,9 +493,12 @@ def operation_download_all():
     finish_time = time.time()
     time.sleep(0.1)
     with lock_print_global:
-        print('\r耗时: ', round(finish_time-start_time, 2),
+        if file_download_count_global>0:
+            print('\r共下载 ',file_download_count_global,' 个附件', indent(8),sep='',flush=True)
+        else:
+            print('\r没有可下载的附件', indent(8),flush=True)
+        print('耗时: ', round(finish_time-start_time, 2),
               ' 秒', indent(8), sep='', flush=True)
-        # print(msg_list_global)#debug
         if len(imap_connect_failed_index_int_list_global):
             print('E: 以下邮箱断开连接,且未能成功连接:', flush=True)
             for imap_connect_failed_index_int in imap_connect_failed_index_int_list_global:
