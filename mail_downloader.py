@@ -360,22 +360,25 @@ def operation_parse_file_name(file_name_raw):
     return file_name
 
 
-def operation_rollback(file_name_list, file_name=None, bigfile_name=None):
+def operation_rollback(file_name_list_raw, file_name=None, bigfile_name=None, file_name_tmp=None, bigfile_name_tmp=None):
     global file_download_count_global
     if file_name:
-        file_name_list.append(file_name)
+        file_name_list_raw.append(file_name)
     if bigfile_name:
-        file_name_list.append(bigfile_name)
-    for file_mixed_name in file_name_list:
-        file_mixed_name_tmp = file_mixed_name+'.tmp'
-        # print(file_mixed_name,file_mixed_name_tmp)#debug
+        file_name_list_raw.append(bigfile_name)
+    if file_name_tmp:
+        if os.path.isfile(os.path.join(settings_download_path, file_name_tmp)):
+            os.remove(os.path.join(
+                settings_download_path, file_name_tmp))
+    if bigfile_name_tmp:
+        if os.path.isfile(os.path.join(settings_download_path, bigfile_name_tmp)):
+            os.remove(os.path.join(
+                settings_download_path, bigfile_name_tmp))
+    for file_mixed_name in file_name_list_raw:
         if os.path.isfile(os.path.join(settings_download_path, file_mixed_name)):
             os.remove(os.path.join(
                 settings_download_path, file_mixed_name))
             file_download_count_global -= 1
-        if os.path.isfile(os.path.join(settings_download_path, file_mixed_name_tmp)):
-            os.remove(os.path.join(
-                settings_download_path, file_mixed_name_tmp))
 
 
 def operation_check_connection(imap_index_int):
@@ -656,8 +659,6 @@ def download_thread_func(thread_id):
                         msg_index = msg_list_global[imap_succeed_index_int_list_global[imap_index_int]].pop(
                             0)
                     # print(thread_id,int(msg_index),flush=True)#debug
-                    file_name = None
-                    bigfile_name = None
                     file_download_count = 0
                     download_state_last = 0  # -2:下载失败;0:正常;1:有无法直接下载的附件;2:附件全部过期或不存在
                     bigfile_undownloadable_code_list = []
@@ -701,6 +702,8 @@ def download_thread_func(thread_id):
                             for eachdata_msg in data_msg.walk():
                                 file_name = None
                                 bigfile_name = None
+                                file_name_tmp = None
+                                bigfile_name_tmp = None
                                 # print(eachdata_msg)
                                 if eachdata_msg.get_content_disposition() and 'attachment' in eachdata_msg.get_content_disposition():
                                     has_downloadable_attachments = True
@@ -711,28 +714,29 @@ def download_thread_func(thread_id):
                                     with lock_var_global:
                                         thread_state_list_global[thread_id] = 2
                                     lock_io_global.acquire()
-                                    thread_file_name_list_global[thread_id][1] = file_name = operation_parse_file_name(
-                                        file_name_raw)
-                                    file_name_tmp = operation_parse_file_name(
-                                        file_name+'.tmp')
                                     if stop_state:
                                         with lock_io_global:
                                             operation_rollback(
-                                                file_name_list, file_name, bigfile_name)
+                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                         return
+                                    file_name_tmp = operation_parse_file_name(
+                                        file_name_raw+'.tmp')
                                     with open(os.path.join(settings_download_path, file_name_tmp), 'wb') as file:
                                         lock_io_global.release()
                                         file.write(file_data)
                                     if stop_state:
                                         with lock_io_global:
                                             operation_rollback(
-                                                file_name_list, file_name, bigfile_name)
+                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                         return
-                                    os.renames(os.path.join(settings_download_path, file_name_tmp),
-                                               os.path.join(settings_download_path, file_name))
+                                    with lock_io_global:
+                                        thread_file_name_list_global[thread_id][1] = file_name = operation_parse_file_name(
+                                            file_name_raw)
+                                        os.renames(os.path.join(settings_download_path, file_name_tmp),
+                                                   os.path.join(settings_download_path, file_name))
                                     with lock_print_global, lock_var_global:
                                         print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
-                                            ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(16), sep='', flush=True)
+                                            ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(8), sep='', flush=True)
                                         print(indent(
                                             1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
                                         print(indent(1), '邮件标题: ', subject, ' - ',
@@ -917,20 +921,23 @@ def download_thread_func(thread_id):
                                                     with lock_var_global:
                                                         thread_state_list_global[thread_id] = 2
                                                     lock_io_global.acquire()
-                                                    thread_file_name_list_global[thread_id][2] = bigfile_name = operation_parse_file_name(
-                                                        bigfile_name_raw)
+                                                    if stop_state:
+                                                        with lock_io_global:
+                                                            operation_rollback(
+                                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                        return
                                                     bigfile_name_tmp = operation_parse_file_name(
-                                                        bigfile_name+'.tmp')
+                                                        bigfile_name_raw+'.tmp')
                                                     req_state_last = False
                                                     for i in range(settings_reconnect_max_times+1):
                                                         try:
                                                             with open(os.path.join(settings_download_path, bigfile_name_tmp), 'wb') as file:
                                                                 lock_io_global.release()
                                                                 for bigfile_data_chunk in bigfile_data.iter_content(1024):
-                                                                    file.write(
-                                                                        bigfile_data_chunk)
                                                                     if stop_state:
                                                                         break
+                                                                    file.write(
+                                                                        bigfile_data_chunk)
                                                             req_state_last = True
                                                             break
                                                         except Exception:
@@ -940,13 +947,16 @@ def download_thread_func(thread_id):
                                                     if stop_state:
                                                         with lock_io_global:
                                                             operation_rollback(
-                                                                file_name_list, file_name, bigfile_name)
+                                                                file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                                         return
-                                                    os.renames(
-                                                        os.path.join(settings_download_path, bigfile_name_tmp), os.path.join(settings_download_path, bigfile_name))
+                                                    with lock_io_global:
+                                                        thread_file_name_list_global[thread_id][2] = bigfile_name = operation_parse_file_name(
+                                                            bigfile_name_raw)
+                                                        os.renames(
+                                                            os.path.join(settings_download_path, bigfile_name_tmp), os.path.join(settings_download_path, bigfile_name))
                                                     with lock_print_global, lock_var_global:
                                                         print('\r', file_download_count_global+1, ' 已下载 ', bigfile_name, (
-                                                            ' <- '+bigfile_name_raw)if bigfile_name != bigfile_name_raw else '', indent(16), sep='', flush=True)
+                                                            ' <- '+bigfile_name_raw)if bigfile_name != bigfile_name_raw else '', indent(8), sep='', flush=True)
                                                         print(indent(
                                                             1), '邮箱: ', address[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
                                                         print(indent(
@@ -967,7 +977,7 @@ def download_thread_func(thread_id):
                                     print('E: 有附件下载失败,该邮件已跳过.', flush=True)
                                     if settings_rollback_when_download_failed:
                                         operation_rollback(
-                                            file_name_list, file_name, bigfile_name)
+                                            file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                             download_state_last = -2
                     with lock_var_global:
                         if fetch_state_last:
@@ -1153,11 +1163,15 @@ try:
     nexit(0)
 except KeyboardInterrupt:
     stop_state = 1
-    for thread_file_name_list in thread_file_name_list_global:
-        with lock_io_global:
-            operation_rollback(thread_file_name_list[0])
+    try:
+        for thread_file_name_list in thread_file_name_list_global:
+            with lock_io_global:
+                operation_rollback(thread_file_name_list[0])
+    except NameError:
+        pass
     with lock_print_global:
         print('\n强制退出', flush=True)
+        time.sleep(1)
         nexit(1)
 except Exception as e:
     with lock_print_global:
