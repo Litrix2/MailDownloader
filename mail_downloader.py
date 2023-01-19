@@ -697,9 +697,9 @@ def download_thread_func(thread_id):
                         try:
                             if '(' in send_time_raw:
                                 send_time = send_time_raw[:send_time_raw.find(' (')]
-                            if '+' in send_time_raw or '-' in send_time_raw:
-                                send_time = str(datetime.datetime.strptime(
-                                send_time_raw, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
+                                if '+' in send_time or '-' in send_time:
+                                    send_time = str(datetime.datetime.strptime(
+                                    send_time, '%d %b %Y %H:%M:%S %z').astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
                             elif 'GMT' in send_time_raw:
                                 send_time = str(datetime.datetime.strptime(
                                 send_time_raw, '%d %b %Y %H:%M:%S %Z').astimezone(pytz.timezone('Etc/GMT+8')))[:-6]
