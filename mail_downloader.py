@@ -987,7 +987,6 @@ def download_thread_func(thread_id):
                         except Exception as e:
                             if lock_io_global.locked():
                                 lock_io_global.release()
-                            traceback.print_exc()
                             with lock_print_global:
                                 if not req_state_last:
                                     print('E: 有附件下载失败,该邮件已跳过.', flush=True)
