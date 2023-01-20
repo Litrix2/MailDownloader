@@ -994,8 +994,8 @@ def download_thread_func(thread_id):
                                         for i in range(settings_reconnect_max_times+1):
                                             try:
                                                 if settings_sign_unseen_tag_after_downloading and download_state_last == 0:
-                                                    imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].store(msg_index,
-                                                                                                                               'flags', '\\seen')
+                                                    imap.store(msg_index,
+                                                        'flags', '\\seen')
                                                 break
                                             except Exception:
                                                 for i in range(settings_reconnect_max_times):
