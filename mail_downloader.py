@@ -656,16 +656,16 @@ def download_thread_func(thread_id):
         imap_index_int_list.append(imap_index_int)
         if imap != None:
             while True:
+                lock_var_global.acquire()
                 if len(msg_list_global[imap_succeed_index_int_list_global[imap_index_int]]):
-                    with lock_var_global:
-                        msg_index = msg_list_global[imap_succeed_index_int_list_global[imap_index_int]].pop(
-                            0)
+                    msg_index = msg_list_global[imap_succeed_index_int_list_global[imap_index_int]].pop(
+                        0)
+                    lock_var_global.release()
                     # print(thread_id,int(msg_index),flush=True)#debug
                     file_download_count = 0
                     download_state_last = -1  # -2:下载失败;-1:无附件且处理正常;0:有附件且处理正常;1:有无法直接下载的附件;2:附件全部过期或不存在
                     bigfile_undownloadable_code_list = []
                     has_downloadable_attachment = False
-                    has_undownloadable_attachment = False
                     thread_file_name_list_global[thread_id][0] = file_name_list = [
                     ]
                     bigfile_downloadable_link_list = []
@@ -758,7 +758,7 @@ def download_thread_func(thread_id):
                                         operation_fresh_thread_state(
                                             thread_id, 0)
                                     if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
-                                        download_state_last == 0
+                                        download_state_last = 0
                                 if eachdata_msg.get_content_type() == 'text/html':
                                     eachdata_msg_charset = eachdata_msg.get_content_charset()
                                     eachdata_msg_data_raw = eachdata_msg.get_payload(
@@ -870,7 +870,6 @@ def download_thread_func(thread_id):
                                                                 bigfile_link)
                                                             bigfile_undownloadable_code_list.append(
                                                                 bigfile_download_code)
-                                                            has_undownloadable_attachment = True
                                                             download_state_last = 1
                                                     elif 'mail.sina.com.cn' in bigfile_link:
                                                         req_state_last = False
@@ -979,7 +978,7 @@ def download_thread_func(thread_id):
                                                         operation_fresh_thread_state(
                                                             thread_id, 0)
                                                     if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
-                                                        download_state_last == 0
+                                                        download_state_last = 0
                         except Exception as e:
                             if lock_io_global.locked():
                                 lock_io_global.release()
@@ -1054,6 +1053,7 @@ def download_thread_func(thread_id):
                             msg_fetch_failed_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
                                 msg_index)
                 else:
+                    lock_var_global.release()
                     break
     with lock_var_global:
         # print(msg_list_global)
