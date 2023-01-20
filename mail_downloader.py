@@ -383,29 +383,6 @@ def operation_rollback(file_name_list_raw, file_name=None, bigfile_name=None, fi
             file_download_count_global -= 1
 
 
-def operation_check_connection(imap_index_int):
-    is_reconnect_succeed = False
-    try:
-        imap_list_global[imap_index_int].noop()
-        is_reconnect_succeed = True
-    except imaplib.IMAP4_SSL.abort:
-        print('\rW: 连接已断开,正在尝试重连...', flush=True)
-        for i in range(settings_reconnect_max_times):
-            imap_list_global[imap_index_int] = operation_login_imap_server(
-                host[imap_index_int], address[imap_index_int], password[imap_index_int])
-            if imap_list_global[imap_index_int] != None:
-                is_reconnect_succeed = True
-                break
-        if not is_reconnect_succeed:
-            imap_list_global[imap_index_int] = None
-            print(
-                'E: 无法连接至', address[imap_index_int], ',已跳过.', flush=True)
-            imap_connect_failed_index_int_list_global.append(
-                imap_index_int)
-            imap_succeed_index_int_list_global.remove(imap_index_int)
-    return is_reconnect_succeed
-
-
 def operation_download_all():
     global thread_state_list_global  # 0:其他;1:读取邮件数据/获取链接;2:下载文件
     global has_thread_state_changed_global
@@ -435,19 +412,12 @@ def operation_download_all():
         prompt += '的未读邮件' if settings_only_search_unseen_mails else '的邮件'
         print(prompt, sep='', flush=True)
     for imap_index_int in imap_succeed_index_int_list_global:
-        is_connect_succeed = operation_check_connection(imap_index_int)
-        if not is_connect_succeed:
-            continue
-        print(
-            '\r邮箱: ', address[imap_index_int], indent(3), sep='', flush=True)
         if not (settings_mail_min_date.enabled or settings_mail_max_date.enabled):
             search_command = ''
             if settings_only_search_unseen_mails:
                 search_command = 'unseen'
             else:
                 search_command = 'all'
-            typ, data_msg_index_raw = imap_list_global[imap_index_int].search(
-                None, search_command)
         else:
             search_command = ''
             search_command += ('since '+settings_mail_min_date.time()
@@ -458,10 +428,29 @@ def operation_download_all():
             search_command += ' ' if (
                 settings_mail_max_date.enabled or settings_mail_min_date.enabled) and settings_only_search_unseen_mails else ''
             search_command += 'unseen' if settings_only_search_unseen_mails else ''
-            typ, data_msg_index_raw = imap_list_global[imap_index_int].search(
-                None, search_command)
+        search_state_last = False
+        for i in range(settings_reconnect_max_times+1):
+            try:
+                typ, data_msg_index_raw = imap_list_global[imap_index_int].search(
+                    None, search_command)
+                search_state_last = True
+                break
+            except Exception:
+                for i in range(settings_reconnect_max_times):
+                    imap_list_global[imap_index_int] = operation_login_imap_server(
+                        host[imap_index_int], address[imap_index_int], password[imap_index_int], False)
+                    if imap_list_global[imap_index_int] != None:
+                        break
+        if not search_state_last:
+            print('E: 邮箱', address[imap_index_int], '搜索失败,已跳过.', flush=True)
+            imap_connect_failed_index_int_list_global.append(
+                imap_index_int)
+            imap_index_int = None
+            continue
         msg_list = list(reversed(data_msg_index_raw[0].split()))
         msg_list_global[imap_index_int] = msg_list
+        print(
+            '\r邮箱: ', address[imap_index_int], indent(3), sep='', flush=True)
         print(indent(1), '共 ', len(msg_list), ' 封邮件', sep='', flush=True)
     if len(extract_nested_list(msg_list_global)):
         print('共 ', len(extract_nested_list(msg_list_global)),
@@ -636,6 +625,8 @@ def download_thread_func(thread_id):
     imap_list = []
     imap_index_int_list = []
     for imap_index_int in range(len(imap_succeed_index_int_list_global)):
+        if imap_succeed_index_int_list_global[imap_index_int] == None:
+            continue
         req_state_last = False
         for i in range(settings_reconnect_max_times+1):
             imap = operation_login_imap_server(
