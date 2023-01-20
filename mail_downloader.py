@@ -987,9 +987,6 @@ def download_thread_func(thread_id):
                                         msg_index)
                                     file_name_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
                                         thread_file_name_list_global[thread_id])
-                                    # 防止回滚时把全部下载成功的邮件的附件删除
-                                    thread_file_name_list_global[thread_id] = [
-                                    ]
                                     if settings_sign_unseen_tag_after_downloading:
                                         for i in range(settings_reconnect_max_times+1):
                                             try:
@@ -1165,10 +1162,13 @@ try:
     nexit(0)
 except KeyboardInterrupt:
     stop_state_global = 1
-    if 'thread_state_list_global' in vars() and settings_rollback_when_download_failed and thread_state_list_global.count(-1) < len(thread_state_list_global):
-        for thread_file_name_list in thread_file_name_list_global:
-            with lock_io_global:
-                operation_rollback(thread_file_name_list)
+    if 'thread_state_list_global' in vars() and settings_rollback_when_download_failed:
+        for thread_index_int in range(settings_thread_count):
+            # 防止回滚时把全部下载成功的邮件的附件删除
+            if thread_state_list_global[thread_index_int] != -1:
+                with lock_io_global:
+                    operation_rollback(
+                        thread_file_name_list_global[thread_index_int])
     with lock_print_global:
         print('\n强制退出', flush=True)
         time.sleep(1)
