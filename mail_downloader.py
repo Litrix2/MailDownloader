@@ -413,8 +413,8 @@ def operation_download_all():
     global msg_list_global, msg_total_count_global, msg_processed_count_global
     init()
     operation_login_all_imapserver()
-    if not len(imap_list_global):
-        print('E: 无法执行该操作.原因:没有可用邮箱.', flush=True)
+    if not len(imap_succeed_index_int_list_global):
+        print('E: 无法执行该操作.原因: 没有可用邮箱.', flush=True)
         return
     if settings_allow_manual_input_search_date:
         operation_set_time()
@@ -570,14 +570,12 @@ def operation_download_all():
                                     imap_list_global[imap_index_int].store(msg_index,
                                                                            'flags', '\\seen')
                                     break
-                                except imaplib.IMAP4.abort:
+                                except Exception:
                                     for i in range(settings_reconnect_max_times):
                                         imap_list_global[imap_index_int] = operation_login_imap_server(
                                             host[imap_succeed_index_int_list_global[imap_index_int]], address[imap_succeed_index_int_list_global[imap_index_int]], password[imap_succeed_index_int_list_global[imap_index_int]], False)
                                         if imap_list_global[imap_index_int] != None:
                                             break
-                                except Exception:
-                                    pass
                             msg_with_downloadable_attachments_signed_count += 1
                     print('\r', indent(6), sep='', end='', flush=True)
                     if not len(extract_nested_list(msg_overdueanddeleted_list_global)):
@@ -612,14 +610,12 @@ def operation_download_all():
                                     imap_list_global[imap_index_int].store(msg_index,
                                                                            'flags', '\\seen')
                                     break
-                                except imaplib.IMAP4.abort:
+                                except Exception:
                                     for i in range(settings_reconnect_max_times):
                                         imap_list_global[imap_index_int] = operation_login_imap_server(
                                             host[imap_succeed_index_int_list_global[imap_index_int]], address[imap_succeed_index_int_list_global[imap_index_int]], password[imap_succeed_index_int_list_global[imap_index_int]], False)
                                         if imap_list_global[imap_index_int] != None:
                                             break
-                                except Exception:
-                                    pass
                             msg_overdueanddeleted_signed_count += 1
                     print('\r', indent(6), sep='', flush=True)
                 else:
@@ -673,14 +669,12 @@ def download_thread_func(thread_id):
                                 msg_index, 'BODY.PEEK[]')
                             fetch_state_last = True
                             break
-                        except imaplib.IMAP4.abort:
+                        except Exception:
                             for i in range(settings_reconnect_max_times):
                                 imap = operation_login_imap_server(
                                     host[imap_succeed_index_int_list_global[imap_index_int]], address[imap_succeed_index_int_list_global[imap_index_int]], password[imap_succeed_index_int_list_global[imap_index_int]], False)
                                 if imap != None:
                                     break
-                        except Exception:
-                            pass
                     if not fetch_state_last:
                         print('E: 有邮件获取失败,已跳过.')
                     else:
@@ -997,7 +991,7 @@ def download_thread_func(thread_id):
                                                     imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].store(msg_index,
                                                                                                                                'flags', '\\seen')
                                                 break
-                                            except imaplib.IMAP4.abort:
+                                            except Exception:
                                                 for i in range(settings_reconnect_max_times):
                                                     imap = operation_login_imap_server(
                                                         host[imap_succeed_index_int_list_global[imap_index_int]], address[imap_succeed_index_int_list_global[imap_index_int]], password[imap_succeed_index_int_list_global[imap_index_int]], False)
@@ -1165,13 +1159,10 @@ try:
     nexit(0)
 except KeyboardInterrupt:
     stop_state_global = 1
-    if settings_rollback_when_download_failed and thread_state_list_global.count(-1) < len(thread_state_list_global):
-        try:
-            for thread_file_name_list in thread_file_name_list_global:
-                with lock_io_global:
-                    operation_rollback(thread_file_name_list[0])
-        except NameError:
-            pass
+    if 'thread_state_list_global' in vars() and settings_rollback_when_download_failed and thread_state_list_global.count(-1) < len(thread_state_list_global):
+        for thread_file_name_list in thread_file_name_list_global:
+            with lock_io_global:
+                operation_rollback(thread_file_name_list[0])
     with lock_print_global:
         print('\n强制退出', flush=True)
         time.sleep(1)
