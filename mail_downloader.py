@@ -622,8 +622,6 @@ def operation_fresh_thread_state(thread_id, state):
 def download_thread_func(thread_id):
     global file_download_count_global, msg_processed_count_global, msg_list_global
     global thread_file_name_list_global
-    imap_list = []
-    imap_index_int_list = []
     for imap_index_int in range(len(imap_succeed_index_int_list_global)):
         if imap_succeed_index_int_list_global[imap_index_int] == None:
             continue
@@ -635,8 +633,6 @@ def download_thread_func(thread_id):
                 host[imap_succeed_index_int_list_global[imap_index_int]], address[imap_succeed_index_int_list_global[imap_index_int]], password[imap_succeed_index_int_list_global[imap_index_int]], False)
             if imap != None:
                 break
-        imap_list.append(imap)
-        imap_index_int_list.append(imap_index_int)
         if imap != None:
             while True:
                 lock_var_global.acquire()
