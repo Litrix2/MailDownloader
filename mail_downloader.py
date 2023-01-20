@@ -467,7 +467,7 @@ def operation_download_all():
     thread_file_name_list_global = []
     for thread_id in range(settings_thread_count):
         thread_state_list_global.append(0)
-        thread_file_name_list_global.append([[], '', ''])
+        thread_file_name_list_global.append([])
         thread = threading.Thread(
             target=download_thread_func, args=(thread_id,))
         thread_list_global.append(thread)
@@ -644,10 +644,9 @@ def download_thread_func(thread_id):
                     lock_var_global.release()
                     file_download_count = 0
                     download_state_last = -1  # -2:下载失败;-1:无附件且处理正常;0:有附件且处理正常;1:有无法直接下载的附件;2:附件全部过期或不存在
+                    thread_file_name_list_global[thread_id]=[]
                     bigfile_undownloadable_code_list = []
                     has_downloadable_attachment = False
-                    thread_file_name_list_global[thread_id][0] = file_name_list = [
-                    ]
                     bigfile_downloadable_link_list = []
                     bigfile_download_code = 0
                     bigfile_undownloadable_link_list = []
@@ -710,7 +709,7 @@ def download_thread_func(thread_id):
                                         if settings_rollback_when_download_failed:
                                             with lock_io_global:
                                                 operation_rollback(
-                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                    thread_file_name_list_global[thread_id], file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                         return
                                     lock_io_global.acquire()
                                     file_name_tmp = operation_parse_file_name(
@@ -719,7 +718,7 @@ def download_thread_func(thread_id):
                                         lock_io_global.release()
                                         file.write(file_data)
                                     with lock_io_global:
-                                        thread_file_name_list_global[thread_id][1] = file_name = operation_parse_file_name(
+                                        file_name = operation_parse_file_name(
                                             file_name_raw)
                                         os.renames(os.path.join(settings_download_path, file_name_tmp),
                                                    os.path.join(settings_download_path, file_name))
@@ -727,7 +726,7 @@ def download_thread_func(thread_id):
                                         if settings_rollback_when_download_failed:
                                             with lock_io_global:
                                                 operation_rollback(
-                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                    thread_file_name_list_global[thread_id], file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                         return
                                     with lock_print_global, lock_var_global:
                                         print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
@@ -738,7 +737,7 @@ def download_thread_func(thread_id):
                                               send_time, sep='', flush=True)
                                         file_download_count_global += 1
                                         file_download_count += 1
-                                        file_name_list.append(file_name)
+                                        thread_file_name_list_global[thread_id].append(file_name)
                                         operation_fresh_thread_state(
                                             thread_id, 0)
                                     if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
@@ -922,7 +921,7 @@ def download_thread_func(thread_id):
                                                         if settings_rollback_when_download_failed:
                                                             with lock_io_global:
                                                                 operation_rollback(
-                                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                                    thread_file_name_list_global[thread_id], file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                                         return
                                                     lock_io_global.acquire()
                                                     bigfile_name_tmp = operation_parse_file_name(
@@ -944,7 +943,7 @@ def download_thread_func(thread_id):
                                                     if not req_state_last:
                                                         raise Exception
                                                     with lock_io_global:
-                                                        thread_file_name_list_global[thread_id][2] = bigfile_name = operation_parse_file_name(
+                                                        bigfile_name = operation_parse_file_name(
                                                             bigfile_name_raw)
                                                         os.renames(
                                                             os.path.join(settings_download_path, bigfile_name_tmp), os.path.join(settings_download_path, bigfile_name))
@@ -952,7 +951,7 @@ def download_thread_func(thread_id):
                                                         if settings_rollback_when_download_failed:
                                                             with lock_io_global:
                                                                 operation_rollback(
-                                                                    file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                                                    thread_file_name_list_global[thread_id], file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                                                         return
                                                     with lock_print_global, lock_var_global:
                                                         print('\r', file_download_count_global+1, ' 已下载 ', bigfile_name, (
@@ -963,7 +962,7 @@ def download_thread_func(thread_id):
                                                             1), '邮件标题: ', subject, ' - ', send_time, sep='', flush=True)
                                                         file_download_count_global += 1
                                                         file_download_count += 1
-                                                        file_name_list.append(
+                                                        thread_file_name_list_global[thread_id].append(
                                                             bigfile_name)
                                                         operation_fresh_thread_state(
                                                             thread_id, 0)
@@ -977,7 +976,7 @@ def download_thread_func(thread_id):
                                     print('E: 有附件下载失败,该邮件已跳过.', flush=True)
                                     if settings_rollback_when_download_failed:
                                         operation_rollback(
-                                            file_name_list, file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
+                                            thread_file_name_list_global[thread_id], file_name, bigfile_name, file_name_tmp, bigfile_name_tmp)
                             download_state_last = -2
                     with lock_var_global:
                         if fetch_state_last:
@@ -986,7 +985,8 @@ def download_thread_func(thread_id):
                                     msg_with_downloadable_attachments_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
                                         msg_index)
                                     file_name_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
-                                        file_name_list)
+                                        thread_file_name_list_global[thread_id])
+                                    thread_file_name_list_global[thread_id]=[]#防止回滚时把全部下载成功的邮件的附件删除
                                     if settings_sign_unseen_tag_after_downloading:
                                         for i in range(settings_reconnect_max_times+1):
                                             try:
@@ -1165,7 +1165,7 @@ except KeyboardInterrupt:
     if 'thread_state_list_global' in vars() and settings_rollback_when_download_failed and thread_state_list_global.count(-1) < len(thread_state_list_global):
         for thread_file_name_list in thread_file_name_list_global:
             with lock_io_global:
-                operation_rollback(thread_file_name_list[0])
+                operation_rollback(thread_file_name_list)
     with lock_print_global:
         print('\n强制退出', flush=True)
         time.sleep(1)
