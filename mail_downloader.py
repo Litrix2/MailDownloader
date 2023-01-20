@@ -247,6 +247,7 @@ def operation_login_imap_server(host, address, password, display=True):
 
 
 def operation_login_all_imapserver():
+    init()
     for imap_index_int in range(len(host)):
         imap = operation_login_imap_server(
             host[imap_index_int], address[imap_index_int], password[imap_index_int])
@@ -388,7 +389,6 @@ def operation_download_all():
     global has_thread_state_changed_global
     global thread_list_global, thread_file_name_list_global
     global msg_list_global, msg_total_count_global, msg_processed_count_global
-    init()
     operation_login_all_imapserver()
     if not len(imap_succeed_index_int_list_global):
         print('E: 无法执行该操作.原因: 没有可用邮箱.', flush=True)
