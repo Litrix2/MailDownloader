@@ -637,15 +637,9 @@ def operation_fresh_thread_state(thread_id, state):
 def download_thread_func(thread_id):
     global file_download_count_global, msg_processed_count_global, msg_list_global
     global thread_file_name_list_global
-    # if stop_state:
-    #     print(thread_id, 'closed', flush=True)
-    #     return
     imap_list = []
     imap_index_int_list = []
     for imap_index_int in range(len(imap_succeed_index_int_list_global)):
-        # if imap_index_int==1:
-        #     continue
-        # print(host[imap_succeed_index_int_list_global[imap_index_int]])#debug
         req_state_last = False
         for i in range(settings_reconnect_max_times+1):
             imap = operation_login_imap_server(
@@ -661,7 +655,6 @@ def download_thread_func(thread_id):
                     msg_index = msg_list_global[imap_succeed_index_int_list_global[imap_index_int]].pop(
                         0)
                     lock_var_global.release()
-                    # print(thread_id,int(msg_index),flush=True)#debug
                     file_download_count = 0
                     download_state_last = -1  # -2:下载失败;-1:无附件且处理正常;0:有附件且处理正常;1:有无法直接下载的附件;2:附件全部过期或不存在
                     bigfile_undownloadable_code_list = []
@@ -1056,9 +1049,7 @@ def download_thread_func(thread_id):
                     lock_var_global.release()
                     break
     with lock_var_global:
-        # print(msg_list_global)
         operation_fresh_thread_state(thread_id, -1)
-        # print(thread_state_list_global[thread_id],thread_state_list_global[thread_id])#debug
 
 
 def get_path():
