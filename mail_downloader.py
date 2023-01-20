@@ -656,7 +656,7 @@ def download_thread_func(thread_id):
                     for i in range(settings_reconnect_max_times+1):
                         try:
                             typ, data_msg_raw = imap.fetch(
-                                msg_index, 'BODY.PEEK[]')
+                                msg_index, 'body.peek[]')
                             fetch_state_last = True
                             break
                         except Exception:
