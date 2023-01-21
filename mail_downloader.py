@@ -459,12 +459,11 @@ def operation_download_all():
     else:
         print('没有符合条件的邮件.\n', flush=True)
         return
-    # print(msg_list_global)  # debug
     start_time = time.time()
     print('开始处理...\n', end='', flush=True)
     msg_total_count_global = len(extract_nested_list(msg_list_global))
     thread_list_global = []
-    thread_state_list_global = []
+    thread_state_list_global = [] # -1: 关闭;0: 空闲;1: 处理数据;2: 下载附件
     thread_file_name_list_global = []
     for thread_id in range(settings_thread_count):
         thread_state_list_global.append(0)
