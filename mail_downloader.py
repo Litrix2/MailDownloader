@@ -760,7 +760,8 @@ def download_thread_func(thread_id):
                                         for href in href_list:
                                             if '下载' in href.get_text():
                                                 largefile_downloadable_link = None
-                                                largefile_link = href.get('href')
+                                                largefile_link = href.get(
+                                                    'href')
                                                 if find_childstr_to_list(available_largefile_website_list, largefile_link):
                                                     req_state_last = False
                                                     for i in range(settings_reconnect_max_times+1):
@@ -778,7 +779,8 @@ def download_thread_func(thread_id):
                                                     if 'wx.mail.qq.com' in largefile_link:
                                                         script = html_fetcher_2.select_one(
                                                             'body > script:nth-child(2)').get_text()
-                                                        largefile_downloadable_link=re.compile(r'(?<=var url = ").+(?=")').findall(script)
+                                                        largefile_downloadable_link = re.compile(
+                                                            r'(?<=var url = ").+(?=")').findall(script)
                                                         if len(largefile_downloadable_link):
                                                             largefile_downloadable_link = largefile_downloadable_link[0].replace(
                                                                 '\\x26', '&')
@@ -909,7 +911,8 @@ def download_thread_func(thread_id):
                                                         'ISO-8859-1').decode('utf8')  # 转码
                                                     largefile_name_raw = largefile_name_raw.split(';')[
                                                         1]
-                                                    largefile_name_raw=re.compile(r'(?<=").+(?=")').findall(largefile_name_raw)[0]
+                                                    largefile_name_raw = re.compile(
+                                                        r'(?<=").+(?=")').findall(largefile_name_raw)[0]
                                                     with lock_var_global:
                                                         operation_fresh_thread_state(
                                                             thread_id, 2)
@@ -990,7 +993,7 @@ def download_thread_func(thread_id):
                                             try:
                                                 if settings_sign_unseen_tag_after_downloading and download_state_last == 0:
                                                     imap.store(msg_index,
-                                                        'flags', '\\seen')
+                                                               'flags', '\\seen')
                                                 break
                                             except Exception:
                                                 for i in range(settings_reconnect_max_times):
