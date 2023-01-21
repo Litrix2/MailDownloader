@@ -18,7 +18,7 @@ import traceback
 import urllib.parse
 
 version = '1.3.1'
-mode = 3  # 0:Release;1:Alpha;2:Beta;3:Demo
+mode = 0  # 0:Release;1:Alpha;2:Beta;3:Demo
 authentication = ['name', 'MailDownloader', 'version', version]
 available_largefile_website_list = [
     'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
