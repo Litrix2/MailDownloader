@@ -751,8 +751,6 @@ def download_thread_func(thread_id):
                                     html_fetcher = BeautifulSoup(
                                         eachdata_msg_data, 'lxml')
                                     if '附件' in eachdata_msg_data:
-                                        # with open(os.path.join(get_path(), 'test/mail2.html'), 'wb') as a:
-                                        #     a.write(eachdata_msg_data_raw)
                                         with lock_var_global:
                                             operation_fresh_thread_state(
                                                 thread_id, 1)
@@ -1036,13 +1034,13 @@ def download_thread_func(thread_id):
                                 subject_download_failed_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
                                     subject)
                             msg_processed_count_global += 1
-                            operation_fresh_thread_state(thread_id, 0)
                         else:
                             if safe_list_find(imap_fetch_failed_index_int_list_global, imap_succeed_index_int_list_global[imap_index_int]) == -1:
                                 imap_fetch_failed_index_int_list_global.append(
                                     imap_succeed_index_int_list_global[imap_index_int])
                             msg_fetch_failed_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
                                 msg_index)
+                        operation_fresh_thread_state(thread_id, 0)
                     try:
                         imap.close()
                         imap.logput()
