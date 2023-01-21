@@ -665,7 +665,8 @@ def download_thread_func(thread_id):
                                 if imap != None:
                                     break
                     if not fetch_state_last:
-                        print('E: 有邮件获取失败,已跳过.')
+                        with lock_print_global:
+                            print('E: 有邮件获取失败,已跳过.',flush=True)
                     else:
                         data_msg = email.message_from_bytes(
                             data_msg_raw[0][1])
@@ -1043,6 +1044,11 @@ def download_thread_func(thread_id):
                                     imap_succeed_index_int_list_global[imap_index_int])
                             msg_fetch_failed_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
                                 msg_index)
+                    try:
+                        imap.close()
+                        imap.logput()
+                    except Exception:
+                        pass
                 else:
                     lock_var_global.release()
                     break
