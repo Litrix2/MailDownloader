@@ -777,12 +777,10 @@ def download_thread_func(thread_id):
                                                         download_page.text, 'lxml')
                                                     if 'wx.mail.qq.com' in largefile_link:
                                                         script = html_fetcher_2.select_one(
-                                                            'body > script:nth-child(2)')
-                                                        if not 'var url = ""' in script:
-                                                            script = script.get_text()
-                                                            largefile_downloadable_link = script[script.find(
-                                                                'https://'):-1]
-                                                            largefile_downloadable_link = largefile_downloadable_link.replace(
+                                                            'body > script:nth-child(2)').get_text()
+                                                        largefile_downloadable_link=re.compile(r'(?<=var url = ").+(?=")').findall(script)
+                                                        if len(largefile_downloadable_link):
+                                                            largefile_downloadable_link = largefile_downloadable_link[0].replace(
                                                                 '\\x26', '&')
                                                             largefile_download_method = 0  # get
                                                         else:
@@ -911,7 +909,7 @@ def download_thread_func(thread_id):
                                                         'ISO-8859-1').decode('utf8')  # 转码
                                                     largefile_name_raw = largefile_name_raw.split(';')[
                                                         1]
-                                                    largefile_name_raw=re.compile(r'".*"').findall(largefile_name_raw)[0].replace('"','')
+                                                    largefile_name_raw=re.compile(r'(?<=").+(?=")').findall(largefile_name_raw)[0]
                                                     with lock_var_global:
                                                         operation_fresh_thread_state(
                                                             thread_id, 2)
