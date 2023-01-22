@@ -1043,7 +1043,7 @@ def download_thread_func(thread_id):
                         operation_fresh_thread_state(thread_id, 0)
                     try:
                         imap.close()
-                        imap.logput()
+                        imap.logout()
                     except Exception:
                         pass
                 else:
