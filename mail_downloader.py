@@ -23,7 +23,7 @@ version = '1.4.0-Alpha'
 mode = 1  # 0:Release;1:Alpha;2:Beta;3:Demo
 
 config_custom_path_global=None
-is_config_path_relative_global=False
+is_config_path_relative_to_program_global=False
 
 authentication = ['name', 'MailDownloader', 'version', version]
 available_largefile_website_list_global = [
@@ -86,7 +86,7 @@ def operation_load_config():
     print('正在读取配置文件...', flush=True)
     try:
         if config_custom_path_global:
-            if is_config_path_relative_global:
+            if is_config_path_relative_to_program_global:
                 config_path=os.path.join(get_path(), config_custom_path_global)
             else:
                 config_path=config_custom_path_global
@@ -1156,7 +1156,7 @@ try:
             if opt=='-c':
                 config_custom_path_global=val
             elif opt=='-r':
-                is_config_path_relative_global=True
+                is_config_path_relative_to_program_global=True
     except getopt.GetoptError:
         print('F: 程序参数错误.',flush=True)
         nexit(1)
@@ -1188,7 +1188,7 @@ try:
         elif command == 'n':
             if input_option('此操作将生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
                 with open(os.path.join(get_path(), 'config_new.toml'), 'w') as config_new_file:
-                    rtoml.dump(config_primary_data, config_new_file)
+                    rtoml.dump(config_primary_data, config_new_file,pretty=True)
                 print('操作成功完成.', flush=True)
         elif command == 'c':
             Platform = platform.platform().lower()
