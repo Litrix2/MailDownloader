@@ -3,6 +3,7 @@ import copy
 import datetime
 import email
 from email import header
+import getopt
 import imaplib
 import json
 import os
@@ -12,6 +13,7 @@ import re
 import requests
 import rtoml
 import socket
+import sys
 import time
 import threading
 import traceback
@@ -19,10 +21,14 @@ import urllib.parse
 
 version = '1.4.0-Alpha'
 mode = 1  # 0:Release;1:Alpha;2:Beta;3:Demo
+
+config_custom_path_global=None
+is_config_path_relative_global=False
+
 authentication = ['name', 'MailDownloader', 'version', version]
-available_largefile_website_list = [
+available_largefile_website_list_global = [
     'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
-unavailable_largefile_website_list = []
+unavailable_largefile_website_list_global = []
 website_blacklist = ['fs.163.com', 'u.163.com']
 
 thread_excepion_list_global=[]
@@ -79,7 +85,14 @@ def operation_load_config():
     global settings_download_path
     print('正在读取配置文件...', flush=True)
     try:
-        with open(os.path.join(get_path(), 'config.toml'), 'rb') as config_file:
+        if config_custom_path_global:
+            if is_config_path_relative_global:
+                config_path=os.path.join(get_path(), config_custom_path_global)
+            else:
+                config_path=config_custom_path_global
+        else:
+            config_path=os.path.join(get_path(), 'config.toml')
+        with open(config_path, 'rb') as config_file:
             config_file_data = rtoml.load(
                 bytes.decode(config_file.read(), 'utf-8'))
             host = []
@@ -145,6 +158,9 @@ def operation_load_config():
             if type(settings_reconnect_max_times) != int and settings_reconnect_max_times < 0:
                 raise ValueError
             settings_download_path = config_file_data['download_path']
+    except (OSError,FileNotFoundError):
+        print('E: 配置文件不存在.', flush=True)
+        return False
     except:
         print('E: 配置文件错误.', flush=True)
         return False
@@ -766,7 +782,7 @@ def download_thread_func(thread_id):
                                                     largefile_downloadable_link = None
                                                     largefile_link = href.get(
                                                         'href')
-                                                    if find_childstr_to_list(available_largefile_website_list, largefile_link):
+                                                    if find_childstr_to_list(available_largefile_website_list_global, largefile_link):
                                                         req_state_last = False
                                                         for i in range(settings_reconnect_max_times+1):
                                                             try:
@@ -880,7 +896,7 @@ def download_thread_func(thread_id):
                                                             else:
                                                                 if not has_downloadable_attachment and download_state_last != 1:
                                                                     download_state_last = 2
-                                                    elif find_childstr_to_list(unavailable_largefile_website_list, largefile_link):
+                                                    elif find_childstr_to_list(unavailable_largefile_website_list_global, largefile_link):
                                                         largefile_undownloadable_link_list.append(
                                                             largefile_link)
                                                         largefile_undownloadable_code_list.append(
@@ -1126,12 +1142,25 @@ def input_option(prompt, *options, allow_undefind_input=False, default_option=''
             return result
 
 
-def nexit(code=0):
-    input_option('按回车键退出 ', allow_undefind_input=True)
+def nexit(code=0,pause=True):
+    if pause:
+        input_option('按回车键退出 ', allow_undefind_input=True)
     exit(code)
 
 
 try:
+    #读取参数
+    #-c: 配置文件路径; -r: 路径相对于程序父目录,否则路径相对于工作目录
+    try:
+        for opt,val in getopt.getopt(sys.argv[1:],'c:r')[0]:
+            if opt=='-c':
+                config_custom_path_global=val
+            elif opt=='-r':
+                is_config_path_relative_global=True
+    except getopt.GetoptError:
+        print('F: 程序参数错误.',flush=True)
+        nexit(1)
+
     print('Mail Downloader\nDesingned by Litrix', flush=True)
     print('版本:', version, flush=True)
     print('获取更多信息,请访问 https://github.com/Litrix2/MailDownloader', flush=True)
@@ -1148,7 +1177,7 @@ try:
             '\r请选择操作 [d:下载;t:测试连接;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'r', 'n', 'c', 'q', default_option='d', end=':')
         if command == 'd' or command == 't':
             if not config_load_state:
-                print('E: 配置文件错误,请在重新加载后执行该操作.', flush=True)
+                print('E: 未能成功加载配置,请在重新加载后执行该操作.', flush=True)
             else:
                 if command == 'd':
                     operation_download_all()
@@ -1180,7 +1209,7 @@ except KeyboardInterrupt:
                 operation_rollback(thread_file_name_list)
     with lock_print_global:
         print('\n强制退出', flush=True)
-        time.sleep(1)
+        time.sleep(0.5)
         nexit(1)
 except Exception as e:
     stop_state_global = 1
