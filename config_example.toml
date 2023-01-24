@@ -30,7 +30,7 @@ mailbox = []
 only_search_unseen_mails = true
 
 [search.date]
-#手动输入检索日期;仅在auto_download_mode为false时生效
+#手动输入检索日期;仅在silent_download_mode为false时生效
 manual_input_search_date = true
 
 #起始搜索日期([年,月,日]);若不需要,设为[]
