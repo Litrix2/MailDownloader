@@ -1,8 +1,8 @@
 [program]
-#自动下载模式
+#静默下载模式
 #为true时,自动执行"下载"操作,不会询问任何信息,且在操作结束后自动退出
 #推荐搭配日志功能使用
-auto_download_mode = false
+silent_download_mode = false
 
 #输出日志;若不需要,设为false
 log = false
