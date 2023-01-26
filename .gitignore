@@ -1,8 +1,9 @@
-old/
 .vscode/
+config/
 download/
 test/
+old/
 config.toml
-config*.toml
+config_new.toml
 note.md
 *.bat
