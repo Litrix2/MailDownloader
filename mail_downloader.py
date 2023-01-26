@@ -33,6 +33,7 @@ _regex_flag_dict = {
 }
 _month_dict = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
                6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
+
 config_custom_path_global = None
 is_config_path_relative_to_program_global = False
 
@@ -52,7 +53,7 @@ log_global = logging.getLogger('logger')
 log_global.setLevel(logging.DEBUG)
 log_debug_handler_global = logging.StreamHandler()
 log_debug_handler_global.setLevel(logging.DEBUG)
-log_global.addHandler(log_debug_handler_global)
+# log_global.addHandler(log_debug_handler_global)
 
 
 class Date():
@@ -446,6 +447,7 @@ def operation_load_config():
         return False
     else:
         print('配置加载成功.', flush=True)
+        log_global.info('    '+'='*10+'开始记录'+'='*10)
         return True
 
 
@@ -1679,6 +1681,7 @@ try:
                 elif command == 'T':
                     print('Work in progress.', flush=True)
         elif command == 'r':
+            log_global.warning(' '+'='*10+'重载配置'+'='*10)
             config_load_state = operation_load_config()
         elif command == 'n':
             if input_option('此操作将在程序目录下生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
@@ -1701,6 +1704,7 @@ try:
                 print('E: 操作系统类型未知,无法执行该操作.', flush=True)
         elif command == 'q':
             break
+    log_global.info('    '+'='*10+'程序退出'+'='*10)
     nexit(0)
 except KeyboardInterrupt:
     stop_state_global = 1
