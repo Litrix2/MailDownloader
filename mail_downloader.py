@@ -32,7 +32,7 @@ _regex_flag_dict = {
     'u': re.UNICODE
 }
 _month_dict = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
-                   6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
+               6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 config_custom_path_global = None
 is_config_path_relative_to_program_global = False
 
@@ -89,10 +89,10 @@ config_primary_data = {
 }
 
 
-def operation_load_config_new():
+def operation_load_config():
     global host_global, address_global, password_global
     global setting_silent_download_mode_global
-    global setting_enable_log_global, log_file_handler_global
+    global setting_enable_log_global
     global setting_search_mailbox_global
     global setting_search_mails_type_global
     global setting_manual_input_search_date_global
@@ -138,10 +138,12 @@ def operation_load_config_new():
                         if type(handler) == logging.FileHandler:
                             handler.close()
                             log_global.removeHandler(handler)
-                    log_file_handler_global = logging.FileHandler(
+                    log_file_handler = logging.FileHandler(
                         os.path.join(log_path, log_name), log_write_type, 'UTF8')
-                    log_file_handler_global.setLevel(logging.INFO)
-                    log_global.addHandler(log_file_handler_global)
+                    log_file_handler.setLevel(logging.INFO)
+                    log_file_handler.setFormatter(logging.Formatter(
+                        '[%(asctime)s %(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+                    log_global.addHandler(log_file_handler)
                 except OSError as e:
                     print('E: 日志文件创建错误.', flush=True)
                     raise e
@@ -489,10 +491,10 @@ def init():
     global stop_state_global
     global has_thread_state_changed_global
     global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_overdueanddeleted_index_int_list_global, imap_fetch_failed_index_int_list_global, imap_download_failed_index_int_list_global
-    global msg_processed_count_global, msg_list_global, msg_with_undownloadable_attachments_list_global, msg_with_downloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_fetch_failed_list_global, msg_download_failed_list_global
+    global msg_processed_count_global, msg_list_global, msg_with_undownloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_fetch_failed_list_global, msg_download_failed_list_global
     global send_time_with_undownloadable_attachments_list_global, send_time_overdueanddeleted_list_global, send_time_download_failed_list_global
     global subject_with_undownloadable_attachments_list_global, subject_overdueanddeleted_list_global, subject_download_failed_list_global
-    global file_download_count_global, file_name_raw_list_global, file_name_list_global, file_download_path_global
+    global file_download_count_global, file_download_path_global
     global largefile_undownloadable_link_list_global
     global largefile_undownloadable_code_list_global
     stop_state_global = 0
@@ -510,7 +512,6 @@ def init():
     msg_processed_count_global = 0
     msg_list_global = []
     msg_with_undownloadable_attachments_list_global = []
-    msg_with_downloadable_attachments_list_global = []
     msg_overdueanddeleted_list_global = []
     msg_fetch_failed_list_global = []
     msg_download_failed_list_global = []
@@ -521,15 +522,12 @@ def init():
     subject_overdueanddeleted_list_global = []
     subject_download_failed_list_global = []
     file_download_count_global = 0
-    file_name_raw_list_global = []
-    file_name_list_global = []
     file_download_path_global = []
     largefile_undownloadable_link_list_global = []  # 2级下载链接
     largefile_undownloadable_code_list_global = []
     for i in range(len(host_global)):
         msg_list_global.append([])
         msg_with_undownloadable_attachments_list_global.append([])
-        msg_with_downloadable_attachments_list_global.append([])
         msg_overdueanddeleted_list_global.append([])
         msg_fetch_failed_list_global.append([])
         msg_download_failed_list_global.append([])
@@ -539,15 +537,12 @@ def init():
         subject_with_undownloadable_attachments_list_global.append([])
         subject_overdueanddeleted_list_global.append([])
         subject_download_failed_list_global.append([])
-        file_name_raw_list_global.append([])
-        file_name_list_global.append([])
         file_download_path_global.append([])
         largefile_undownloadable_link_list_global.append([])
         largefile_undownloadable_code_list_global.append([])
         for _ in range(len(setting_search_mailbox_global[i])):
             msg_list_global[-1].append([])
             msg_with_undownloadable_attachments_list_global[-1].append([])
-            msg_with_downloadable_attachments_list_global[-1].append([])
             msg_overdueanddeleted_list_global[-1].append([])
             msg_fetch_failed_list_global[-1].append([])
             msg_download_failed_list_global[-1].append([])
@@ -558,8 +553,6 @@ def init():
             subject_with_undownloadable_attachments_list_global[-1].append([])
             subject_overdueanddeleted_list_global[-1].append([])
             subject_download_failed_list_global[-1].append([])
-            file_name_raw_list_global[-1].append([])
-            file_name_list_global[-1].append([])
             file_download_path_global[-1].append([])
             largefile_undownloadable_link_list_global[-1].append([])
             largefile_undownloadable_code_list_global[-1].append([])
@@ -803,7 +796,7 @@ def operation_download_all():
         for mailbox_index_int in range(len(setting_search_mailbox_global[imap_succeed_index_int_list_global[imap_index_int]])):
             mailbox_raw = setting_search_mailbox_global[
                 imap_succeed_index_int_list_global[imap_index_int]][mailbox_index_int]
-            mailbox=str_to_imap_utf7_bytes(mailbox_raw)
+            mailbox = str_to_imap_utf7_bytes(mailbox_raw)
             mailbox_state, _ = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].select(
                 mailbox)
             if mailbox_state == 'NO':
@@ -955,7 +948,8 @@ def operation_download_all():
                         for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index_int])):
                             if not len(msg_with_undownloadable_attachments_list_global[imap_index_int][mailbox_index_int]):
                                 continue
-                            mailbox = str_to_imap_utf7_bytes(setting_search_mailbox_global[imap_index_int][mailbox_index_int])
+                            mailbox = str_to_imap_utf7_bytes(
+                                setting_search_mailbox_global[imap_index_int][mailbox_index_int])
                             for _ in range(setting_reconnect_max_times_global+1):
                                 try:
                                     imap_list_global[imap_index_int].select(
@@ -1010,7 +1004,8 @@ def operation_download_all():
                         for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index_int])):
                             if not len(msg_overdueanddeleted_list_global[imap_index_int][mailbox_index_int]):
                                 continue
-                            mailbox = str_to_imap_utf7_bytes(setting_search_mailbox_global[imap_index_int][mailbox_index_int])
+                            mailbox = str_to_imap_utf7_bytes(
+                                setting_search_mailbox_global[imap_index_int][mailbox_index_int])
                             for _ in range(setting_reconnect_max_times_global+1):
                                 try:
                                     imap_list_global[imap_index_int].select(
@@ -1061,7 +1056,8 @@ def download_thread_func(thread_id):
             for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index_int])):
                 if not len(msg_list_global[imap_succeed_index_int_list_global[imap_index_int]][mailbox_index_int]):
                     continue
-                mailbox = str_to_imap_utf7_bytes(setting_search_mailbox_global[imap_succeed_index_int_list_global[imap_index_int]][mailbox_index_int])
+                mailbox = str_to_imap_utf7_bytes(
+                    setting_search_mailbox_global[imap_succeed_index_int_list_global[imap_index_int]][mailbox_index_int])
                 select_state = False
                 for _ in range(setting_reconnect_max_times_global+1):
                     try:
@@ -1468,11 +1464,6 @@ def download_thread_func(thread_id):
                             if fetch_state_last:
                                 if download_state_last == 0:
                                     if has_downloadable_attachment:
-                                        # msg_with_downloadable_attachments_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
-                                        #     msg_index)
-                                        # file_name_list_global[imap_succeed_index_int_list_global[imap_index_int]].append(
-                                        #     thread_file_name_list_global[thread_id])
-
                                         # 防止回滚时把全部下载成功的邮件的附件删除
                                         thread_file_name_list_global[thread_id] = [
                                         ]
@@ -1582,10 +1573,15 @@ def extract_nested_list(List):
             result_list.append(List2[i])
     return result_list
 
+
 def str_to_imap_utf7_bytes(source):
-    return source.encode('UTF7').replace(b'+',b'&')
+    return source.encode('UTF7').replace(b'+', b'&')
+
+
 def imap_utf7_bytes_to_str(source):
-    return source.replace(b'&',b'+').decode('UTF7')
+    return source.replace(b'&', b'+').decode('UTF7')
+
+
 def input_option(prompt, *options, allow_undefind_input=False, default_option='', end=''):
     if len(options) or len(default_option):
         prompt += ' ('
@@ -1645,7 +1641,7 @@ try:
     elif _mode == 3:
         print('W: 此版本为演示版本,部分功能与信息显示与正式版本存在差异.')
     print(flush=True)
-    config_load_state = operation_load_config_new()
+    config_load_state = operation_load_config()
     while True:
         command = input_option(
             '\r选择操作 [d:下载;t:测试连接;T:工具;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'T', 'r', 'n', 'c', 'q', default_option='d', end=':')
@@ -1660,7 +1656,7 @@ try:
                 elif command == 'T':
                     print('Work in progress.', flush=True)
         elif command == 'r':
-            config_load_state = operation_load_config_new()
+            config_load_state = operation_load_config()
         elif command == 'n':
             if input_option('此操作将生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
                 with open(os.path.join(get_path(), 'config_new.toml'), 'w') as config_new_file:
