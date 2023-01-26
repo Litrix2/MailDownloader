@@ -76,16 +76,41 @@ class Date():
 
 config_load_state = False
 config_primary_data = {
-    'mail': [],
-    'allow_manual_input_search_date': True,
-    'min_search_date': False,
-    'max_search_date': False,
-    'only_search_unseen_mails': True,
-    'thread_count': 4,
-    'rollback_when_download_failed': True,
-    'sign_unseen_tag_after_downloading': True,
-    'reconnect_max_times': 3,
-    'download_path': ''
+    'program': {
+        'silent_download_mode': False,
+        'log': False
+    },
+    'mail':{
+        'user_data':[]
+    },
+    'search':{
+        'mailbox':[],
+        'search_mail_type':0,
+        'date':{
+            'manual_input_search_date':True,
+            'min_search_date':[],
+            'max_search_date':[]
+        },
+        'filter':{
+            'sender_name':[],
+            'sender_address':[],
+            'subject':[]
+        }
+    },
+    'download':{
+        'reconnect_max_times':3,
+        'rollback_when_download_failed':True,
+        'sign_unseen_tag_after_downloading':True,
+        'thread_count':4,
+        'path':{
+            'default':{
+                'path':'',
+                'relative_to_program':True
+            },
+            'mime_type_classfication':[],
+            'file_name_classfication':[]
+        }
+    }
 }
 
 
@@ -280,8 +305,8 @@ def operation_load_config():
                     filter_subject_flag[1], filter_subject, filter_subject_flag[0])
                 assert operation_validate_regex(
                     filter_subject, filter_subject_flag)
-            setting_filter_subject_global.append(filter_subject)
-            setting_filter_subject_flag_global.append(filter_subject_flag)
+                setting_filter_subject_global.append(filter_subject)
+                setting_filter_subject_flag_global.append(filter_subject_flag)
 
             setting_download_thread_count_global = config_file_data['download']['thread_count']
             assert isinstance(setting_download_thread_count_global,
@@ -313,13 +338,13 @@ def operation_load_config():
                 raise e
             setting_deafult_download_path_global = default_download_path
 
-            mime_type_classfication = []
+            setting_mime_type_classfication_path_global = []
             mime_type_classfication_raw = config_file_data['download']['path']['mime_type_classfication']
             assert isinstance(mime_type_classfication_raw, list)
             for mime_type_classfication_splited in mime_type_classfication_raw:
                 assert isinstance(mime_type_classfication_splited, dict) and isinstance(mime_type_classfication_splited['type'], dict) and isinstance(
                     mime_type_classfication_splited['path'], str) and isinstance(mime_type_classfication_splited['relative_to_download_path'], bool)
-                mime_type_classfication.append([])
+                setting_mime_type_classfication_path_global.append([])
                 mime_type_classfication_splited_expression = mime_type_classfication_splited[
                     'type']['exp']
                 assert isinstance(
@@ -350,21 +375,20 @@ def operation_load_config():
                 except OSError as e:
                     print('E: 路径创建错误.', flush=True)
                     raise e
-                mime_type_classfication[-1].append(
+                setting_mime_type_classfication_path_global[-1].append(
                     mime_type_classfication_splited_expression)
-                mime_type_classfication[-1].append(
+                setting_mime_type_classfication_path_global[-1].append(
                     mime_type_classfication_splited_flag)
-                mime_type_classfication[-1].append(
+                setting_mime_type_classfication_path_global[-1].append(
                     mime_type_classfication_splited_download_path)
-            setting_mime_type_classfication_path_global = mime_type_classfication
 
-            file_name_classfication = []
+            setting_file_name_classfication_path_global = []
             file_name_classfication_raw = config_file_data['download']['path']['file_name_classfication']
             assert isinstance(file_name_classfication_raw, list)
             for file_name_classfication_splited in file_name_classfication_raw:
                 assert isinstance(file_name_classfication_splited, dict) and isinstance(file_name_classfication_splited['type'], dict) and isinstance(file_name_classfication_splited['path'], str) and isinstance(
                     file_name_classfication_splited['extension'], bool) and isinstance(file_name_classfication_splited['relative_to_download_path'], bool)
-                file_name_classfication.append([])
+                setting_file_name_classfication_path_global.append([])
                 file_name_classfication_splited_expression = file_name_classfication_splited[
                     'type']['exp']
                 assert isinstance(
@@ -395,15 +419,14 @@ def operation_load_config():
                 except OSError as e:
                     print('E: 路径创建错误.', flush=True)
                     raise e
-                file_name_classfication[-1].append(
+                setting_file_name_classfication_path_global[-1].append(
                     file_name_classfication_splited_expression)
-                file_name_classfication[-1].append(
+                setting_file_name_classfication_path_global[-1].append(
                     file_name_classfication_splited_flag)
-                file_name_classfication[-1].append(
+                setting_file_name_classfication_path_global[-1].append(
                     file_name_classfication_splited['extension'])
-                file_name_classfication[-1].append(
+                setting_file_name_classfication_path_global[-1].append(
                     file_name_classfication_splited_download_path)
-            setting_file_name_classfication_path_global = file_name_classfication
 
             # log_global.debug(setting_search_mailbox_global)
             # log_global.debug(setting_filter_sender_global)
@@ -1658,11 +1681,16 @@ try:
         elif command == 'r':
             config_load_state = operation_load_config()
         elif command == 'n':
-            if input_option('此操作将生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
-                with open(os.path.join(get_path(), 'config_new.toml'), 'w') as config_new_file:
-                    rtoml.dump(config_primary_data,
-                               config_new_file, pretty=True)
+            if input_option('此操作将在程序目录下生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
+                try:
+                    with open(os.path.join(get_path(), 'config_new.toml'), 'w') as config_new_file:
+                        rtoml.dump(config_primary_data,
+                                config_new_file, pretty=True)
+                except OSError as e:
+                    print('E: 操作失败,信息如下:',flush=True)
+                    print(repr(e))
                 print('操作成功完成.', flush=True)
+                print('N: 有关配置文件的详细说明,请查看仓库中的示例配置文件;新建配置文件的部分内容可能与示例配置文件不完全相同.', flush=True)
         elif command == 'c':
             Platform = platform.platform().lower()
             if 'windows' in Platform:
