@@ -3,6 +3,6 @@ old/
 download/
 test/
 config.toml
-config_new.toml
+config*.toml
 note.md
 *.bat
