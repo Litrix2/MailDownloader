@@ -941,7 +941,7 @@ def program_download_main():
             log_info('没有可下载的附件.')
         print('耗时: ', round(finish_time-start_time, 2),
               ' 秒', indent(8), sep='', flush=True)
-        log_info('耗时: '+str(round(finish_time-start_time, 2)), ' 秒')
+        log_info('耗时: '+str(round(finish_time-start_time, 2)) + ' 秒')
         if len(imap_connect_failed_index_int_list_global):
             print('E: 以下邮箱连接失败:', flush=True)
             log_error('以下邮箱连接失败:')
@@ -1740,8 +1740,10 @@ def log_thread_func():
         if log_stop_flag_global:
             break
         if not log_msg_queue_global.empty():
+            log_global.handlers[0].acquire()
             level, msg = log_msg_queue_global.get(block=True)
             log_global.log(level, msg)
+            log_global.handlers[0].release()
         time.sleep(0.006)
 
 
