@@ -50,12 +50,14 @@ thread_excepion_list_global = []
 lock_print_global = threading.Lock()
 lock_var_global = threading.Lock()
 lock_io_global = threading.Lock()
+lock_log_global = threading.Lock()
 
 log_global = logging.getLogger('logger')
 log_global.setLevel(logging.DEBUG)
-log_msg_queue_global=Queue(-1)
-log_thread_global=None
-log_stop_flag_global=0
+log_msg_queue_global = Queue(-1)
+log_thread_global = None
+log_stop_flag_global = 0
+
 
 class Date():
     year = 0
@@ -117,7 +119,7 @@ config_primary_data = {
 
 
 def operation_load_config():
-    global log_thread_global,log_stop_flag_global
+    global log_thread_global, log_stop_flag_global
     global host_global, address_global, password_global
     global setting_silent_download_mode_global
     global setting_enable_log_global
@@ -154,10 +156,10 @@ def operation_load_config():
             if log != False:
                 assert isinstance(log, dict) and isinstance(log['path'], str) and isinstance(
                     log['relative_to_program'], bool) and isinstance(log['overwrite'], bool)
-                log_stop_flag_global=1
-                if log_thread_global!=None:
+                log_stop_flag_global = 1
+                if log_thread_global != None:
                     log_thread_global.join()
-                log_stop_flag_global=0
+                log_stop_flag_global = 0
                 setting_enable_log_global = True
                 log_write_type = 'w' if log['overwrite'] else 'a'
                 log_path = os.path.join(
@@ -177,7 +179,8 @@ def operation_load_config():
                     log_file_handler.setFormatter(logging.Formatter(
                         '[%(asctime)s %(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
                     log_global.addHandler(log_file_handler)
-                    log_thread_global=threading.Thread(target=log_thread_func,daemon=True)
+                    log_thread_global = threading.Thread(
+                        target=log_thread_func, daemon=True)
                     log_thread_global.start()
                 except OSError as e:
                     print('E: 日志文件创建错误.', flush=True)
@@ -905,7 +908,7 @@ def program_download_main():
         thread_file_name_list_global.append([])
         thread_file_download_path_list_global.append([])
         thread = threading.Thread(
-            target=download_thread_func, args=(thread_id,),daemon=True)
+            target=download_thread_func, args=(thread_id,), daemon=True)
         thread_list_global.append(thread)
         thread.start()
     while True:
@@ -1683,32 +1686,39 @@ def program_tool_list_mail_folders_main():
         print('E: 无法执行该操作.原因: 没有可用邮箱.', flush=True)
         log_error('列出邮箱文件夹 操作无法执行. 原因: 没有可用邮箱.')
     for imap_index_int, _ in enumerate(imap_succeed_index_int_list_global):
-        _,list_data_raw=imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].list()
+        _, list_data_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].list(
+        )
+
+
 def log_thread_func():
     while True:
         if log_stop_flag_global:
             break
         if not log_msg_queue_global.empty():
-            level,msg=log_msg_queue_global.get(block=True)
-            log_global.log(level,msg)
+            level, msg = log_msg_queue_global.get(block=True)
+            with lock_log_global:
+                log_global.log(level, msg)
         time.sleep(0)
+
+
 def log_debug(msg):
-    log_msg_queue_global.put([logging.DEBUG,' '*3+msg],block=True)
+    log_msg_queue_global.put([logging.DEBUG, ' '*3+msg], block=True)
+
 
 def log_info(msg):
-    log_msg_queue_global.put([logging.INFO,' '*4+msg],block=True)
+    log_msg_queue_global.put([logging.INFO, ' '*4+msg], block=True)
 
 
 def log_warning(msg):
-    log_msg_queue_global.put([logging.WARNING,' '+msg],block=True)
+    log_msg_queue_global.put([logging.WARNING, ' '+msg], block=True)
 
 
 def log_error(msg):
-    log_msg_queue_global.put([logging.ERROR,' '*3+msg],block=True)
+    log_msg_queue_global.put([logging.ERROR, ' '*3+msg], block=True)
 
 
 def log_critical(msg):
-    log_msg_queue_global.put([logging.CRITICAL,msg],block=True)
+    log_msg_queue_global.put([logging.CRITICAL, msg], block=True)
 
 
 def get_path():
