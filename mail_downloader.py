@@ -104,7 +104,7 @@ config_primary_data = {
     'download': {
         'reconnect_max_times': 3,
         'rollback_when_download_failed': True,
-        'sign_unseen_tag_after_downloading': True,
+        'sign_unseen_flag_after_downloading': True,
         'thread_count': 4,
         'display': {
             'mail': True,
@@ -134,7 +134,7 @@ def operation_load_config():
     global setting_filter_sender_global, setting_filter_sender_flag_global, setting_filter_subject_global, setting_filter_subject_flag_global
     global setting_download_thread_count_global
     global setting_rollback_when_download_failed_global
-    global setting_sign_unseen_tag_after_downloading_global
+    global setting_sign_unseen_flag_after_downloading_global
     global setting_reconnect_max_times_global
     global setting_display_mail, setting_display_subject_and_time, setting_display_mime_type
     global setting_deafult_download_path_global, setting_mime_type_classfication_path_global, setting_file_name_classfication_path_global
@@ -332,10 +332,10 @@ def operation_load_config():
             assert isinstance(
                 setting_rollback_when_download_failed_global, bool)
 
-            setting_sign_unseen_tag_after_downloading_global = config_file_data[
-                'download']['sign_unseen_tag_after_downloading']
+            setting_sign_unseen_flag_after_downloading_global = config_file_data[
+                'download']['sign_unseen_flag_after_downloading']
             assert isinstance(
-                setting_sign_unseen_tag_after_downloading_global, bool)
+                setting_sign_unseen_flag_after_downloading_global, bool)
 
             setting_reconnect_max_times_global = config_file_data['download']['reconnect_max_times']
             assert isinstance(setting_reconnect_max_times_global, int)
@@ -1037,7 +1037,7 @@ def program_download_main():
                                         indent(5) + '原因: 文件下载次数达到最大限制.')
                             largefile_undownloadable_link_counted_count += 1
                         msg_with_undownloadable_attachments_counted_count += 1
-            if setting_sign_unseen_tag_after_downloading_global and setting_search_mails_type_global != 2:
+            if setting_sign_unseen_flag_after_downloading_global and setting_search_mails_type_global != 2:
                 if setting_silent_download_mode_global or input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='n', end=':') == 'y':
                     msg_with_downloadable_attachments_signed_count = 0
                     print('\r正在标记...', end='', flush=True)
@@ -1101,7 +1101,7 @@ def program_download_main():
                         log_info(indent(3) + str(msg_overdueanddeleted_counted_count+1) + ' 标题: "' +
                                  subject_overdueanddeleted_list_global[imap_overdueanddeleted_index_int][mailbox_index_int][subject_index_int]+'"')
                         msg_overdueanddeleted_counted_count += 1
-            if setting_sign_unseen_tag_after_downloading_global and setting_search_mails_type_global != 2:
+            if setting_sign_unseen_flag_after_downloading_global and setting_search_mails_type_global != 2:
                 if setting_silent_download_mode_global or input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='y', end=':') == 'y':
                     print('\r正在标记...', end='', flush=True)
                     for imap_index_int in range(len(imap_list_global)):
@@ -1612,10 +1612,10 @@ def download_thread_func(thread_id):
                                         # 防止回滚时把全部下载成功的邮件的附件删除
                                         thread_file_name_list_global[thread_id] = [
                                         ]
-                                        if setting_sign_unseen_tag_after_downloading_global:
+                                        if setting_sign_unseen_flag_after_downloading_global:
                                             for _ in range(setting_reconnect_max_times_global+1):
                                                 try:
-                                                    if setting_sign_unseen_tag_after_downloading_global and setting_search_mails_type_global != 2:
+                                                    if setting_sign_unseen_flag_after_downloading_global and setting_search_mails_type_global != 2:
                                                         imap.store(msg_index,
                                                                    'flags', '\\SEEN')
                                                     break
