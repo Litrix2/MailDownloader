@@ -8,7 +8,7 @@ silent_download_mode = false
 # 警告: 日志会在本地记录你的邮箱名、部分邮件信息,请注意隐私!
 log = false
 # path: 日志输出文件夹路径; relative_to_program: 路径相对于程序/工作目录; overwrite: 是否覆写文件(覆写/追加)
-# log={path='log',relative_to_program=true,overwrite=true}
+# log={path='log',relative_to_program=true,overwrite=false}
 
 [mail]
 # 邮箱数据
