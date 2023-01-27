@@ -161,6 +161,8 @@ def operation_load_config():
             log_stop_flag_global = 1
             if log_thread_global != None:
                 log_thread_global.join()
+            while not log_msg_queue_global.empty():
+                log_msg_queue_global.get()
             log_stop_flag_global = 0
             for handler in log_global.handlers:
                 log_global.removeHandler(handler)
