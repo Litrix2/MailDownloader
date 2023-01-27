@@ -7,6 +7,7 @@ import getopt
 import imaplib
 import json
 import logging
+from logging.handlers import QueueHandler, QueueListener
 import os
 import platform
 import pytz
@@ -55,6 +56,7 @@ lock_log_global = threading.Lock()
 log_global = logging.getLogger('logger')
 log_global.setLevel(logging.DEBUG)
 log_msg_queue_global = Queue(-1)
+log_msg_queue_listener_global = None
 log_thread_global = None
 log_stop_flag_global = 0
 
@@ -120,6 +122,7 @@ config_primary_data = {
 
 def operation_load_config():
     global log_thread_global, log_stop_flag_global
+    global log_msg_queue_listener_global
     global host_global, address_global, password_global
     global setting_silent_download_mode_global
     global setting_enable_log_global
@@ -170,18 +173,22 @@ def operation_load_config():
                     if not os.path.exists(log_path):
                         os.makedirs(log_path)
                     for handler in log_global.handlers:
-                        if type(handler) == logging.FileHandler:
+                        log_global.removeHandler(handler)
+                    if log_msg_queue_listener_global != None:
+                        for handler in log_msg_queue_listener_global.handlers:
                             handler.close()
-                            log_global.removeHandler(handler)
+                        log_msg_queue_listener_global.stop()
                     log_file_handler = logging.FileHandler(
                         os.path.join(log_path, log_name), log_write_type, 'UTF8')
                     log_file_handler.setLevel(logging.INFO)
                     log_file_handler.setFormatter(logging.Formatter(
-                        '[%(asctime)s %(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
-                    log_global.addHandler(log_file_handler)
-                    log_thread_global = threading.Thread(
-                        target=log_thread_func, daemon=True)
-                    log_thread_global.start()
+                        '[%(asctime)s %(levelname)8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+                    log_msg_queue_handler = QueueHandler(log_msg_queue_global)
+                    log_msg_queue_handler.setLevel(logging.INFO)
+                    log_msg_queue_listener_global = QueueListener(
+                        log_msg_queue_global, log_file_handler)
+                    log_global.addHandler(log_msg_queue_handler)
+                    log_msg_queue_listener_global.start()
                 except OSError as e:
                     print('E: 日志文件创建错误.', flush=True)
                     raise e
@@ -455,11 +462,11 @@ def operation_load_config():
             # log_global.debug(setting_file_name_classfication_path_global)
     except Exception as e:
         if str(e):
-            print('E: 配置文件错误,信息如下:', flush=True)
+            print('E: 读取配置文件时错误,信息如下:', flush=True)
             print(repr(e), flush=True)
             # traceback.print_exc()
         else:
-            print('E: 配置文件错误.', flush=True)
+            print('E: 读取配置文件时错误.', flush=True)
         return False
     else:
         print('配置加载成功.', flush=True)
@@ -1170,8 +1177,8 @@ def download_thread_func(thread_id):
                     with lock_print_global:
                         print('E: 邮箱', address_global[imap_succeed_index_int_list_global[imap_index_int]],
                               '的文件夹', mailbox_raw, '选择失败,已跳过.', flush=True)
-                    log_error(
-                        '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
+                        log_error(
+                            '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
                     continue
                 while True:
                     lock_var_global.acquire()
@@ -1255,8 +1262,8 @@ def download_thread_func(thread_id):
                             with lock_print_global:
                                 print(
                                     'E: 邮箱', address_global[imap_succeed_index_int_list_global[imap_index_int]], '有邮件数据获取失败,已跳过.', flush=True)
-                            log_error(
-                                '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 有邮件数据获取失败.')
+                                log_error(
+                                    '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 有邮件数据获取失败.')
                         else:
                             msg_data = email.message_from_bytes(
                                 msg_data_raw[0][1])
@@ -1328,14 +1335,14 @@ def download_thread_func(thread_id):
                                                 file_download_path)
                                             operation_fresh_thread_state(
                                                 thread_id, 0)
-                                        log_info(str(file_download_count_global)+' 已下载 "' + file_name + (
-                                            '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '')
-                                        log_info(indent(
-                                            1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
-                                        log_info(
-                                            indent(1)+'邮件标题: "'+subject+'"')
-                                        log_info(
-                                            indent(1)+'时间: '+send_time)
+                                            log_info(str(file_download_count_global)+' 已下载 "' + file_name + (
+                                                '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '')
+                                            log_info(indent(
+                                                1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
+                                            log_info(
+                                                indent(1)+'邮件标题: "'+subject+'"')
+                                            log_info(
+                                                indent(1)+'时间: '+send_time)
                                         if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
                                             download_state_last = 0
                                     if msg_data_splited.get_content_type() == 'text/html':
@@ -1562,14 +1569,14 @@ def download_thread_func(thread_id):
                                                                 largefile_download_path)
                                                             operation_fresh_thread_state(
                                                                 thread_id, 0)
-                                                        log_info(str(file_download_count_global)+' 已下载 "' + largefile_name + (
-                                                            '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '')
-                                                        log_info(indent(
-                                                            1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
-                                                        log_info(
-                                                            indent(1)+'邮件标题: "'+subject+'"')
-                                                        log_info(
-                                                            indent(1)+'时间: '+send_time)
+                                                            log_info(str(file_download_count_global)+' 已下载 "' + largefile_name + (
+                                                                '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '')
+                                                            log_info(indent(
+                                                                1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
+                                                            log_info(
+                                                                indent(1)+'邮件标题: "'+subject+'"')
+                                                            log_info(
+                                                                indent(1)+'时间: '+send_time)
                                                         if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
                                                             download_state_last = 0
                             except Exception as e:
@@ -1580,12 +1587,12 @@ def download_thread_func(thread_id):
                                     if not req_state_last:
                                         print(
                                             'E: 邮箱', address_global[imap_succeed_index_int_list_global[imap_index_int]], '有附件下载失败,该邮件已跳过.', flush=True)
+                                        log_error(
+                                            '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 有附件下载失败.')
                                         if setting_rollback_when_download_failed_global:
                                             operation_rollback(
                                                 thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
                                 download_state_last = -2
-                                log_error(
-                                    '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 有附件下载失败.')
                         with lock_var_global:
                             if fetch_state_last:
                                 if download_state_last == 0:
@@ -1690,35 +1697,24 @@ def program_tool_list_mail_folders_main():
         )
 
 
-def log_thread_func():
-    while True:
-        if log_stop_flag_global:
-            break
-        if not log_msg_queue_global.empty():
-            level, msg = log_msg_queue_global.get(block=True)
-            with lock_log_global:
-                log_global.log(level, msg)
-        time.sleep(0)
-
-
 def log_debug(msg):
-    log_msg_queue_global.put([logging.DEBUG, ' '*3+msg], block=True)
+    log_global.debug(msg)
 
 
 def log_info(msg):
-    log_msg_queue_global.put([logging.INFO, ' '*4+msg], block=True)
+    log_global.info(msg)
 
 
 def log_warning(msg):
-    log_msg_queue_global.put([logging.WARNING, ' '+msg], block=True)
+    log_global.warning(msg)
 
 
 def log_error(msg):
-    log_msg_queue_global.put([logging.ERROR, ' '*3+msg], block=True)
+    log_global.error(msg)
 
 
 def log_critical(msg):
-    log_msg_queue_global.put([logging.CRITICAL, msg], block=True)
+    log_global.critical(msg)
 
 
 def get_path():
