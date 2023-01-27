@@ -149,7 +149,6 @@ def operation_load_config():
                 config_path = config_custom_path_global
         else:
             config_path = os.path.join(get_path(), 'config.toml')
-            # config_path = os.path.join(get_path(), 'config/config_1.4.toml')
         with open(config_path, 'rb') as config_file:
             config_file_data = rtoml.load(
                 bytes.decode(config_file.read(), 'UTF8'))
@@ -458,20 +457,10 @@ def operation_load_config():
                         file_name_classfication_splited['extension'])
                     setting_file_name_classfication_path_global[-1].append(
                         file_name_classfication_splited_download_path)
-
-            # log_global.debug(setting_search_mailbox_global)
-            # log_global.debug(setting_filter_sender_global)
-            # log_global.debug(setting_filter_sender_flag_global)
-            # log_global.debug(setting_filter_subject_global)
-            # log_global.debug(setting_filter_subject_flag_global)
-            # log_global.debug(setting_deafult_download_path_global)
-            # log_global.debug(setting_mime_type_classfication_path_global)
-            # log_global.debug(setting_file_name_classfication_path_global)
     except Exception as e:
         if str(e):
             print('E: 读取配置文件时错误,信息如下:', flush=True)
             print(repr(e), flush=True)
-            # traceback.print_exc()
         else:
             print('E: 读取配置文件时错误.', flush=True)
         return False
