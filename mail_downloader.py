@@ -10,6 +10,8 @@ import logging
 import os
 import platform
 import pytz
+import queue
+from queue import Queue
 import re
 import requests
 import rtoml
@@ -48,14 +50,12 @@ thread_excepion_list_global = []
 lock_print_global = threading.Lock()
 lock_var_global = threading.Lock()
 lock_io_global = threading.Lock()
-lock_log_global = threading.RLock()
 
 log_global = logging.getLogger('logger')
 log_global.setLevel(logging.DEBUG)
-log_debug_handler_global = logging.StreamHandler()
-log_debug_handler_global.setLevel(logging.DEBUG)
-# log_global.addHandler(log_debug_handler_global)
-
+log_msg_queue_global=Queue(-1)
+log_thread_global=None
+log_stop_flag_global=0
 
 class Date():
     year = 0
@@ -76,7 +76,7 @@ class Date():
         return '{:0>2d}-{}-{:0>4d}'.format(self.day, _month_dict[self.month], self.year)
 
 
-config_load_state = False
+config_load_state_global = False
 config_primary_data = {
     'program': {
         'silent_download_mode': False,
@@ -117,6 +117,7 @@ config_primary_data = {
 
 
 def operation_load_config():
+    global log_thread_global,log_stop_flag_global
     global host_global, address_global, password_global
     global setting_silent_download_mode_global
     global setting_enable_log_global
@@ -153,6 +154,10 @@ def operation_load_config():
             if log != False:
                 assert isinstance(log, dict) and isinstance(log['path'], str) and isinstance(
                     log['relative_to_program'], bool) and isinstance(log['overwrite'], bool)
+                log_stop_flag_global=1
+                if log_thread_global!=None:
+                    log_thread_global.join()
+                log_stop_flag_global=0
                 setting_enable_log_global = True
                 log_write_type = 'w' if log['overwrite'] else 'a'
                 log_path = os.path.join(
@@ -172,6 +177,8 @@ def operation_load_config():
                     log_file_handler.setFormatter(logging.Formatter(
                         '[%(asctime)s %(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
                     log_global.addHandler(log_file_handler)
+                    log_thread_global=threading.Thread(target=log_thread_func,daemon=True)
+                    log_thread_global.start()
                 except OSError as e:
                     print('E: 日志文件创建错误.', flush=True)
                     raise e
@@ -519,7 +526,7 @@ def operation_validate_regex(expression, flag):  # 验证正则表达式是否�
 
 
 def init():
-    global stop_state_global
+    global download_stop_flag_global
     global has_thread_state_changed_global
     global imap_list_global, imap_succeed_index_int_list_global, imap_connect_failed_index_int_list_global, imap_with_undownloadable_attachments_index_int_list_global, imap_overdueanddeleted_index_int_list_global, imap_fetch_failed_index_int_list_global, imap_download_failed_index_int_list_global
     global msg_processed_count_global, msg_list_global, msg_with_undownloadable_attachments_list_global, msg_overdueanddeleted_list_global, msg_fetch_failed_list_global, msg_download_failed_list_global
@@ -528,7 +535,7 @@ def init():
     global file_download_count_global, file_download_path_global
     global largefile_undownloadable_link_list_global
     global largefile_undownloadable_code_list_global
-    stop_state_global = 0
+    download_stop_flag_global = 0
     has_thread_state_changed_global = True
 
     imaplib.Commands['ID'] = ('AUTH')
@@ -770,7 +777,6 @@ def operation_rollback(file_name_list, file_download_path_list, file_name=None, 
         if os.path.isfile(os.path.join(largefile_download_path, largefile_name_tmp)):
             os.remove(os.path.join(
                 largefile_download_path, largefile_name_tmp))
-        with lock_log_global:
             log_error('已回滚 "'+os.path.join(
                 largefile_download_path, largefile_name_tmp)+'"')
     for file_mixed_name_index_int in range(len(file_name_list)):
@@ -781,7 +787,7 @@ def operation_rollback(file_name_list, file_download_path_list, file_name=None, 
                 file_download_count_global -= 1
 
 
-def operation_download_all():
+def program_download_main():
     global thread_state_list_global  # 0:其他;1:读取邮件数据/获取链接;2:下载文件
     global has_thread_state_changed_global
     global thread_list_global, thread_file_name_list_global, thread_file_download_path_list_global
@@ -838,9 +844,12 @@ def operation_download_all():
             mailbox_raw = setting_search_mailbox_global[
                 imap_succeed_index_int_list_global[imap_index_int]][mailbox_index_int]
             mailbox = str_to_imap_utf7_bytes(mailbox_raw)
-            mailbox_state, _ = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].select(
-                mailbox)
-            if mailbox_state == 'NO':
+            try:
+                select_state, _ = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].select(
+                    mailbox)
+            except Exception:
+                select_state = 'NO'
+            if select_state == 'NO':
                 print('E: 邮箱', address_global[imap_succeed_index_int_list_global[imap_index_int]],
                       '的收件箱', mailbox_raw, '选择失败,已跳过.', flush=True)
                 log_error(
@@ -849,16 +858,12 @@ def operation_download_all():
             search_state_last = False
             for _ in range(setting_reconnect_max_times_global+1):
                 try:
-                    typ, data_msg_index_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].search(
+                    typ, msg_data_index_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].search(
                         None, search_command)
                     search_state_last = True
                     break
                 except Exception:
-                    for _ in range(setting_reconnect_max_times_global):
-                        imap_list_global[imap_succeed_index_int_list_global[imap_index_int]] = operation_login_imap_server(
-                            host_global[imap_succeed_index_int_list_global[imap_index_int]], address_global[imap_succeed_index_int_list_global[imap_index_int]], password_global[imap_succeed_index_int_list_global[imap_index_int]], False)
-                        if imap_list_global[imap_succeed_index_int_list_global[imap_index_int]] != None:
-                            break
+                    pass
             if not search_state_last:
                 print('E: 邮箱', address_global[imap_succeed_index_int_list_global[imap_index_int]],
                       '的收件箱', mailbox_raw, '搜索失败,已跳过.', flush=True)
@@ -868,7 +873,7 @@ def operation_download_all():
                     imap_connect_failed_index_int_list_global.append(
                         imap_succeed_index_int_list_global[imap_index_int])
                 continue
-            msg_list = list(reversed(data_msg_index_raw[0].split()))
+            msg_list = list(reversed(msg_data_index_raw[0].split()))
             msg_list_global[imap_succeed_index_int_list_global[imap_index_int]
                             ][mailbox_index_int] = msg_list
         print(
@@ -900,12 +905,11 @@ def operation_download_all():
         thread_file_name_list_global.append([])
         thread_file_download_path_list_global.append([])
         thread = threading.Thread(
-            target=download_thread_func, args=(thread_id,))
+            target=download_thread_func, args=(thread_id,),daemon=True)
         thread_list_global.append(thread)
-        thread.daemon = True
         thread.start()
     while True:
-        if stop_state_global:
+        if download_stop_flag_global:
             return
         if thread_state_list_global.count(-1) == len(thread_state_list_global):
             break
@@ -1163,9 +1167,8 @@ def download_thread_func(thread_id):
                     with lock_print_global:
                         print('E: 邮箱', address_global[imap_succeed_index_int_list_global[imap_index_int]],
                               '的文件夹', mailbox_raw, '选择失败,已跳过.', flush=True)
-                    with lock_log_global:
-                        log_error(
-                            '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
+                    log_error(
+                        '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
                     continue
                 while True:
                     lock_var_global.acquire()
@@ -1231,7 +1234,7 @@ def download_thread_func(thread_id):
                         fetch_state_last = False
                         for _ in range(setting_reconnect_max_times_global+1):
                             try:
-                                typ, data_msg_raw = imap.fetch(
+                                typ, msg_data_raw = imap.fetch(
                                     msg_index, 'BODY.PEEK[]')
                                 fetch_state_last = True
                                 break
@@ -1249,16 +1252,15 @@ def download_thread_func(thread_id):
                             with lock_print_global:
                                 print(
                                     'E: 邮箱', address_global[imap_succeed_index_int_list_global[imap_index_int]], '有邮件数据获取失败,已跳过.', flush=True)
-                            with lock_log_global:
-                                log_error(
-                                    '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 有邮件数据获取失败.')
+                            log_error(
+                                '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 有邮件数据获取失败.')
                         else:
-                            data_msg = email.message_from_bytes(
-                                data_msg_raw[0][1])
+                            msg_data = email.message_from_bytes(
+                                msg_data_raw[0][1])
                             subject = str(header.make_header(
-                                header.decode_header(data_msg.get('Subject'))))
+                                header.decode_header(msg_data.get('Subject'))))
                             send_time_raw = str(header.make_header(
-                                header.decode_header(data_msg.get('Date'))))[5:]
+                                header.decode_header(msg_data.get('Date'))))[5:]
                             send_time = copy.copy(send_time_raw)
                             try:
                                 send_time = str(utils.parsedate_to_datetime(
@@ -1266,25 +1268,24 @@ def download_thread_func(thread_id):
                             except ValueError:
                                 send_time = send_time_raw
                             try:
-                                for eachdata_msg in data_msg.walk():
+                                for msg_data_splited in msg_data.walk():
                                     file_name = None
                                     largefile_name = None
                                     file_download_path = None
                                     largefile_download_path = None
                                     file_name_tmp = None
                                     largefile_name_tmp = None
-                                    # print(eachdata_msg)
-                                    if eachdata_msg.get_content_disposition() and 'attachment' in eachdata_msg.get_content_disposition():
-                                        mime_type = eachdata_msg.get_content_type()
+                                    if msg_data_splited.get_content_disposition() and 'attachment' in msg_data_splited.get_content_disposition():
+                                        mime_type = msg_data_splited.get_content_type()
                                         has_downloadable_attachment = True
                                         file_name_raw = str(header.make_header(
-                                            header.decode_header(eachdata_msg.get_filename())))
-                                        file_data = eachdata_msg.get_payload(
+                                            header.decode_header(msg_data_splited.get_filename())))
+                                        file_data = msg_data_splited.get_payload(
                                             decode=True)
                                         with lock_var_global:
                                             operation_fresh_thread_state(
                                                 thread_id, 2)
-                                        if stop_state_global:
+                                        if download_stop_flag_global:
                                             if setting_rollback_when_download_failed_global:
                                                 with lock_io_global:
                                                     operation_rollback(
@@ -1303,7 +1304,7 @@ def download_thread_func(thread_id):
                                                 file_name_raw, file_download_path)
                                             os.renames(os.path.join(file_download_path, file_name_tmp),
                                                        os.path.join(file_download_path, file_name))
-                                        if stop_state_global:
+                                        if download_stop_flag_global:
                                             if setting_rollback_when_download_failed_global:
                                                 with lock_io_global:
                                                     operation_rollback(
@@ -1324,27 +1325,25 @@ def download_thread_func(thread_id):
                                                 file_download_path)
                                             operation_fresh_thread_state(
                                                 thread_id, 0)
-                                        with lock_log_global:
-                                            log_info(str(file_download_count_global)+' 已下载 "' + file_name + (
-                                                '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '')
-                                            log_info(indent(
-                                                1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
-                                            log_info(
-                                                indent(1)+'邮件标题: "'+subject+'"')
-                                            log_info(
-                                                indent(1)+'时间: '+send_time)
-                                            time.sleep(0)
+                                        log_info(str(file_download_count_global)+' 已下载 "' + file_name + (
+                                            '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '')
+                                        log_info(indent(
+                                            1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
+                                        log_info(
+                                            indent(1)+'邮件标题: "'+subject+'"')
+                                        log_info(
+                                            indent(1)+'时间: '+send_time)
                                         if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
                                             download_state_last = 0
-                                    if eachdata_msg.get_content_type() == 'text/html':
-                                        eachdata_msg_charset = eachdata_msg.get_content_charset()
-                                        eachdata_msg_data_raw = eachdata_msg.get_payload(
+                                    if msg_data_splited.get_content_type() == 'text/html':
+                                        msg_data_splited_charset = msg_data_splited.get_content_charset()
+                                        msg_data_splited_data_raw = msg_data_splited.get_payload(
                                             decode=True)
-                                        eachdata_msg_data = bytes.decode(
-                                            eachdata_msg_data_raw, eachdata_msg_charset)
+                                        msg_data_splited_data = bytes.decode(
+                                            msg_data_splited_data_raw, msg_data_splited_charset)
                                         html_fetcher = BeautifulSoup(
-                                            eachdata_msg_data, 'lxml')
-                                        if '附件' in eachdata_msg_data:
+                                            msg_data_splited_data, 'lxml')
+                                        if '附件' in msg_data_splited_data:
                                             with lock_var_global:
                                                 operation_fresh_thread_state(
                                                     thread_id, 1)
@@ -1506,7 +1505,7 @@ def download_thread_func(thread_id):
                                                         with lock_var_global:
                                                             operation_fresh_thread_state(
                                                                 thread_id, 2)
-                                                        if stop_state_global:
+                                                        if download_stop_flag_global:
                                                             if setting_rollback_when_download_failed_global:
                                                                 with lock_io_global:
                                                                     operation_rollback(
@@ -1523,7 +1522,7 @@ def download_thread_func(thread_id):
                                                                 with open(os.path.join(largefile_download_path, largefile_name_tmp), 'wb') as file:
                                                                     lock_io_global.release()
                                                                     for largefile_data_chunk in largefile_data.iter_content(1024):
-                                                                        if stop_state_global:
+                                                                        if download_stop_flag_global:
                                                                             break
                                                                         file.write(
                                                                             largefile_data_chunk)
@@ -1539,7 +1538,7 @@ def download_thread_func(thread_id):
                                                                 largefile_name_raw, largefile_download_path)
                                                             os.renames(
                                                                 os.path.join(largefile_download_path, largefile_name_tmp), os.path.join(largefile_download_path, largefile_name))
-                                                        if stop_state_global:
+                                                        if download_stop_flag_global:
                                                             if setting_rollback_when_download_failed_global:
                                                                 with lock_io_global:
                                                                     operation_rollback(
@@ -1560,16 +1559,14 @@ def download_thread_func(thread_id):
                                                                 largefile_download_path)
                                                             operation_fresh_thread_state(
                                                                 thread_id, 0)
-                                                        with lock_log_global:
-                                                            log_info(str(file_download_count_global)+' 已下载 "' + largefile_name + (
-                                                                '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '')
-                                                            log_info(indent(
-                                                                1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
-                                                            log_info(
-                                                                indent(1)+'邮件标题: "'+subject+'"')
-                                                            log_info(
-                                                                indent(1)+'时间: '+send_time)
-                                                            time.sleep(0)
+                                                        log_info(str(file_download_count_global)+' 已下载 "' + largefile_name + (
+                                                            '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '')
+                                                        log_info(indent(
+                                                            1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
+                                                        log_info(
+                                                            indent(1)+'邮件标题: "'+subject+'"')
+                                                        log_info(
+                                                            indent(1)+'时间: '+send_time)
                                                         if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
                                                             download_state_last = 0
                             except Exception as e:
@@ -1584,9 +1581,8 @@ def download_thread_func(thread_id):
                                             operation_rollback(
                                                 thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
                                 download_state_last = -2
-                                with lock_log_global:
-                                    log_error(
-                                        '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 有附件下载失败.')
+                                log_error(
+                                    '邮箱 "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'" 有附件下载失败.')
                         with lock_var_global:
                             if fetch_state_last:
                                 if download_state_last == 0:
@@ -1664,24 +1660,55 @@ def download_thread_func(thread_id):
         operation_fresh_thread_state(thread_id, -1)
 
 
-def log_debug(msg):
-    log_global.debug(' '*3+msg)
+def program_tool_main():
+    while True:
+        command = input_option('选择操作 [l:列出邮箱文件夹;q:返回主菜单]', 'l', 'q',
+                               allow_undefind_input=False, default_option='l', end=':')
+        if command == 'l':
+            if not config_load_state_global:
+                print('E: 未能成功加载配置,请在重新加载后执行该操作.', flush=True)
+            else:
+                if command == 'l':
+                    log_info('-'*3+'列出邮箱文件夹操作开始'+'-'*3)
+                    program_tool_list_mail_folders_main()
+                    print('Work in progress.')
+                    log_info('-'*3+'列出邮箱文件夹操作完成'+'-'*3)
+        elif command == 'q':
+            break
 
+
+def program_tool_list_mail_folders_main():
+    operation_login_all_imapserver()
+    if not len(imap_succeed_index_int_list_global):
+        print('E: 无法执行该操作.原因: 没有可用邮箱.', flush=True)
+        log_error('列出邮箱文件夹 操作无法执行. 原因: 没有可用邮箱.')
+    for imap_index_int, _ in enumerate(imap_succeed_index_int_list_global):
+        _,list_data_raw=imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].list()
+def log_thread_func():
+    while True:
+        if log_stop_flag_global:
+            break
+        if not log_msg_queue_global.empty():
+            level,msg=log_msg_queue_global.get(block=True)
+            log_global.log(level,msg)
+        time.sleep(0)
+def log_debug(msg):
+    log_msg_queue_global.put([logging.DEBUG,' '*3+msg],block=True)
 
 def log_info(msg):
-    log_global.info(' '*4+msg)
+    log_msg_queue_global.put([logging.INFO,' '*4+msg],block=True)
 
 
 def log_warning(msg):
-    log_global.warning(' '+msg)
+    log_msg_queue_global.put([logging.WARNING,' '+msg],block=True)
 
 
 def log_error(msg):
-    log_global.error(' '*3+msg)
+    log_msg_queue_global.put([logging.ERROR,' '*3+msg],block=True)
 
 
 def log_critical(msg):
-    log_global.critical(msg)
+    log_msg_queue_global.put([logging.CRITICAL,msg],block=True)
 
 
 def get_path():
@@ -1788,25 +1815,25 @@ try:
     elif _mode == 3:
         print('W: 此版本为演示版本,部分功能与信息显示与正式版本存在差异.')
     print(flush=True)
-    config_load_state = operation_load_config()
+    config_load_state_global = operation_load_config()
     while True:
         command = input_option(
             '\r选择操作 [d:下载;t:测试连接;T:工具;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'T', 'r', 'n', 'c', 'q', default_option='d', end=':')
-        if command == 'd' or command == 't' or command == 'T':
-            if not config_load_state:
+        if command == 'd' or command == 't':
+            if not config_load_state_global:
                 print('E: 未能成功加载配置,请在重新加载后执行该操作.', flush=True)
             else:
                 if command == 'd':
                     log_info('-'*8+'下载操作开始'+'-'*8)
-                    operation_download_all()
+                    program_download_main()
                     log_info('-'*8+'下载操作完成'+'-'*8)
                 elif command == 't':
                     operation_login_all_imapserver()
-                elif command == 'T':
-                    print('Work in progress.', flush=True)
+        elif command == 'T':
+            program_tool_main()
         elif command == 'r':
             log_warning('='*10+'重载配置'+'='*10)
-            config_load_state = operation_load_config()
+            config_load_state_global = operation_load_config()
         elif command == 'n':
             if input_option('此操作将在程序目录下生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
                 log_info('-'*4+'新建配置文件操作开始'+'-'*4)
@@ -1838,7 +1865,7 @@ try:
     log_info('='*10+'程序退出'+'='*10)
     nexit(0)
 except KeyboardInterrupt:
-    stop_state_global = 1
+    download_stop_flag_global = 1
     if 'thread_state_list_global' in vars() and setting_rollback_when_download_failed_global and thread_state_list_global.count(-1) < setting_download_thread_count_global:
         for thread_id in range(setting_download_thread_count_global):
             with lock_io_global:
@@ -1850,7 +1877,7 @@ except KeyboardInterrupt:
         time.sleep(0.5)
         nexit(1)
 except Exception as e:
-    stop_state_global = 1
+    download_stop_flag_global = 1
     with lock_print_global:
         print('\nF: 遇到无法解决的错误.信息如下:', flush=True)
         print(repr(e), flush=True)
