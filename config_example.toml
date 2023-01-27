@@ -35,7 +35,7 @@ search_mail_type = 1
 
 [search.date]
 # 手动输入检索日期;仅在silent_download_mode为false时生效
-manual_input_search_date = false
+manual_input_search_date = true
 
 # 起始搜索日期([年,月,日]);若不需要,设为[]
 # 当manual_input_search_date为true时,作为缺省值
@@ -76,11 +76,11 @@ reconnect_max_times = 3
 rollback_when_download_failed = true
 
 # 在成功下载附件后对邮件设置已读标签
-sign_unseen_flag_after_downloading = false
+sign_unseen_flag_after_downloading = true
 
 # 下载线程数
 # 适量配置
-thread_count = 16
+thread_count = 4
 
 # 设置下载时显示和记录的邮件信息
 [download.display]

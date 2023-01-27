@@ -89,7 +89,7 @@ config_primary_data = {
     },
     'search': {
         'mailbox': [],
-        'search_mail_type': 0,
+        'search_mail_type': 1,
         'date': {
             'manual_input_search_date': True,
             'min_search_date': [],
