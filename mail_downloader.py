@@ -51,15 +51,12 @@ thread_excepion_list_global = []
 lock_print_global = threading.Lock()
 lock_var_global = threading.Lock()
 lock_io_global = threading.Lock()
-lock_log_global = threading.Lock()
 
 log_global = logging.getLogger('logger')
 log_global.setLevel(logging.DEBUG)
-log_msg_queue_global = Queue(-1)
-log_msg_queue_listener_global = None
-log_thread_global = None
-log_stop_flag_global = 0
-
+log_msg_queue_global=Queue(-1)
+log_thread_global=None
+log_stop_flag_global=0
 
 class Date():
     year = 0
@@ -122,10 +119,8 @@ config_primary_data = {
 
 def operation_load_config():
     global log_thread_global, log_stop_flag_global
-    global log_msg_queue_listener_global
     global host_global, address_global, password_global
     global setting_silent_download_mode_global
-    global setting_enable_log_global
     global setting_search_mailbox_global
     global setting_search_mails_type_global
     global setting_manual_input_search_date_global
@@ -156,14 +151,15 @@ def operation_load_config():
             assert isinstance(setting_silent_download_mode_global, bool)
 
             log = config_file_data['program']['log']
+            log_stop_flag_global=1
+            if log_thread_global!=None:
+                log_thread_global.join()
+            log_stop_flag_global=0
+            for handler in log_global.handlers:
+                log_global.removeHandler(handler)
             if log != False:
                 assert isinstance(log, dict) and isinstance(log['path'], str) and isinstance(
                     log['relative_to_program'], bool) and isinstance(log['overwrite'], bool)
-                log_stop_flag_global = 1
-                if log_thread_global != None:
-                    log_thread_global.join()
-                log_stop_flag_global = 0
-                setting_enable_log_global = True
                 log_write_type = 'w' if log['overwrite'] else 'a'
                 log_path = os.path.join(
                     get_path(), log['path']) if log['relative_to_program'] else log['path']
@@ -172,29 +168,19 @@ def operation_load_config():
                 try:
                     if not os.path.exists(log_path):
                         os.makedirs(log_path)
-                    for handler in log_global.handlers:
-                        log_global.removeHandler(handler)
-                    if log_msg_queue_listener_global != None:
-                        for handler in log_msg_queue_listener_global.handlers:
-                            handler.close()
-                        log_msg_queue_listener_global.stop()
                     log_file_handler = logging.FileHandler(
                         os.path.join(log_path, log_name), log_write_type, 'UTF8')
                     log_file_handler.setLevel(logging.INFO)
                     log_file_handler.setFormatter(logging.Formatter(
                         '[%(asctime)s %(levelname)8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
-                    log_msg_queue_handler = QueueHandler(log_msg_queue_global)
-                    log_msg_queue_handler.setLevel(logging.INFO)
-                    log_msg_queue_listener_global = QueueListener(
-                        log_msg_queue_global, log_file_handler)
-                    log_global.addHandler(log_msg_queue_handler)
-                    log_msg_queue_listener_global.start()
+                    log_global.addHandler(log_file_handler)
+                    log_thread_global=threading.Thread(target=log_thread_func,daemon=True)
+                    log_thread_global.start()
                 except OSError as e:
                     print('E: 日志文件创建错误.', flush=True)
                     raise e
             else:
-                setting_enable_log_global = False
-
+                log_global.addHandler(logging.NullHandler(logging.INFO))
             host_global = []
             address_global = []
             password_global = []
@@ -868,7 +854,7 @@ def program_download_main():
             search_state_last = False
             for _ in range(setting_reconnect_max_times_global+1):
                 try:
-                    typ, msg_data_index_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].search(
+                    _, msg_data_index_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].search(
                         None, search_command)
                     search_state_last = True
                     break
@@ -990,9 +976,9 @@ def program_download_main():
                     log_error(indent(
                         2) + '文件夹: "' + setting_search_mailbox_global[imap_download_failed_index_int][mailbox_index_int]+'"')
                     for subject_index_int in range(len(subject_download_failed_list_global[imap_download_failed_index_int][mailbox_index_int])):
-                        print(indent(3), msg_download_failed_counted_count+1, ' 邮件标题-时间: ',
+                        print(indent(3), msg_download_failed_counted_count+1, ' 标题-时间: ',
                               subject_download_failed_list_global[imap_download_failed_index_int][mailbox_index_int][subject_index_int], ' - ', send_time_download_failed_list_global[imap_download_failed_index_int][mailbox_index_int][subject_index_int], sep='', flush=True)
-                        log_error(indent(3) + str(msg_download_failed_counted_count+1) + ' 邮件标题: "' +
+                        log_error(indent(3) + str(msg_download_failed_counted_count+1) + ' 标题: "' +
                                   subject_download_failed_list_global[imap_download_failed_index_int][mailbox_index_int][subject_index_int]+'"')
                         log_error(indent(
                             4)+'时间: '+send_time_download_failed_list_global[imap_download_failed_index_int][mailbox_index_int][subject_index_int])
@@ -1015,9 +1001,9 @@ def program_download_main():
                     log_warning(indent(
                         2) + '文件夹: "' + setting_search_mailbox_global[imap_with_undownloadable_attachments_index_int][mailbox_index_int]+'"')
                     for subject_index_int in range(len(subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][mailbox_index_int])):
-                        print(indent(3), msg_with_undownloadable_attachments_counted_count+1, ' 邮件标题-时间: ',
+                        print(indent(3), msg_with_undownloadable_attachments_counted_count+1, ' 标题-时间: ',
                               subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][mailbox_index_int][subject_index_int], ' - ', send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][mailbox_index_int][subject_index_int], sep='', flush=True)
-                        log_warning(indent(3) + str(msg_with_undownloadable_attachments_counted_count+1) + ' 邮件标题: "' +
+                        log_warning(indent(3) + str(msg_with_undownloadable_attachments_counted_count+1) + ' 标题: "' +
                                     subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][mailbox_index_int][subject_index_int]+'"')
                         log_warning(indent(
                             4)+'时间: '+send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index_int][mailbox_index_int][subject_index_int])
@@ -1099,9 +1085,9 @@ def program_download_main():
                     log_info(indent(
                         2) + '文件夹: "' + setting_search_mailbox_global[imap_overdueanddeleted_index_int][mailbox_index_int]+'"')
                     for subject_index_int in range(len(subject_overdueanddeleted_list_global[imap_overdueanddeleted_index_int][mailbox_index_int])):
-                        print(indent(3), msg_overdueanddeleted_counted_count+1, ' 邮件标题-时间: ',
+                        print(indent(3), msg_overdueanddeleted_counted_count+1, ' 标题-时间: ',
                               subject_overdueanddeleted_list_global[imap_overdueanddeleted_index_int][mailbox_index_int][subject_index_int], ' - ', send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index_int][mailbox_index_int][subject_index_int], sep='', flush=True)
-                        log_info(indent(3) + str(msg_overdueanddeleted_counted_count+1) + ' 邮件标题: "' +
+                        log_info(indent(3) + str(msg_overdueanddeleted_counted_count+1) + ' 标题: "' +
                                  subject_overdueanddeleted_list_global[imap_overdueanddeleted_index_int][mailbox_index_int][subject_index_int]+'"')
                         msg_overdueanddeleted_counted_count += 1
             if setting_sign_unseen_tag_after_downloading_global and setting_search_mails_type_global != 2:
@@ -1244,7 +1230,7 @@ def download_thread_func(thread_id):
                         fetch_state_last = False
                         for _ in range(setting_reconnect_max_times_global+1):
                             try:
-                                typ, msg_data_raw = imap.fetch(
+                                _, msg_data_raw = imap.fetch(
                                     msg_index, 'BODY.PEEK[]')
                                 fetch_state_last = True
                                 break
@@ -1325,7 +1311,7 @@ def download_thread_func(thread_id):
                                                 ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(8), sep='', flush=True)
                                             print(indent(
                                                 1), '邮箱: ', address_global[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
-                                            print(indent(1), '邮件标题-时间: ', subject, ' - ',
+                                            print(indent(1), '标题-时间: ', subject, ' - ',
                                                   send_time, sep='', flush=True)
                                             file_download_count_global += 1
                                             file_download_count += 1
@@ -1340,7 +1326,7 @@ def download_thread_func(thread_id):
                                             log_info(indent(
                                                 1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
                                             log_info(
-                                                indent(1)+'邮件标题: "'+subject+'"')
+                                                indent(1)+'标题: "'+subject+'"')
                                             log_info(
                                                 indent(1)+'时间: '+send_time)
                                         if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
@@ -1560,7 +1546,7 @@ def download_thread_func(thread_id):
                                                             print(indent(
                                                                 1), '邮箱: ', address_global[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
                                                             print(indent(
-                                                                1), '邮件标题-时间: ', subject, ' - ', send_time, sep='', flush=True)
+                                                                1), '标题-时间: ', subject, ' - ', send_time, sep='', flush=True)
                                                             file_download_count_global += 1
                                                             file_download_count += 1
                                                             thread_file_name_list_global[thread_id].append(
@@ -1574,7 +1560,7 @@ def download_thread_func(thread_id):
                                                             log_info(indent(
                                                                 1)+'邮箱: "'+address_global[imap_succeed_index_int_list_global[imap_index_int]]+'"')
                                                             log_info(
-                                                                indent(1)+'邮件标题: "'+subject+'"')
+                                                                indent(1)+'标题: "'+subject+'"')
                                                             log_info(
                                                                 indent(1)+'时间: '+send_time)
                                                         if download_state_last == -1 or download_state_last == 2:  # 去除邮件无附件标记或全部过期标记
@@ -1681,7 +1667,6 @@ def program_tool_main():
                 if command == 'l':
                     log_info('-'*3+'列出邮箱文件夹操作开始'+'-'*3)
                     program_tool_list_mail_folders_main()
-                    print('Work in progress.')
                     log_info('-'*3+'列出邮箱文件夹操作完成'+'-'*3)
         elif command == 'q':
             break
@@ -1692,30 +1677,56 @@ def program_tool_list_mail_folders_main():
     if not len(imap_succeed_index_int_list_global):
         print('E: 无法执行该操作.原因: 没有可用邮箱.', flush=True)
         log_error('列出邮箱文件夹 操作无法执行. 原因: 没有可用邮箱.')
-    for imap_index_int, _ in enumerate(imap_succeed_index_int_list_global):
-        _, list_data_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].list(
-        )
-
+    for imap_index_int, imap_index in enumerate(imap_succeed_index_int_list_global):
+        list_state=False
+        for _ in range(setting_reconnect_max_times_global+1):
+            try:
+                _, list_data_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].list()
+                list_state=True
+                break
+            except Exception:
+                pass
+        if not list_state:
+            print('E: 邮箱',address_global[imap_index],'获取文件夹列表失败,已跳过.',flush=True)
+            log_error('邮箱 "'+address_global[imap_index]+'" 获取文件夹列表失败.')
+            continue
+        print('邮箱:',address_global[imap_index],flush=True)
+        for folder in list_data_raw:
+            folder_name=imap_utf7_bytes_to_str(re.compile(rb'(?<=/" ").+(?=")').findall(folder)[0])
+            folder_flag=re.compile(rb'(?<=\().+(?=\))').findall(folder)
+            print(indent(1),'文件夹: ',folder_name,sep='',flush=True)
+            log_info(indent(1)+'文件夹: "'+folder_name+'"')
+            if len(folder_flag):
+                folder_flag=imap_utf7_bytes_to_str(folder_flag[0])
+                print(indent(2),'标签: ',folder_flag,sep='',flush=True)
+                log_info(indent(2)+'标签: "'+folder_flag+'"')
+            else:
+                print(indent(2),'没有标签',sep='',flush=True)
+                log_info(indent(2)+'没有标签')
+        print(flush=True)
+def log_thread_func():
+    while True:
+        if log_stop_flag_global:
+            break
+        if not log_msg_queue_global.empty():
+            level,msg=log_msg_queue_global.get(block=True)
+            log_global.log(level,msg)
+        time.sleep(0.002)
 
 def log_debug(msg):
-    log_global.debug(msg)
-
+    log_msg_queue_global.put([logging.DEBUG,msg],block=True)
 
 def log_info(msg):
-    log_global.info(msg)
-
+    log_msg_queue_global.put([logging.INFO,msg],block=True)
 
 def log_warning(msg):
-    log_global.warning(msg)
-
+    log_msg_queue_global.put([logging.WARNING,msg],block=True)
 
 def log_error(msg):
-    log_global.error(msg)
-
+    log_msg_queue_global.put([logging.ERROR,msg],block=True)
 
 def log_critical(msg):
-    log_global.critical(msg)
-
+    log_msg_queue_global.put([logging.CRITICAL,msg],block=True)
 
 def get_path():
     return os.path.dirname(__file__)
