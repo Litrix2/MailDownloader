@@ -1879,8 +1879,9 @@ try:
         program_download_main()
         log_info('-'*8+'下载操作完成'+'-'*8)
         print('程序将在 5 秒后退出.')
-        time.sleep(5)
+        time.sleep(4.5)
         log_info('='*10+'程序退出'+'='*10)
+        time.sleep(0.5)
         exit(0)
     else:
         while True:
