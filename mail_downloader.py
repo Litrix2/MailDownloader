@@ -23,8 +23,8 @@ import threading
 import traceback
 import urllib.parse
 
-_version = '1.4.0-Alpha'
-_mode = 1  # 0:Release;1:Alpha;2:Beta;3:Demo
+_version = '1.4.0-Beta'
+_mode = 2  # 0:Release;1:Alpha;2:Beta;3:Demo
 _regex_flag_dict = {
     'a': re.ASCII,
     'i': re.IGNORECASE,
