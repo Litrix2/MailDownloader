@@ -1,6 +1,7 @@
 .vscode/
 config/
 download/
+log/
 test/
 old/
 config.toml
