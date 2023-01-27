@@ -952,6 +952,7 @@ def program_download_main():
             log_info('没有可下载的附件.')
         print('耗时: ', round(finish_time-start_time, 2),
               ' 秒', indent(8), sep='', flush=True)
+        log_info('耗时: '+str(round(finish_time-start_time, 2)), ' 秒')
         if len(imap_connect_failed_index_int_list_global):
             print('E: 以下邮箱连接失败:', flush=True)
             log_error('以下邮箱连接失败:')
@@ -1048,7 +1049,7 @@ def program_download_main():
                             largefile_undownloadable_link_counted_count += 1
                         msg_with_undownloadable_attachments_counted_count += 1
             if setting_sign_unseen_tag_after_downloading_global and setting_search_mails_type_global != 2:
-                if input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='n', end=':') == 'y':
+                if setting_silent_download_mode_global or input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='n', end=':') == 'y':
                     msg_with_downloadable_attachments_signed_count = 0
                     print('\r正在标记...', end='', flush=True)
                     for imap_index_int in range(len(imap_list_global)):
@@ -1112,7 +1113,7 @@ def program_download_main():
                                  subject_overdueanddeleted_list_global[imap_overdueanddeleted_index_int][mailbox_index_int][subject_index_int]+'"')
                         msg_overdueanddeleted_counted_count += 1
             if setting_sign_unseen_tag_after_downloading_global and setting_search_mails_type_global != 2:
-                if input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='y', end=':') == 'y':
+                if setting_silent_download_mode_global or input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='y', end=':') == 'y':
                     print('\r正在标记...', end='', flush=True)
                     for imap_index_int in range(len(imap_list_global)):
                         for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index_int])):
@@ -1752,7 +1753,7 @@ def log_thread_func():
         if not log_msg_queue_global.empty():
             level, msg = log_msg_queue_global.get(block=True)
             log_global.log(level, msg)
-        time.sleep(0.002)
+        time.sleep(0.006)
 
 
 def log_debug(msg):
@@ -1880,54 +1881,65 @@ try:
         print('W: 此版本为演示版本,部分功能与信息显示与正式版本存在差异.')
     print(flush=True)
     config_load_state_global = operation_load_config()
-    while True:
-        command = input_option(
-            '\r选择操作 [d:下载;t:测试连接;T:工具;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'T', 'r', 'n', 'c', 'q', default_option='d', end=':')
-        if command == 'd' or command == 't':
-            if not config_load_state_global:
-                print('E: 未能成功加载配置,请在重新加载后执行该操作.', flush=True)
-            else:
-                if command == 'd':
-                    log_info('-'*8+'下载操作开始'+'-'*8)
-                    program_download_main()
-                    log_info('-'*8+'下载操作完成'+'-'*8)
-                elif command == 't':
-                    operation_login_all_imapserver()
-        elif command == 'T':
-            program_tool_main()
-        elif command == 'r':
-            log_warning('='*10+'重载配置'+'='*10)
-            config_load_state_global = operation_load_config()
-        elif command == 'n':
-            if input_option('此操作将在程序目录下生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
-                log_info('-'*4+'新建配置文件操作开始'+'-'*4)
-                try:
-                    with open(os.path.join(get_path(), 'config_new.toml'), 'w') as config_new_file:
-                        rtoml.dump(config_primary_data,
-                                   config_new_file, pretty=True)
-                    print('操作成功完成.', flush=True)
-                    print(
-                        'N: 有关配置文件的详细说明,请查看仓库中的示例配置文件;新配置文件的部分内容可能与示例配置文件不完全相同.', flush=True)
-                    log_info('已生成新配置文件 "' +
-                             os.path.join(get_path(), 'config_new.toml')+'"')
-                except OSError as e:
-                    print('E: 操作失败,信息如下:', flush=True)
-                    print(repr(e))
-                    log_error('操作失败,信息如下:')
-                    log_error(repr(e))
-                log_info('-'*4+'新建配置文件操作完成'+'-'*4)
-        elif command == 'c':
-            Platform = platform.platform().lower()
-            if 'windows' in Platform:
-                os.system('cls')
-            elif 'linux' in Platform or 'macos' in Platform:
-                os.system('clear')
-            else:
-                print('E: 操作系统类型未知,无法执行该操作.', flush=True)
-        elif command == 'q':
-            break
-    log_info('='*10+'程序退出'+'='*10)
-    nexit(0)
+    if config_load_state_global and setting_silent_download_mode_global:
+        print('W: 静默下载模式已开启.', flush=True)
+        log_warning('静默下载模式已开启.')
+        log_info('-'*8+'下载操作开始'+'-'*8)
+        program_download_main()
+        log_info('-'*8+'下载操作完成'+'-'*8)
+        print('程序将在 5 秒后退出.')
+        time.sleep(5)
+        log_info('='*10+'程序退出'+'='*10)
+        exit(0)
+    else:
+        while True:
+            command = input_option(
+                '\r选择操作 [d:下载;t:测试连接;T:工具;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'T', 'r', 'n', 'c', 'q', default_option='d', end=':')
+            if command == 'd' or command == 't':
+                if not config_load_state_global:
+                    print('E: 未能成功加载配置,请在重新加载后执行该操作.', flush=True)
+                else:
+                    if command == 'd':
+                        log_info('-'*8+'下载操作开始'+'-'*8)
+                        program_download_main()
+                        log_info('-'*8+'下载操作完成'+'-'*8)
+                    elif command == 't':
+                        operation_login_all_imapserver()
+            elif command == 'T':
+                program_tool_main()
+            elif command == 'r':
+                log_warning('='*10+'重载配置'+'='*10)
+                config_load_state_global = operation_load_config()
+            elif command == 'n':
+                if input_option('此操作将在程序目录下生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
+                    log_info('-'*4+'新建配置文件操作开始'+'-'*4)
+                    try:
+                        with open(os.path.join(get_path(), 'config_new.toml'), 'w') as config_new_file:
+                            rtoml.dump(config_primary_data,
+                                       config_new_file, pretty=True)
+                        print('操作成功完成.', flush=True)
+                        print(
+                            'N: 有关配置文件的详细说明,请查看仓库中的示例配置文件;新配置文件的部分内容可能与示例配置文件不完全相同.', flush=True)
+                        log_info('已生成新配置文件 "' +
+                                 os.path.join(get_path(), 'config_new.toml')+'"')
+                    except OSError as e:
+                        print('E: 操作失败,信息如下:', flush=True)
+                        print(repr(e))
+                        log_error('操作失败,信息如下:')
+                        log_error(repr(e))
+                    log_info('-'*4+'新建配置文件操作完成'+'-'*4)
+            elif command == 'c':
+                Platform = platform.platform().lower()
+                if 'windows' in Platform:
+                    os.system('cls')
+                elif 'linux' in Platform or 'macos' in Platform:
+                    os.system('clear')
+                else:
+                    print('E: 操作系统类型未知,无法执行该操作.', flush=True)
+            elif command == 'q':
+                break
+        log_info('='*10+'程序退出'+'='*10)
+        nexit(0)
 except KeyboardInterrupt:
     download_stop_flag_global = 1
     if 'thread_state_list_global' in vars() and setting_rollback_when_download_failed_global and thread_state_list_global.count(-1) < setting_download_thread_count_global:
