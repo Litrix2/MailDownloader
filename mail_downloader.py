@@ -1719,6 +1719,8 @@ def program_tool_list_mail_folders_main():
         log_error('列出邮箱文件夹 操作无法执行. 原因: 没有可用邮箱.')
     for imap_index_int, imap_index in enumerate(imap_succeed_index_int_list_global):
         list_status = False
+        print('正在读取... (', imap_index_int+1, '/',
+              len(imap_succeed_index_int_list_global), ')', sep='', end='')
         for _ in range(setting_reconnect_max_times_global+1):
             try:
                 _, list_data_raw = imap_list_global[imap_index].list(
@@ -1732,11 +1734,12 @@ def program_tool_list_mail_folders_main():
                     if imap_list_global[imap_index] != None:
                         break
         if not list_status:
-            print('E: 邮箱', address_global[imap_index],
-                  '获取文件夹列表失败,已跳过.', flush=True)
+            print('\rE: 邮箱 ', address_global[imap_index],
+                  ' 获取文件夹列表失败,已跳过.', ltk.indent(2), sep='', flush=True)
             log_error('邮箱 "'+address_global[imap_index]+'" 获取文件夹列表失败.')
             continue
-        print('邮箱:', address_global[imap_index], flush=True)
+        print('\r邮箱: ', address_global[imap_index],
+              ltk.indent(3), sep='', flush=True)
         log_info('邮箱: "' + address_global[imap_index]+'"')
         for folder in list_data_raw:
             try:
@@ -1754,9 +1757,10 @@ def program_tool_list_mail_folders_main():
                     print(ltk.indent(2), '没有标签', sep='', flush=True)
                     log_info(ltk.indent(2)+'没有标签')
             except UnicodeError:
-                print('E: 邮箱', address_global[imap_index], '有文件夹信息解码失败,已跳过.')
+                print('\rE: 邮箱 ', address_global[imap_index], ' 有文件夹信息解码失败,已跳过.', ltk.indent(
+                    2), sep='', flush=True)
                 log_error('邮箱 "'+address_global[imap_index]+'" 有文件夹信息解码失败.')
-        print(flush=True)
+    print(flush=True)
 
 
 def log_debug(msg):
