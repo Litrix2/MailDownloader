@@ -1,9 +1,10 @@
-.vscode/
+.*
+__*__
+ancient/
 config/
 download/
 log/
 test/
-old/
 config.toml
 config_new.toml
 note.md
