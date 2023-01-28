@@ -23,7 +23,7 @@ import urllib.parse
 
 __version__ = '1.4.1'
 _depend_toolkit_version = '1.0.0'
-__status__ = 2
+__status__ = 0
 __author__ = 'Litrix'
 
 _status_dict = {
@@ -460,7 +460,6 @@ def operation_load_config():
                         file_name_classfication_splited['extension'])
                     setting_file_name_classfication_path_global[-1].append(
                         file_name_classfication_splited_download_path)
-            log_debug(log_global.handlers)
     except Exception as e:
         if str(e):
             print('E: 读取配置文件时错误,信息如下:', flush=True)
