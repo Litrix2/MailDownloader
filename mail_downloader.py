@@ -24,7 +24,7 @@ import urllib.parse
 __version__ = '1.4.1'
 _depend_toolkit_version = '1.0.0'
 __status__ = 1
-__author__='Litrix'
+__author__ = 'Litrix'
 
 _status_dict = {
     0: 'Release',
@@ -59,7 +59,8 @@ lock_print_global = threading.Lock()
 lock_var_global = threading.Lock()
 lock_io_global = threading.Lock()
 
-# logging.disable(logging.DEBUG)  # 屏蔽调试信息
+if __status__ == 0:
+    logging.disable(logging.DEBUG)  # 屏蔽调试信息
 log_global = logging.getLogger('main_logger')
 log_global.setLevel(logging.INFO)
 log_file_handler_global = None
@@ -1695,7 +1696,7 @@ def download_thread_func(thread_id):
 def program_tool_main():
     while True:
         command = ltk.input_option('选择操作 [l:列出邮箱文件夹;t:测试连接;q:返回主菜单]', 'l', 't', 'q',
-                               allow_undefind_input=False, default_option='l', end=':')
+                                   allow_undefind_input=False, default_option='l', end=':')
         if command == 'l' or command == 't':
             if not config_load_status_global:
                 print('E: 未能成功加载配置,请在重新加载后执行该操作.', flush=True)
@@ -1747,7 +1748,8 @@ def program_tool_list_mail_folders_main():
                 log_info(ltk.indent(1)+'文件夹: "'+folder_name+'"')
                 if len(folder_flag):
                     folder_flag = ltk.imap_utf7_bytes_decode(folder_flag[0])
-                    print(ltk.indent(2), '标签: ', folder_flag, sep='', flush=True)
+                    print(ltk.indent(2), '标签: ',
+                          folder_flag, sep='', flush=True)
                     log_info(ltk.indent(2)+'标签: "'+folder_flag+'"')
                 else:
                     print(ltk.indent(2), '没有标签', sep='', flush=True)
@@ -1798,10 +1800,10 @@ try:
             is_config_path_relative_to_program_global = True
 except getopt.GetoptError:
     print('F: 程序参数错误.', flush=True)
-    ltk.nexit(1)
+    ltk.pause_exit(1)
 try:
     print('Mail Downloader', flush=True)
-    print('Desingned by Litrix',flush=True)
+    print('Desingned by Litrix', flush=True)
     print('版本:', __version__ +
           ('-'+_status_dict[__status__] if __status__ != 0 else ''), flush=True)
     print('获取更多信息,请访问 https://github.com/Litrix2/MailDownloader', flush=True)
@@ -1870,7 +1872,7 @@ try:
             elif command == 'q':
                 break
         log_info('='*10+'程序退出'+'='*10)
-        ltk.nexit(0)
+        ltk.pause_exit(0)
 except KeyboardInterrupt:
     download_stop_flag_global = 1
     if 'thread_status_list_global' in vars() and setting_rollback_when_download_failed_global and thread_status_list_global.count(-1) < setting_download_thread_count_global:
@@ -1882,7 +1884,7 @@ except KeyboardInterrupt:
         print('\n强制退出', flush=True)
         log_critical('='*10+'强制退出'+'='*10)
         time.sleep(0.5)
-        ltk.nexit(1)
+        ltk.pause_exit(1)
 except Exception as e:
     download_stop_flag_global = 1
     with lock_print_global:
@@ -1892,4 +1894,4 @@ except Exception as e:
         log_critical(repr(e))
         log_critical('='*10+'异常退出'+'='*10)
         # traceback.print_exc()
-        ltk.nexit(1)
+        ltk.pause_exit(1)

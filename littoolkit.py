@@ -4,6 +4,7 @@ import os
 __version__ = '1.0.0'
 __author__ = 'Litrix'
 
+
 def indent(count: int, unit_count: int = 4, unit_char: str = ' ') -> str:
     """实现输出缩进功能."""
     indent_str = ''
@@ -12,7 +13,7 @@ def indent(count: int, unit_count: int = 4, unit_char: str = ' ') -> str:
     return indent_str
 
 
-def safe_list_find(List: list, element):
+def safe_list_find(List: list, element) -> int:
     """
     安全查找列表中元素.
     如果列表中没有指定元素,返回-1,而不是报错.
@@ -24,7 +25,7 @@ def safe_list_find(List: list, element):
         return -1
 
 
-def find_list_substr(List: str, Str: str):
+def find_list_substr(List: str, Str: str) -> bool:
     """遍历列表,判断列表中字符串是否为指定字符串的子字符串."""
     for j in List:
         if j in Str:
@@ -32,7 +33,7 @@ def find_list_substr(List: str, Str: str):
     return False
 
 
-def extract_nested_list(List: list):
+def extract_nested_list(List: list) -> list:
     """展开嵌套列表."""
     result_list = []
     for i in range(len(List)):
@@ -43,11 +44,11 @@ def extract_nested_list(List: list):
     return result_list
 
 
-def _base64_encode(source: str):
+def _base64_encode(source: str) -> bytes:
     return b'&'+base64.b64encode(source.encode('UTF-16BE')).rstrip(b'==').replace(b'/', b',')+b'-' if source else b''
 
 
-def imap_utf7_bytes_encode(source: str):
+def imap_utf7_bytes_encode(source: str) -> bytes:
     """将字符串编码成IMAP协议专用的UTF-7格式字节串."""
     result = b''
     base64_str = ''
@@ -67,7 +68,7 @@ def imap_utf7_bytes_encode(source: str):
     return bytes(result)
 
 
-def imap_utf7_bytes_decode(source: bytes):
+def imap_utf7_bytes_decode(source: bytes) -> str:
     """将成IMAP协议专用的UTF-7格式字节串解码成字符串."""
     result = ''
     base64_status = False
@@ -99,7 +100,8 @@ def imap_utf7_bytes_decode(source: bytes):
                 result += byte.decode()
     return result
 
-def input_option(prompt: str, *options: str, allow_undefind_input: bool = False, default_option: str = '', end: str = ''):
+
+def input_option(prompt: str, *options: str, allow_undefind_input: bool = False, default_option: str = '', end: str = '') -> None:
     """实现输入选项功能."""
     if len(options) or len(default_option):
         prompt += ' ('
@@ -130,7 +132,7 @@ def input_option(prompt: str, *options: str, allow_undefind_input: bool = False,
             print('无效选项,请重新输入.', flush=True)
 
 
-def pause_exit(code: int = 0):
+def pause_exit(code: int = 0) -> None:
     """先暂停再退出."""
     input_option('按回车键退出 ', allow_undefind_input=True)
     exit(code)
