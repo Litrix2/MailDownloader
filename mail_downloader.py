@@ -1707,15 +1707,15 @@ def program_tool_list_mail_folders_main():
         list_state = False
         for _ in range(setting_reconnect_max_times_global+1):
             try:
-                _, list_data_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].list(
+                _, list_data_raw = imap_list_global[imap_index].list(
                 )
                 list_state = True
                 break
             except Exception:
                 for _ in range(setting_reconnect_max_times_global):
-                    imap_list_global[imap_succeed_index_int_list_global[imap_index_int]] = operation_login_imap_server(
-                        host_global[imap_succeed_index_int_list_global[imap_index_int]], address_global[imap_succeed_index_int_list_global[imap_index_int]], password_global[imap_succeed_index_int_list_global[imap_index_int]], False)
-                    if imap_list_global[imap_succeed_index_int_list_global[imap_index_int]] != None:
+                    imap_list_global[imap_index] = operation_login_imap_server(
+                        host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
+                    if imap_list_global[imap_index] != None:
                         break
         if not list_state:
             print('E: 邮箱', address_global[imap_index],
