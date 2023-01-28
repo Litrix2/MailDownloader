@@ -49,16 +49,17 @@ lock_print_global = threading.Lock()
 lock_var_global = threading.Lock()
 lock_io_global = threading.Lock()
 
-logging.disable(logging.DEBUG) # 屏蔽调试信息
+logging.disable(logging.DEBUG)  # 屏蔽调试信息
 log_global = logging.getLogger('main_logger')
 log_global.setLevel(logging.INFO)
-log_file_handler_global=None
+log_file_handler_global = None
 log_global.addHandler(logging.NullHandler())
-log_debug_global=logging.getLogger('debug_logger')
+log_debug_global = logging.getLogger('debug_logger')
 log_debug_global.setLevel(logging.DEBUG)
-log_debug_handler=logging.StreamHandler()
+log_debug_handler = logging.StreamHandler()
 log_debug_handler.setLevel(logging.DEBUG)
 log_debug_global.addHandler(log_debug_handler)
+
 
 class Date():
     year = 0
@@ -158,7 +159,7 @@ def operation_load_config():
             assert isinstance(setting_silent_download_mode_global, bool)
 
             log = config_file_data['program']['log']
-            if log_file_handler_global!=None:
+            if log_file_handler_global != None:
                 log_global.removeHandler(log_file_handler_global)
             if log != False:
                 assert isinstance(log, dict) and isinstance(log['path'], str) and isinstance(
@@ -865,6 +866,8 @@ def program_download_main():
                         imap_list_global[imap_succeed_index_int_list_global[imap_index_int]] = operation_login_imap_server(
                             host_global[imap_succeed_index_int_list_global[imap_index_int]], address_global[imap_succeed_index_int_list_global[imap_index_int]], password_global[imap_succeed_index_int_list_global[imap_index_int]], False)
                         if imap_list_global[imap_succeed_index_int_list_global[imap_index_int]] != None:
+                            imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].select(
+                                mailbox)
                             break
             if not search_state_last:
                 print('E: 邮箱', address_global[imap_succeed_index_int_list_global[imap_index_int]],
@@ -1312,8 +1315,8 @@ def download_thread_func(thread_id):
                                         with lock_print_global, lock_var_global:
                                             print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
                                                 ' <- '+file_name_raw)if file_name != file_name_raw else '', indent(8), sep='', flush=True)
-                                            log_info(str(file_download_count_global+1)+' 已下载 "' + file_name + (
-                                                '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '')
+                                            log_info(str(file_download_count_global+1)+' 已下载 "' + file_name + ((
+                                                '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '"'))
                                             if setting_display_mail:
                                                 print(indent(
                                                     1), '邮箱: ', address_global[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
@@ -1554,8 +1557,8 @@ def download_thread_func(thread_id):
                                                         with lock_print_global, lock_var_global:
                                                             print('\r', file_download_count_global+1, ' 已下载 ', largefile_name, (
                                                                 ' <- '+largefile_name_raw)if largefile_name != largefile_name_raw else '', indent(8), sep='', flush=True)
-                                                            log_info(str(file_download_count_global+1)+' 已下载 "' + largefile_name + (
-                                                                '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '')
+                                                            log_info(str(file_download_count_global+1)+' 已下载 "' + largefile_name + ((
+                                                                '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '"'))
                                                             if setting_display_mail:
                                                                 print(indent(
                                                                     1), '邮箱: ', address_global[imap_succeed_index_int_list_global[imap_index_int]], sep='', flush=True)
@@ -1617,7 +1620,8 @@ def download_thread_func(thread_id):
                                                             imap = operation_login_imap_server(
                                                                 host_global[imap_succeed_index_int_list_global[imap_index_int]], address_global[imap_succeed_index_int_list_global[imap_index_int]], password_global[imap_succeed_index_int_list_global[imap_index_int]], False)
                                                             if imap != None:
-                                                                imap.select(mailbox)
+                                                                imap.select(
+                                                                    mailbox)
                                                                 break
                                                         except Exception:
                                                             pass
@@ -1703,7 +1707,8 @@ def program_tool_list_mail_folders_main():
         list_state = False
         for _ in range(setting_reconnect_max_times_global+1):
             try:
-                _, list_data_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].list()
+                _, list_data_raw = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].list(
+                )
                 list_state = True
                 break
             except Exception:
