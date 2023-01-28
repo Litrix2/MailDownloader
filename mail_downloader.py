@@ -20,7 +20,7 @@ import threading
 import traceback
 import urllib.parse
 
-_version = '1.4.0'
+_version = '1.4.1'
 _mode = 0  # 0:Release;1:Alpha;2:Beta;3:Demo
 _regex_flag_dict = {
     'a': re.ASCII,
