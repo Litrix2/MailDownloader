@@ -49,7 +49,7 @@ lock_print_global = threading.Lock()
 lock_var_global = threading.Lock()
 lock_io_global = threading.Lock()
 
-logging.disable(logging.DEBUG)  # 屏蔽调试信息
+# logging.disable(logging.DEBUG)  # 屏蔽调试信息
 log_global = logging.getLogger('main_logger')
 log_global.setLevel(logging.INFO)
 log_file_handler_global = None
@@ -842,7 +842,7 @@ def program_download_main():
         for mailbox_index_int in range(len(setting_search_mailbox_global[imap_succeed_index_int_list_global[imap_index_int]])):
             mailbox_raw = setting_search_mailbox_global[
                 imap_succeed_index_int_list_global[imap_index_int]][mailbox_index_int]
-            mailbox = str_to_imap_utf7_bytes(mailbox_raw)
+            mailbox = imap_utf7_bytes_encode(mailbox_raw)
             try:
                 select_state, _ = imap_list_global[imap_succeed_index_int_list_global[imap_index_int]].select(
                     mailbox)
@@ -1044,7 +1044,7 @@ def program_download_main():
                         for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index_int])):
                             if not len(msg_with_undownloadable_attachments_list_global[imap_index_int][mailbox_index_int]):
                                 continue
-                            mailbox = str_to_imap_utf7_bytes(
+                            mailbox = imap_utf7_bytes_encode(
                                 setting_search_mailbox_global[imap_index_int][mailbox_index_int])
                             for _ in range(setting_reconnect_max_times_global+1):
                                 try:
@@ -1107,7 +1107,7 @@ def program_download_main():
                         for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index_int])):
                             if not len(msg_overdueanddeleted_list_global[imap_index_int][mailbox_index_int]):
                                 continue
-                            mailbox = str_to_imap_utf7_bytes(
+                            mailbox = imap_utf7_bytes_encode(
                                 setting_search_mailbox_global[imap_index_int][mailbox_index_int])
                             for _ in range(setting_reconnect_max_times_global+1):
                                 try:
@@ -1161,7 +1161,7 @@ def download_thread_func(thread_id):
                     continue
                 mailbox_raw = setting_search_mailbox_global[
                     imap_succeed_index_int_list_global[imap_index_int]][mailbox_index_int]
-                mailbox = str_to_imap_utf7_bytes(mailbox_raw)
+                mailbox = imap_utf7_bytes_encode(mailbox_raw)
                 select_state = False
                 for _ in range(setting_reconnect_max_times_global+1):
                     try:
@@ -1684,9 +1684,9 @@ def download_thread_func(thread_id):
 
 def program_tool_main():
     while True:
-        command = input_option('选择操作 [l:列出邮箱文件夹;q:返回主菜单]', 'l', 'q',
+        command = input_option('选择操作 [l:列出邮箱文件夹;t:测试连接;q:返回主菜单]', 'l','t', 'q',
                                allow_undefind_input=False, default_option='l', end=':')
-        if command == 'l':
+        if command == 'l' or command=='t':
             if not config_load_state_global:
                 print('E: 未能成功加载配置,请在重新加载后执行该操作.', flush=True)
             else:
@@ -1694,6 +1694,10 @@ def program_tool_main():
                     log_info('-'*3+'列出邮箱文件夹操作开始'+'-'*3)
                     program_tool_list_mail_folders_main()
                     log_info('-'*3+'列出邮箱文件夹操作完成'+'-'*3)
+                elif command == 't':
+                    log_info('-'*6+'测试连接操作开始'+'-'*6)
+                    operation_login_all_imapserver()
+                    log_info('-'*6+'测试连接操作结束'+'-'*6)
         elif command == 'q':
             break
 
@@ -1723,19 +1727,24 @@ def program_tool_list_mail_folders_main():
             log_error('邮箱 "'+address_global[imap_index]+'" 获取文件夹列表失败.')
             continue
         print('邮箱:', address_global[imap_index], flush=True)
+        log_info('邮箱: "'+ address_global[imap_index]+'"')
         for folder in list_data_raw:
-            folder_name = imap_utf7_bytes_to_str(
-                re.compile(rb'(?<=/" ").+(?=")').findall(folder)[0])
-            folder_flag = re.compile(rb'(?<=\().+(?=\))').findall(folder)
-            print(indent(1), '文件夹: ', folder_name, sep='', flush=True)
-            log_info(indent(1)+'文件夹: "'+folder_name+'"')
-            if len(folder_flag):
-                folder_flag = imap_utf7_bytes_to_str(folder_flag[0])
-                print(indent(2), '标签: ', folder_flag, sep='', flush=True)
-                log_info(indent(2)+'标签: "'+folder_flag+'"')
-            else:
-                print(indent(2), '没有标签', sep='', flush=True)
-                log_info(indent(2)+'没有标签')
+            try:
+                folder_name = imap_utf7_bytes_decode(
+                    re.compile(rb'(?<=/" ").+(?=")').findall(folder)[0])
+                folder_flag = re.compile(rb'(?<=\().+(?=\))').findall(folder)
+                print(indent(1), '文件夹: ', folder_name, sep='', flush=True)
+                log_info(indent(1)+'文件夹: "'+folder_name+'"')
+                if len(folder_flag):
+                    folder_flag = imap_utf7_bytes_decode(folder_flag[0])
+                    print(indent(2), '标签: ', folder_flag, sep='', flush=True)
+                    log_info(indent(2)+'标签: "'+folder_flag+'"')
+                else:
+                    print(indent(2), '没有标签', sep='', flush=True)
+                    log_info(indent(2)+'没有标签')
+            except UnicodeError:
+                print('E: 邮箱',address_global[imap_index],'有文件夹信息解码失败,已跳过.')
+                log_error('邮箱 "'+address_global[imap_index]+'" 有文件夹信息解码失败.')
         print(flush=True)
 
 
@@ -1778,7 +1787,8 @@ def safe_list_find(List, element):
         return -1
 
 
-def find_childstr_to_list(List, Str):  # 遍历列表,判断列表中字符串是否为指定字符串的子字符串
+def find_childstr_to_list(List, Str):
+    '''遍历列表,判断列表中字符串是否为指定字符串的子字符串'''
     for j in List:
         if j in Str:
             return True
@@ -1796,12 +1806,13 @@ def extract_nested_list(List):
     return result_list
 
 
-def str_to_imap_utf7_bytes(source):
-    return source.encode('UTF7').replace(b'+', b'&')
+def imap_utf7_bytes_encode(source):
+    return source.encode('UTF7').replace(b'+', b'&').replace(b'/',b',')
 
 
-def imap_utf7_bytes_to_str(source):
-    return source.replace(b'&', b'+').decode('UTF7')
+def imap_utf7_bytes_decode(source):
+    log_debug(source)
+    return source.replace(b',',b'/').replace(b'&', b'+').decode('UTF7')
 
 
 def input_option(prompt, *options, allow_undefind_input=False, default_option='', end=''):
@@ -1878,8 +1889,8 @@ try:
     else:
         while True:
             command = input_option(
-                '\r选择操作 [d:下载;t:测试连接;T:工具;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'T', 'r', 'n', 'c', 'q', default_option='d', end=':')
-            if command == 'd' or command == 't':
+                '\r选择操作 [d:下载;t:工具;r:重载配置;n:新建配置;c:清屏;q:退出]', 'd', 't', 'r', 'n', 'c', 'q', default_option='d', end=':')
+            if command == 'd':
                 if not config_load_state_global:
                     print('E: 未能成功加载配置,请在重新加载后执行该操作.', flush=True)
                 else:
@@ -1887,9 +1898,7 @@ try:
                         log_info('-'*8+'下载操作开始'+'-'*8)
                         program_download_main()
                         log_info('-'*8+'下载操作完成'+'-'*8)
-                    elif command == 't':
-                        operation_login_all_imapserver()
-            elif command == 'T':
+            elif command == 't':
                 program_tool_main()
             elif command == 'r':
                 log_warning('='*10+'重载配置'+'='*10)
