@@ -15,7 +15,7 @@ def indent(count: int, unit_count: int = 4, unit_char: str = ' ') -> str:
 
 def safe_list_find(List: list, element) -> int:
     """
-    安全查找列表中元素.
+    安全查找列表中的元素.
     如果列表中没有指定元素,返回-1,而不是报错.
     """
     try:
@@ -69,7 +69,7 @@ def imap_utf7_bytes_encode(source: str) -> bytes:
 
 
 def imap_utf7_bytes_decode(source: bytes) -> str:
-    """将成IMAP协议专用的UTF-7格式字节串解码成字符串."""
+    """将IMAP协议专用的UTF-7格式字节串解码成字符串."""
     result = ''
     base64_status = False
     ampersand_status = False
