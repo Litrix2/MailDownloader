@@ -1,28 +1,114 @@
-#示例配置文件,在使用前请重命名为config.toml
+[program]
+# 静默下载模式;仅在程序重启后生效
+# 为true时,自动执行"下载"操作,不会询问任何信息,且在操作结束后自动退出
+# 推荐搭配日志功能使用
+silent_download_mode = false
 
-#邮箱数据;host:主机名,address:邮箱地址,password:邮箱密码或授权码(如果需要)
-mail = [
-    { host = 'imap.example.com', address = 'name_1@example.com', password = 'your_password_1' },
-    { host = 'imap.example.com', address = 'name_2@example.com', password = 'your_password_2' },
+# 输出日志;若不需要,设为false
+# 警告: 日志会在本地记录你的邮箱名、部分邮件信息,请注意隐私!
+log = false
+# path: 日志输出文件夹路径; relative_to_program: 路径相对于程序/工作目录; overwrite: 是否覆写文件(覆写/追加)
+# log={path='log',relative_to_program=true,overwrite=false}
+
+[mail]
+# 邮箱数据
+# host: IMAP服务器地址; address: 邮箱地址; password:邮箱授权码/密码(根据邮箱选择)
+user_data = [
+    { host = 'imap.example1.com', address = 'mail1@example1.com', password = 'your_password1' },
+    { host = 'imap.example1.com', address = 'mail2@example2.com', password = 'your_password2' },
+    { host = 'imap.example2.com', address = 'mail3@example3.com', password = 'your_password3' },
 ]
-#允许手动输入搜索日期
-allow_manual_input_search_date = true
-#起始搜索日期([年,月,日]);若不需要,设为false
-#仅在allow_manual_input_search_time为false时生效
-min_search_date = false
-#截止搜索日期([年,月,日]);若不需要,设为false
-#仅在allow_manual_input_search_time为false时生效
-max_search_date = false
-#仅搜索未读邮件
-only_search_unseen_mails = true
-#下载线程数
-#适量配置
-thread_count=4
-#当邮件中任意附件下载错误时,删除该邮件中所有已下载的附件
-rollback_when_download_failed = true
-#在成功下载附件后对该邮件设置已读标签
-sign_unseen_tag_after_downloading = true
-#断开连接后最大重连次数
+
+[search]
+# 检索的邮件文件夹;留空为默认文件夹(INBOX)
+# 可以使用"查看邮箱文件夹"命令来查看文件夹名称
+# 由于每种邮箱同种类型的文件夹名称可能不同,不允许额外设置默认文件夹
+mailbox = [
+    # ['已发送'],#mail1
+    # []#mail2留空,所以为默认文件夹
+    # mail3也为默认文件夹
+]
+
+# 搜索邮件类型
+# 0: 所有; 1: 未读; 2: 已读
+search_mail_type = 1
+
+[search.date]
+# 手动输入检索日期;仅在silent_download_mode为false时生效
+manual_input_search_date = true
+
+# 起始搜索日期([年,月,日]);若不需要,设为[]
+# 当manual_input_search_date为true时,作为缺省值
+min_search_date = []
+
+# 截止搜索日期([年,月,日]);若不需要,设为[]
+# 当manual_input_search_date为true时,作为缺省值
+max_search_date = []
+
+# 搜索过滤器(关系为或)
+# 开启后可能会略微降低处理速度
+[search.filter]
+# 按照发件人名称进行过滤,可分邮箱不同处理;不需要请留空
+# 输入正则表达式(多个表达式关系为或)
+# exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应)
+sender_name = [
+    # {exp=[['mail1_1','mail1_2'],[],['mail3_1'],'default1'],flag=[]},
+    # {exp=[[],['mail2_1'],'default2'],flag=[]}
+]
+
+#按照发件人邮箱地址进行过滤,可分邮箱不同处理;不需要请留空
+# 格式同sender_name
+sender_address = [
+    # {exp=[['mail1_1','mail1_2'],'default'],flag=[]}
+]
+
+#按照邮件主题进行过滤,可分邮箱不同处理;不需要请留空
+# 格式同sender_name
+subject = [
+    # {exp=[['mail1_1','mail1_2'],'default'],flag=[]}
+]
+
+[download]
+# 断开连接后最大重连次数
 reconnect_max_times = 3
-#下载文件夹路径,推荐使用绝对路径
-download_path = 'path'
+
+# 当邮件中任意附件下载错误时,删除该邮件中所有已下载的附件
+rollback_when_download_failed = true
+
+# 在成功下载附件后对邮件设置已读标签
+sign_unseen_flag_after_downloading = true
+
+# 下载线程数
+# 适量配置
+thread_count = 4
+
+# 设置下载时显示和记录的邮件信息
+[download.display]
+# 邮箱名称
+mail = true
+
+# 邮件主题、时间
+subject_and_time = true
+
+# 附件的MIME-TYPE
+mime_type = false
+
+[download.path]
+#下载默认路径
+#path: 下载文件夹路径; relative_to_program: 路径相对于程序/工作目录
+default = { path = 'download', relative_to_program = true }
+
+#按照MIME-TYPE选择不同下载路径;若不需要,设为[]
+# 输入正则表达式(多个表达式关系为或)
+#exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应); path: 下载文件夹路径; relative_to_download_path: 路径相对于下载目录/工作目录
+mime_type_classfication = [
+    # {type={exp=[],flag=[]},path='1',relative_to_download_path=true}
+]
+
+#按照文件名选择不同下载路径;若不需要,设为[]
+# 输入正则表达式(多个表达式关系为或)
+#exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应); extenstion: 匹配名为扩展名(不需要写.号)/文件名; path: 下载文件夹路径; relative_to_download_path: 路径相对于下载目录/工作目录
+#优先级高于按MIME-TYPE分类
+file_name_classfication = [
+    # {type={exp=[],flag=[]},extension=true,path='2',relative_to_download_path=true}
+]
