@@ -23,7 +23,7 @@ import urllib.parse
 
 __version__ = '1.4.1'
 _depend_toolkit_version = '1.0.0'
-__status__ = 1
+__status__ = 2
 __author__ = 'Litrix'
 
 _status_dict = {
@@ -164,7 +164,7 @@ def operation_load_config():
             config_path = os.path.join(get_path(), 'config.toml')
         with open(config_path, 'rb') as config_file:
             config_file_data = rtoml.load(
-                bytes.decode(config_file.read(), 'UTF8'))
+                bytes.decode(config_file.read(), 'UTF-8'))
 
             setting_silent_download_mode_global = config_file_data['program']['silent_download_mode']
             assert isinstance(setting_silent_download_mode_global, bool)
@@ -184,7 +184,7 @@ def operation_load_config():
                     if not os.path.exists(log_path):
                         os.makedirs(log_path)
                     log_file_handler_global = logging.FileHandler(
-                        os.path.join(log_path, log_name), log_write_type, 'UTF8')
+                        os.path.join(log_path, log_name), log_write_type, 'UTF-8')
                     log_file_handler_global.setLevel(logging.INFO)
                     log_file_handler_global.setFormatter(logging.Formatter(
                         '[%(asctime)s %(levelname)8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
@@ -1518,7 +1518,7 @@ def download_thread_func(thread_id):
                                                         largefile_name_raw = largefile_data.headers.get(
                                                             'Content-Disposition')
                                                         largefile_name_raw = largefile_name_raw.encode(
-                                                            'ISO-8859-1').decode('UTF8')  # 转码
+                                                            'ISO-8859-1').decode('UTF-8')  # 转码
                                                         largefile_name_raw = largefile_name_raw.split(';')[
                                                             1]
                                                         largefile_name_raw = re.compile(
