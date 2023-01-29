@@ -59,7 +59,7 @@ lock_print_global = threading.Lock()
 lock_var_global = threading.Lock()
 lock_io_global = threading.Lock()
 
-if __status__ == 0:
+if __status__ == 0 or __status__ == 3:
     logging.disable(logging.DEBUG)  # 屏蔽调试信息
 log_global = logging.getLogger('main_logger')
 log_global.setLevel(logging.INFO)
