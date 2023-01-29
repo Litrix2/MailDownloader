@@ -65,11 +65,6 @@ log_global = logging.getLogger('main_logger')
 log_global.setLevel(logging.INFO)
 log_file_handler_global = None
 log_global.addHandler(logging.NullHandler())
-log_debug_global = logging.getLogger('debug_logger')
-log_debug_global.setLevel(logging.DEBUG)
-log_debug_handler = logging.StreamHandler()
-log_debug_handler.setLevel(logging.DEBUG)
-log_debug_global.addHandler(log_debug_handler)
 
 
 class Date():
@@ -1764,7 +1759,7 @@ def program_tool_list_mail_folders_main():
 
 
 def log_debug(msg):
-    log_debug_global.debug(msg)
+    log_global.debug(msg)
 
 
 def log_info(msg):
