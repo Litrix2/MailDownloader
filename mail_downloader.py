@@ -62,7 +62,7 @@ lock_io_global = threading.Lock()
 if __status__ == 0 or __status__ == 3:
     logging.disable(logging.DEBUG)  # 屏蔽调试信息
 log_global = logging.getLogger('main_logger')
-log_global.setLevel(logging.INFO)
+log_global.setLevel(logging.DEBUG)
 log_file_handler_global = None
 log_global.addHandler(logging.NullHandler())
 
@@ -180,7 +180,7 @@ def operation_load_config():
                         os.makedirs(log_path)
                     log_file_handler_global = logging.FileHandler(
                         os.path.join(log_path, log_name), log_write_type, 'UTF-8')
-                    log_file_handler_global.setLevel(logging.INFO)
+                    log_file_handler_global.setLevel(logging.DEBUG)
                     log_file_handler_global.setFormatter(logging.Formatter(
                         '[%(asctime)s %(levelname)8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
                     log_global.addHandler(log_file_handler_global)
