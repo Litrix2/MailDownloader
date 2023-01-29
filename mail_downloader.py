@@ -1237,6 +1237,7 @@ def download_thread_func(thread_id):
                                     pass
 
                         if filter_status_last == 0:
+                            msg_processed_count_global += 1
                             continue
                         fetch_status_last = False
                         for _ in range(setting_reconnect_max_times_global+1):
