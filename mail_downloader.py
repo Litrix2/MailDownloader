@@ -1235,7 +1235,8 @@ def download_thread_func(thread_id):
                                     break
                                 except Exception:
                                     pass
-
+                        with lock_var_global:
+                            operation_fresh_thread_status(thread_id, 1)
                         if filter_status_last == 0:
                             msg_processed_count_global += 1
                             continue
