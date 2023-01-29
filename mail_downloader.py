@@ -921,7 +921,7 @@ def program_download_main():
     while True:
         if download_stop_flag_global:
             return
-        if thread_status_list_global.count(-1) == len(thread_status_list_global) or msg_processed_count_global == msg_total_count_global:
+        if thread_status_list_global.count(-1) == len(thread_status_list_global):
             break
         if len(thread_excepion_list_global):
             with lock_var_global:
