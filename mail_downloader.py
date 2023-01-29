@@ -1892,9 +1892,8 @@ except Exception as e:
     download_stop_flag_global = 1
     with lock_print_global:
         print('\nF: 遇到无法解决的错误.信息如下:', flush=True)
-        print(repr(e), flush=True)
+        traceback.print_exc()
         log_critical('遇到无法解决的错误.信息如下:')
         log_critical(repr(e))
         log_critical('='*10+'异常退出'+'='*10)
-        # traceback.print_exc()
         ltk.pause_exit(1)
