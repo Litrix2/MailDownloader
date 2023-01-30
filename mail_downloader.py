@@ -455,6 +455,8 @@ def operation_load_config():
                         file_name_classfication_splited['extension'])
                     setting_file_name_classfication_path_global[-1].append(
                         file_name_classfication_splited_download_path)
+        log_global.debug(setting_filter_sender_global)
+        log_global.debug(setting_filter_subject_global)
     except Exception as e:
         if str(e):
             print('E: 读取配置文件时错误,信息如下:', flush=True)
@@ -1225,44 +1227,84 @@ def download_thread_func(thread_id):
                         largefile_undownloadable_link_list = []
                         with lock_var_global:
                             operation_fresh_thread_status(thread_id, 1)
-                        filter_status_last = -1  # -1: 过滤器未开启; 0: 不匹配; 1: 匹配
+
+                        # if len(ltk.extract_nested_list(setting_filter_sender_global)) or len(ltk.extract_nested_list(setting_filter_subject_global)):
+                        #     for _ in range(setting_reconnect_max_times_global+1):
+                        #         try:
+                        #             filter_status_last = 0
+                        #             header_data = email.message_from_bytes(
+                        #                 imap.fetch(msg_index, 'BODY.PEEK[HEADER]')[1][0][1])
+                        #             subject = str(header.make_header(
+                        #                 header.decode_header(header_data.get('Subject'))))
+                        #             sender_name, sender_address = utils.parseaddr(str(header.make_header(
+                        #                 header.decode_header(header_data.get('From')))))
+                        #             for filter_name_list_splited_index_int in range(len(setting_filter_sender_global[0])):
+                        #                 for filter_name_index_int in range(len(setting_filter_sender_global[0][filter_name_list_splited_index_int][imap_index])):
+                        #                     if len(re.compile(setting_filter_sender_global[0][filter_name_list_splited_index_int][imap_index][filter_name_index_int], setting_filter_sender_flag_global[0][filter_name_list_splited_index_int][imap_index][filter_name_index_int]).findall(sender_name)):
+                        #                         filter_status_last = 1
+                        #                         break
+                        #             if filter_status_last == 1:
+                        #                 break
+                        #             for filter_address_list_splited_index_int in range(len(setting_filter_sender_global[1])):
+                        #                 for filter_address_index_int in range(len(setting_filter_sender_global[1][filter_address_list_splited_index_int][imap_index])):
+                        #                     if len(re.compile(setting_filter_sender_global[1][filter_address_list_splited_index_int][imap_index][filter_address_index_int], setting_filter_sender_flag_global[1][filter_address_list_splited_index_int][imap_index][filter_address_index_int]).findall(sender_address)):
+                        #                         filter_status_last = 1
+                        #                         break
+                        #             if filter_status_last == 1:
+                        #                 break
+                        #             for filter_subject_list_splited_index_int in range(len(setting_filter_subject_global)):
+                        #                 for filter_subject_index_int in range(len(setting_filter_subject_global[filter_subject_list_splited_index_int][imap_index])):
+                        #                     if len(re.compile(setting_filter_subject_global[filter_subject_list_splited_index_int][imap_index][filter_subject_index_int], setting_filter_subject_flag_global[filter_subject_list_splited_index_int][imap_index][filter_subject_index_int]).findall(subject)):
+                        #                         filter_status_last = 1
+                        #                         break
+                        #             break
+                        #         except Exception:
+                        #             pass
+                        filter_status_last = [True, True, True]
                         if len(ltk.extract_nested_list(setting_filter_sender_global)) or len(ltk.extract_nested_list(setting_filter_subject_global)):
                             for _ in range(setting_reconnect_max_times_global+1):
                                 try:
-                                    filter_status_last = 0
                                     header_data = email.message_from_bytes(
                                         imap.fetch(msg_index, 'BODY.PEEK[HEADER]')[1][0][1])
-                                    subject = str(header.make_header(
-                                        header.decode_header(header_data.get('Subject'))))
                                     sender_name, sender_address = utils.parseaddr(str(header.make_header(
                                         header.decode_header(header_data.get('From')))))
-                                    for filter_name_list_splited_index_int in range(len(setting_filter_sender_global[0])):
-                                        for filter_name_index_int in range(len(setting_filter_sender_global[0][filter_name_list_splited_index_int][imap_index])):
-                                            if len(re.compile(setting_filter_sender_global[0][filter_name_list_splited_index_int][imap_index][filter_name_index_int], setting_filter_sender_flag_global[0][filter_name_list_splited_index_int][imap_index][filter_name_index_int]).findall(sender_name)):
-                                                filter_status_last = 1
-                                                break
-                                    if filter_status_last == 1:
-                                        break
-                                    for filter_address_list_splited_index_int in range(len(setting_filter_sender_global[1])):
-                                        for filter_address_index_int in range(len(setting_filter_sender_global[1][filter_address_list_splited_index_int][imap_index])):
-                                            if len(re.compile(setting_filter_sender_global[1][filter_address_list_splited_index_int][imap_index][filter_address_index_int], setting_filter_sender_flag_global[1][filter_address_list_splited_index_int][imap_index][filter_address_index_int]).findall(sender_address)):
-                                                filter_status_last = 1
-                                                break
-                                    if filter_status_last == 1:
-                                        break
-                                    for filter_subject_list_splited_index_int in range(len(setting_filter_subject_global)):
-                                        for filter_subject_index_int in range(len(setting_filter_subject_global[filter_subject_list_splited_index_int][imap_index])):
-                                            if len(re.compile(setting_filter_subject_global[filter_subject_list_splited_index_int][imap_index][filter_subject_index_int], setting_filter_subject_flag_global[filter_subject_list_splited_index_int][imap_index][filter_subject_index_int]).findall(subject)):
-                                                filter_status_last = 1
-                                                break
-                                    break
+                                    subject = str(header.make_header(
+                                        header.decode_header(header_data.get('Subject'))))
                                 except Exception:
                                     pass
+                                for i in range(max(len(setting_filter_sender_global[0]), len(setting_filter_sender_global[1]), len(setting_filter_subject_global))):
+                                    filter_status_last = [
+                                        True, True, True]
+                                    if i < len(setting_filter_sender_global[0]) and len(ltk.extract_nested_list(setting_filter_sender_global[0][i][imap_index])):
+                                        filter_status_last[0] = False
+                                        for filter_sender_name_index_int, filter_sender_name in enumerate(setting_filter_sender_global[0][i][imap_index]):
+                                            if len(re.compile(filter_sender_name, setting_filter_sender_flag_global[0][i][imap_index][filter_sender_name_index_int]).findall(sender_name)):
+                                                filter_status_last[0] =True
+                                                break
+                                    if i < len(setting_filter_sender_global[1]) and len(ltk.extract_nested_list(setting_filter_sender_global[1][i][imap_index])):
+                                        filter_status_last[1] = False
+                                        for filter_sender_address_index_int, filter_sender_address in enumerate(setting_filter_sender_global[1][i][imap_index]):
+                                            if len(re.compile(filter_sender_address, setting_filter_sender_flag_global[1][i][imap_index][filter_sender_address_index_int]).findall(sender_address)):
+                                                filter_status_last[1] = True
+                                                break
+                                    if i < len(setting_filter_subject_global) and len(ltk.extract_nested_list(setting_filter_subject_global[i][imap_index])):
+                                        filter_status_last[2] = False
+                                        for filter_subject_index_int, filter_subject in enumerate(setting_filter_subject_global[i][imap_index]):
+                                            if len(re.compile(filter_subject, setting_filter_subject_flag_global[i][imap_index][filter_subject_index_int]).findall(subject)):
+                                                filter_status_last[2] = True
+                                                break
+                                    if not False in filter_status_last:
+                                        break
+                                break
+                        log_global.debug(subject)
+                        log_global.debug(filter_status_last)
+                        if False in filter_status_last:
+                            msg_processed_count_global += 1
+                            with lock_var_global:
+                                operation_fresh_thread_status(thread_id, 0)
+                            continue
                         with lock_var_global:
                             operation_fresh_thread_status(thread_id, 1)
-                        if filter_status_last == 0:
-                            msg_processed_count_global += 1
-                            continue
                         fetch_status_last = False
                         for _ in range(setting_reconnect_max_times_global+1):
                             try:
@@ -1290,9 +1332,9 @@ def download_thread_func(thread_id):
                             msg_data = email.message_from_bytes(
                                 msg_data_raw[0][1])
                             subject = str(header.make_header(
-                                header.decode_header(msg_data.get('Subject')))).replace('\n','')
-                            send_time_raw=msg_data.get('Date')
-                            if send_time_raw!=None:
+                                header.decode_header(msg_data.get('Subject')))).replace('\n', '')
+                            send_time_raw = msg_data.get('Date')
+                            if send_time_raw != None:
                                 send_time_raw = str(header.make_header(
                                     header.decode_header(send_time_raw)))[5:]
                                 send_time = copy.copy(send_time_raw)
@@ -1302,7 +1344,7 @@ def download_thread_func(thread_id):
                                 except ValueError:
                                     send_time = send_time_raw
                             else:
-                                send_time='(无法获取时间)'
+                                send_time = '(无法获取时间)'
                             try:
                                 for msg_data_splited in msg_data.walk():
                                     file_name = None
