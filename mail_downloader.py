@@ -455,8 +455,6 @@ def operation_load_config():
                         file_name_classfication_splited['extension'])
                     setting_file_name_classfication_path_global[-1].append(
                         file_name_classfication_splited_download_path)
-        log_global.debug(setting_filter_sender_global)
-        log_global.debug(setting_filter_subject_global)
     except Exception as e:
         if str(e):
             print('E: 读取配置文件时错误,信息如下:', flush=True)
@@ -1296,8 +1294,6 @@ def download_thread_func(thread_id):
                                     if not False in filter_status_last:
                                         break
                                 break
-                        log_global.debug(subject)
-                        log_global.debug(filter_status_last)
                         if False in filter_status_last:
                             msg_processed_count_global += 1
                             with lock_var_global:
