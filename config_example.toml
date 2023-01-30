@@ -15,8 +15,8 @@ log = false
 # host: IMAP服务器地址; address: 邮箱地址; password:邮箱授权码/密码(根据邮箱选择)
 user_data = [
     { host = 'imap.example1.com', address = 'mail1@example1.com', password = 'your_password1' },
-    { host = 'imap.example1.com', address = 'mail2@example2.com', password = 'your_password2' },
-    { host = 'imap.example2.com', address = 'mail3@example3.com', password = 'your_password3' },
+    { host = 'imap.example1.com', address = 'mail2@example1.com', password = 'your_password2' },
+    { host = 'imap.example2.com', address = 'mail3@example2.com', password = 'your_password3' },
 ]
 
 [search]
@@ -26,7 +26,7 @@ user_data = [
 mailbox = [
     # ['已发送'],#mail1
     # []#mail2留空,所以为默认文件夹
-    # mail3也为默认文件夹
+    # (mail3也为默认文件夹)
 ]
 
 # 搜索邮件类型
@@ -45,10 +45,10 @@ min_search_date = []
 # 当manual_input_search_date为true时,作为缺省值
 max_search_date = []
 
-# 搜索过滤器(关系为或)
-# 开启后可能会略微降低处理速度
+# 搜索过滤器
+# 三个过滤器中位置相同的表关系为且,同一过滤器中的表关系为或
 [search.filter]
-# 按照发件人名称进行过滤,可分邮箱不同处理;不需要请留空
+# 按照发件人名称进行过滤,可分邮箱不同处理
 # 输入正则表达式(多个表达式关系为或)
 # exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应)
 sender_name = [
@@ -56,13 +56,13 @@ sender_name = [
     # {exp=[[],['mail2_1'],'default2'],flag=[]}
 ]
 
-#按照发件人邮箱地址进行过滤,可分邮箱不同处理;不需要请留空
+# 按照发件人邮箱地址进行过滤,可分邮箱不同处理
 # 格式同sender_name
 sender_address = [
     # {exp=[['mail1_1','mail1_2'],'default'],flag=[]}
 ]
 
-#按照邮件主题进行过滤,可分邮箱不同处理;不需要请留空
+# 按照邮件主题进行过滤,可分邮箱不同处理
 # 格式同sender_name
 subject = [
     # {exp=[['mail1_1','mail1_2'],'default'],flag=[]}
@@ -94,20 +94,20 @@ subject_and_time = true
 mime_type = false
 
 [download.path]
-#下载默认路径
-#path: 下载文件夹路径; relative_to_program: 路径相对于程序/工作目录
+# 下载默认路径
+# path: 下载文件夹路径; relative_to_program: 路径相对于程序/工作目录
 default = { path = 'download', relative_to_program = true }
 
-#按照MIME-TYPE选择不同下载路径;若不需要,设为[]
+# 按照MIME-TYPE选择不同下载路径;若不需要,设为[]
 # 输入正则表达式(多个表达式关系为或)
-#exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应); path: 下载文件夹路径; relative_to_download_path: 路径相对于下载目录/工作目录
+# exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应); path: 下载文件夹路径; relative_to_download_path: 路径相对于下载目录/工作目录
 mime_type_classfication = [
     # {type={exp=[],flag=[]},path='1',relative_to_download_path=true}
 ]
 
-#按照文件名选择不同下载路径;若不需要,设为[]
+# 按照文件名选择不同下载路径;若不需要,设为[]
 # 输入正则表达式(多个表达式关系为或)
-#exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应); extenstion: 匹配名为扩展名(不需要写.号)/文件名; path: 下载文件夹路径; relative_to_download_path: 路径相对于下载目录/工作目录
+# exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应); extenstion: 匹配名为扩展名(不需要写.号)/文件名; path: 下载文件夹路径; relative_to_download_path: 路径相对于下载目录/工作目录
 #优先级高于按MIME-TYPE分类
 file_name_classfication = [
     # {type={exp=[],flag=[]},extension=true,path='2',relative_to_download_path=true}
