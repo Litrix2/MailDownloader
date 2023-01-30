@@ -23,7 +23,7 @@ import urllib.parse
 
 __version__ = '1.4.2'
 _depend_toolkit_version = '1.0.0'
-__status__ = 1
+__status__ = 2
 __author__ = 'Litrix'
 
 _status_dict = {
