@@ -23,7 +23,7 @@ import urllib.parse
 
 __version__ = '1.4.2'
 _depend_toolkit_version = '1.0.0'
-__status__ = 2
+__status__ = 0
 __author__ = 'Litrix'
 
 _status_dict = {
@@ -59,8 +59,9 @@ lock_print_global = threading.Lock()
 lock_var_global = threading.Lock()
 lock_io_global = threading.Lock()
 debug_mode_global = __status__ == 1 or __status__ == 2
+# 屏蔽调试信息
 if not debug_mode_global:
-    logging.disable(logging.DEBUG)  # 屏蔽调试信息
+    logging.disable(logging.DEBUG)
 log_global = logging.getLogger('main_logger')
 log_global.setLevel(logging.DEBUG)
 log_file_handler_global = None
