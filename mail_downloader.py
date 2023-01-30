@@ -1225,39 +1225,6 @@ def download_thread_func(thread_id):
                         largefile_undownloadable_link_list = []
                         with lock_var_global:
                             operation_fresh_thread_status(thread_id, 1)
-
-                        # if len(ltk.extract_nested_list(setting_filter_sender_global)) or len(ltk.extract_nested_list(setting_filter_subject_global)):
-                        #     for _ in range(setting_reconnect_max_times_global+1):
-                        #         try:
-                        #             filter_status_last = 0
-                        #             header_data = email.message_from_bytes(
-                        #                 imap.fetch(msg_index, 'BODY.PEEK[HEADER]')[1][0][1])
-                        #             subject = str(header.make_header(
-                        #                 header.decode_header(header_data.get('Subject'))))
-                        #             sender_name, sender_address = utils.parseaddr(str(header.make_header(
-                        #                 header.decode_header(header_data.get('From')))))
-                        #             for filter_name_list_splited_index_int in range(len(setting_filter_sender_global[0])):
-                        #                 for filter_name_index_int in range(len(setting_filter_sender_global[0][filter_name_list_splited_index_int][imap_index])):
-                        #                     if len(re.compile(setting_filter_sender_global[0][filter_name_list_splited_index_int][imap_index][filter_name_index_int], setting_filter_sender_flag_global[0][filter_name_list_splited_index_int][imap_index][filter_name_index_int]).findall(sender_name)):
-                        #                         filter_status_last = 1
-                        #                         break
-                        #             if filter_status_last == 1:
-                        #                 break
-                        #             for filter_address_list_splited_index_int in range(len(setting_filter_sender_global[1])):
-                        #                 for filter_address_index_int in range(len(setting_filter_sender_global[1][filter_address_list_splited_index_int][imap_index])):
-                        #                     if len(re.compile(setting_filter_sender_global[1][filter_address_list_splited_index_int][imap_index][filter_address_index_int], setting_filter_sender_flag_global[1][filter_address_list_splited_index_int][imap_index][filter_address_index_int]).findall(sender_address)):
-                        #                         filter_status_last = 1
-                        #                         break
-                        #             if filter_status_last == 1:
-                        #                 break
-                        #             for filter_subject_list_splited_index_int in range(len(setting_filter_subject_global)):
-                        #                 for filter_subject_index_int in range(len(setting_filter_subject_global[filter_subject_list_splited_index_int][imap_index])):
-                        #                     if len(re.compile(setting_filter_subject_global[filter_subject_list_splited_index_int][imap_index][filter_subject_index_int], setting_filter_subject_flag_global[filter_subject_list_splited_index_int][imap_index][filter_subject_index_int]).findall(subject)):
-                        #                         filter_status_last = 1
-                        #                         break
-                        #             break
-                        #         except Exception:
-                        #             pass
                         filter_status_last = [True, True, True]
                         if len(ltk.extract_nested_list(setting_filter_sender_global)) or len(ltk.extract_nested_list(setting_filter_subject_global)):
                             for _ in range(setting_reconnect_max_times_global+1):
@@ -1414,8 +1381,8 @@ def download_thread_func(thread_id):
                                                 file_download_path)
                                             operation_fresh_thread_status(
                                                 thread_id, 0)
-
-                                        if download_status_last == -1 or download_status_last == 2:  # 去除邮件无附件标记或全部过期标记
+                                        # 去除邮件无附件标记或全部过期标记
+                                        if download_status_last == -1 or download_status_last == 2:  
                                             download_status_last = 0
                                     if msg_data_splited.get_content_type() == 'text/html':
                                         msg_data_splited_charset = msg_data_splited.get_content_charset()
@@ -1656,7 +1623,8 @@ def download_thread_func(thread_id):
                                                                 largefile_download_path)
                                                             operation_fresh_thread_status(
                                                                 thread_id, 0)
-                                                        if download_status_last == -1 or download_status_last == 2:  # 去除邮件无附件标记或全部过期标记
+                                                        # 去除邮件无附件标记或全部过期标记
+                                                        if download_status_last == -1 or download_status_last == 2: 
                                                             download_status_last = 0
                             except Exception as e:
                                 if lock_io_global.locked():
