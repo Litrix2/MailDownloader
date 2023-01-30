@@ -1291,14 +1291,18 @@ def download_thread_func(thread_id):
                                 msg_data_raw[0][1])
                             subject = str(header.make_header(
                                 header.decode_header(msg_data.get('Subject'))))
-                            send_time_raw = str(header.make_header(
-                                header.decode_header(msg_data.get('Date'))))[5:]
-                            send_time = copy.copy(send_time_raw)
-                            try:
-                                send_time = str(utils.parsedate_to_datetime(
-                                    send_time_raw).astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
-                            except ValueError:
-                                send_time = send_time_raw
+                            send_time_raw=msg_data.get('Date')
+                            if send_time_raw!=None:
+                                send_time_raw = str(header.make_header(
+                                    header.decode_header()))[5:]
+                                send_time = copy.copy(send_time_raw)
+                                try:
+                                    send_time = str(utils.parsedate_to_datetime(
+                                        send_time_raw).astimezone(pytz.timezone('Etc/GMT-8')))[:-6]
+                                except ValueError:
+                                    send_time = send_time_raw
+                            else:
+                                send_time='(无法获取时间)'
                             try:
                                 for msg_data_splited in msg_data.walk():
                                     file_name = None
@@ -1886,7 +1890,7 @@ except KeyboardInterrupt:
         log_global.critical('='*10+'强制退出'+'='*10)
         time.sleep(0.5)
         ltk.pause_exit(1)
-except Exception as e:
+except Exception:
     download_stop_flag_global = 1
     with lock_print_global:
         print('\nF: 遇到无法解决的错误.信息如下:', flush=True)
