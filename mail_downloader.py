@@ -1290,11 +1290,11 @@ def download_thread_func(thread_id):
                             msg_data = email.message_from_bytes(
                                 msg_data_raw[0][1])
                             subject = str(header.make_header(
-                                header.decode_header(msg_data.get('Subject'))))
+                                header.decode_header(msg_data.get('Subject')))).replace('\n','')
                             send_time_raw=msg_data.get('Date')
                             if send_time_raw!=None:
                                 send_time_raw = str(header.make_header(
-                                    header.decode_header()))[5:]
+                                    header.decode_header(send_time_raw)))[5:]
                                 send_time = copy.copy(send_time_raw)
                                 try:
                                     send_time = str(utils.parsedate_to_datetime(
