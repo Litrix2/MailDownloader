@@ -1932,7 +1932,7 @@ except Exception:
     download_stop_flag_global = 1
     with lock_print_global:
         print('\nF: 遇到无法解决的错误.信息如下:', flush=True)
-        log_global.critical('遇到无法解决的错误.信息如下:')
+        log_global.critical('遇到无法解决的错误. 信息如下:')
         traceback_msg = traceback.format_exc()
         print(traceback_msg)
         for traceback_msg_splited in traceback_msg.splitlines():
