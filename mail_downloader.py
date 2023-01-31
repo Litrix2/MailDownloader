@@ -1205,7 +1205,7 @@ def download_thread_func(thread_id):
                 if not select_status:
                     with lock_print_global:
                         print('\rE: 邮箱', address_global[imap_index],
-                              '的文件夹', mailbox_raw, '选择失败,已跳过.',ltk.indent(4), flush=True)
+                              '的文件夹', mailbox_raw, '选择失败,已跳过.', ltk.indent(4), flush=True)
                         log_global.error(
                             '邮箱 "'+address_global[imap_index]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
                     continue
@@ -1245,7 +1245,7 @@ def download_thread_func(thread_id):
                                         filter_status_last[0] = False
                                         for filter_sender_name_index_int, filter_sender_name in enumerate(setting_filter_sender_global[0][i][imap_index]):
                                             if len(re.compile(filter_sender_name, setting_filter_sender_flag_global[0][i][imap_index][filter_sender_name_index_int]).findall(sender_name)):
-                                                filter_status_last[0] =True
+                                                filter_status_last[0] = True
                                                 break
                                     if i < len(setting_filter_sender_global[1]) and len(ltk.extract_nested_list(setting_filter_sender_global[1][i][imap_index])):
                                         filter_status_last[1] = False
@@ -1289,7 +1289,7 @@ def download_thread_func(thread_id):
                         if not fetch_status_last:
                             with lock_print_global:
                                 print(
-                                    '\rE: 邮箱', address_global[imap_index], '有邮件数据获取失败,已跳过.',ltk.indent(4), flush=True)
+                                    '\rE: 邮箱', address_global[imap_index], '有邮件数据获取失败,已跳过.', ltk.indent(4), flush=True)
                                 log_global.error(
                                     '邮箱 "'+address_global[imap_index]+'" 有邮件数据获取失败.')
                         else:
@@ -1324,7 +1324,7 @@ def download_thread_func(thread_id):
                                             header.decode_header(msg_data_splited.get_filename())))
                                         file_data = msg_data_splited.get_payload(
                                             decode=True)
-                                        if file_data!=None:
+                                        if file_data != None:
                                             with lock_var_global:
                                                 operation_fresh_thread_status(
                                                     thread_id, 2)
@@ -1346,7 +1346,7 @@ def download_thread_func(thread_id):
                                                 file_name = operation_fetch_file_name(
                                                     file_name_raw, file_download_path)
                                                 os.renames(os.path.join(file_download_path, file_name_tmp),
-                                                        os.path.join(file_download_path, file_name))
+                                                           os.path.join(file_download_path, file_name))
                                             if download_stop_flag_global:
                                                 if setting_rollback_when_download_failed_global:
                                                     with lock_io_global:
@@ -1365,14 +1365,14 @@ def download_thread_func(thread_id):
                                                         1)+'邮箱: "'+address_global[imap_index]+'"')
                                                 if setting_display_subject_and_time:
                                                     print(ltk.indent(1), '标题-时间: ', subject, ' - ',
-                                                        send_time, sep='', flush=True)
+                                                          send_time, sep='', flush=True)
                                                     log_global.info(
                                                         ltk.indent(1)+'标题: "'+subject+'"')
                                                     log_global.info(
                                                         ltk.indent(1)+'时间: '+send_time)
                                                 if setting_display_mime_type:
                                                     print(ltk.indent(1), 'MIME-TYPE: ',
-                                                        mime_type, sep='', flush=True)
+                                                          mime_type, sep='', flush=True)
                                                     log_global.info(
                                                         ltk.indent(1)+'MIME-TYPE: "'+mime_type+'"')
                                                 file_download_count_global += 1
@@ -1384,7 +1384,7 @@ def download_thread_func(thread_id):
                                                 operation_fresh_thread_status(
                                                     thread_id, 0)
                                             # 去除邮件无附件标记或全部过期标记
-                                            if download_status_last == -1 or download_status_last == 2:  
+                                            if download_status_last == -1 or download_status_last == 2:
                                                 download_status_last = 0
                                     if msg_data_splited.get_content_type() == 'text/html':
                                         msg_data_splited_charset = msg_data_splited.get_content_charset()
@@ -1626,7 +1626,7 @@ def download_thread_func(thread_id):
                                                             operation_fresh_thread_status(
                                                                 thread_id, 0)
                                                         # 去除邮件无附件标记或全部过期标记
-                                                        if download_status_last == -1 or download_status_last == 2: 
+                                                        if download_status_last == -1 or download_status_last == 2:
                                                             download_status_last = 0
                             except Exception as e:
                                 if lock_io_global.locked():
@@ -1634,7 +1634,7 @@ def download_thread_func(thread_id):
                                 with lock_print_global:
                                     if not req_status_last:
                                         print(
-                                            '\rE: 邮箱', address_global[imap_index], '有附件下载失败,该邮件已跳过.',ltk.indent(4), flush=True)
+                                            '\rE: 邮箱', address_global[imap_index], '有附件下载失败,该邮件已跳过.', ltk.indent(4), flush=True)
                                         log_global.error(
                                             '邮箱 "'+address_global[imap_index]+'" 有附件下载失败.')
                                         if setting_rollback_when_download_failed_global:
