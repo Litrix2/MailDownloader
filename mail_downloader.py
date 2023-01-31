@@ -1837,9 +1837,7 @@ try:
     if config_load_status_global and setting_silent_download_mode_global:
         print('W: 静默下载模式已开启.', flush=True)
         log_global.warning('静默下载模式已开启.')
-        log_global.info('-'*8+'下载操作开始'+'-'*8)
         program_download_main()
-        log_global.info('-'*8+'下载操作完成'+'-'*8)
         print('程序将在 5 秒后退出.')
         time.sleep(4.5)
         log_global.info('='*10+'程序退出'+'='*10)
