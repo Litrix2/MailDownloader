@@ -1204,8 +1204,8 @@ def download_thread_func(thread_id):
                                 break
                 if not select_status:
                     with lock_print_global:
-                        print('E: 邮箱', address_global[imap_index],
-                              '的文件夹', mailbox_raw, '选择失败,已跳过.', flush=True)
+                        print('\rE: 邮箱', address_global[imap_index],
+                              '的文件夹', mailbox_raw, '选择失败,已跳过.',ltk.indent(4), flush=True)
                         log_global.error(
                             '邮箱 "'+address_global[imap_index]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
                     continue
@@ -1289,7 +1289,7 @@ def download_thread_func(thread_id):
                         if not fetch_status_last:
                             with lock_print_global:
                                 print(
-                                    'E: 邮箱', address_global[imap_index], '有邮件数据获取失败,已跳过.', flush=True)
+                                    '\rE: 邮箱', address_global[imap_index], '有邮件数据获取失败,已跳过.',ltk.indent(4), flush=True)
                                 log_global.error(
                                     '邮箱 "'+address_global[imap_index]+'" 有邮件数据获取失败.')
                         else:
@@ -1324,67 +1324,68 @@ def download_thread_func(thread_id):
                                             header.decode_header(msg_data_splited.get_filename())))
                                         file_data = msg_data_splited.get_payload(
                                             decode=True)
-                                        with lock_var_global:
-                                            operation_fresh_thread_status(
-                                                thread_id, 2)
-                                        if download_stop_flag_global:
-                                            if setting_rollback_when_download_failed_global:
-                                                with lock_io_global:
-                                                    operation_rollback(
-                                                        thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
-                                            return
-                                        lock_io_global.acquire()
-                                        file_download_path = operation_get_download_path(
-                                            file_name_raw, mime_type)
-                                        file_name_tmp = operation_fetch_file_name(
-                                            file_name_raw+'.tmp', file_download_path)
-                                        with open(os.path.join(file_download_path, file_name_tmp), 'wb') as file:
-                                            lock_io_global.release()
-                                            file.write(file_data)
-                                        with lock_io_global:
-                                            file_name = operation_fetch_file_name(
-                                                file_name_raw, file_download_path)
-                                            os.renames(os.path.join(file_download_path, file_name_tmp),
-                                                       os.path.join(file_download_path, file_name))
-                                        if download_stop_flag_global:
-                                            if setting_rollback_when_download_failed_global:
-                                                with lock_io_global:
-                                                    operation_rollback(
-                                                        thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
-                                            return
-                                        with lock_print_global, lock_var_global:
-                                            print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
-                                                ' <- '+file_name_raw)if file_name != file_name_raw else '', ltk.indent(8), sep='', flush=True)
-                                            log_global.info(str(file_download_count_global+1)+' 已下载 "' + file_name + ((
-                                                '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '"'))
-                                            if setting_display_mail:
-                                                print(ltk.indent(
-                                                    1), '邮箱: ', address_global[imap_index], sep='', flush=True)
-                                                log_global.info(ltk.indent(
-                                                    1)+'邮箱: "'+address_global[imap_index]+'"')
-                                            if setting_display_subject_and_time:
-                                                print(ltk.indent(1), '标题-时间: ', subject, ' - ',
-                                                      send_time, sep='', flush=True)
-                                                log_global.info(
-                                                    ltk.indent(1)+'标题: "'+subject+'"')
-                                                log_global.info(
-                                                    ltk.indent(1)+'时间: '+send_time)
-                                            if setting_display_mime_type:
-                                                print(ltk.indent(1), 'MIME-TYPE: ',
-                                                      mime_type, sep='', flush=True)
-                                                log_global.info(
-                                                    ltk.indent(1)+'MIME-TYPE: "'+mime_type+'"')
-                                            file_download_count_global += 1
-                                            file_download_count += 1
-                                            thread_file_name_list_global[thread_id].append(
-                                                file_name)
-                                            thread_file_download_path_list_global[thread_id].append(
-                                                file_download_path)
-                                            operation_fresh_thread_status(
-                                                thread_id, 0)
-                                        # 去除邮件无附件标记或全部过期标记
-                                        if download_status_last == -1 or download_status_last == 2:  
-                                            download_status_last = 0
+                                        if file_data!=None:
+                                            with lock_var_global:
+                                                operation_fresh_thread_status(
+                                                    thread_id, 2)
+                                            if download_stop_flag_global:
+                                                if setting_rollback_when_download_failed_global:
+                                                    with lock_io_global:
+                                                        operation_rollback(
+                                                            thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
+                                                return
+                                            lock_io_global.acquire()
+                                            file_download_path = operation_get_download_path(
+                                                file_name_raw, mime_type)
+                                            file_name_tmp = operation_fetch_file_name(
+                                                file_name_raw+'.tmp', file_download_path)
+                                            with open(os.path.join(file_download_path, file_name_tmp), 'wb') as file:
+                                                lock_io_global.release()
+                                                file.write(file_data)
+                                            with lock_io_global:
+                                                file_name = operation_fetch_file_name(
+                                                    file_name_raw, file_download_path)
+                                                os.renames(os.path.join(file_download_path, file_name_tmp),
+                                                        os.path.join(file_download_path, file_name))
+                                            if download_stop_flag_global:
+                                                if setting_rollback_when_download_failed_global:
+                                                    with lock_io_global:
+                                                        operation_rollback(
+                                                            thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
+                                                return
+                                            with lock_print_global, lock_var_global:
+                                                print('\r', file_download_count_global+1, ' 已下载 ', file_name, (
+                                                    ' <- '+file_name_raw)if file_name != file_name_raw else '', ltk.indent(8), sep='', flush=True)
+                                                log_global.info(str(file_download_count_global+1)+' 已下载 "' + file_name + ((
+                                                    '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '"'))
+                                                if setting_display_mail:
+                                                    print(ltk.indent(
+                                                        1), '邮箱: ', address_global[imap_index], sep='', flush=True)
+                                                    log_global.info(ltk.indent(
+                                                        1)+'邮箱: "'+address_global[imap_index]+'"')
+                                                if setting_display_subject_and_time:
+                                                    print(ltk.indent(1), '标题-时间: ', subject, ' - ',
+                                                        send_time, sep='', flush=True)
+                                                    log_global.info(
+                                                        ltk.indent(1)+'标题: "'+subject+'"')
+                                                    log_global.info(
+                                                        ltk.indent(1)+'时间: '+send_time)
+                                                if setting_display_mime_type:
+                                                    print(ltk.indent(1), 'MIME-TYPE: ',
+                                                        mime_type, sep='', flush=True)
+                                                    log_global.info(
+                                                        ltk.indent(1)+'MIME-TYPE: "'+mime_type+'"')
+                                                file_download_count_global += 1
+                                                file_download_count += 1
+                                                thread_file_name_list_global[thread_id].append(
+                                                    file_name)
+                                                thread_file_download_path_list_global[thread_id].append(
+                                                    file_download_path)
+                                                operation_fresh_thread_status(
+                                                    thread_id, 0)
+                                            # 去除邮件无附件标记或全部过期标记
+                                            if download_status_last == -1 or download_status_last == 2:  
+                                                download_status_last = 0
                                     if msg_data_splited.get_content_type() == 'text/html':
                                         msg_data_splited_charset = msg_data_splited.get_content_charset()
                                         msg_data_splited_data_raw = msg_data_splited.get_payload(
@@ -1633,7 +1634,7 @@ def download_thread_func(thread_id):
                                 with lock_print_global:
                                     if not req_status_last:
                                         print(
-                                            'E: 邮箱', address_global[imap_index], '有附件下载失败,该邮件已跳过.', flush=True)
+                                            '\rE: 邮箱', address_global[imap_index], '有附件下载失败,该邮件已跳过.',ltk.indent(4), flush=True)
                                         log_global.error(
                                             '邮箱 "'+address_global[imap_index]+'" 有附件下载失败.')
                                         if setting_rollback_when_download_failed_global:
