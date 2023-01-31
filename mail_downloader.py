@@ -1204,8 +1204,8 @@ def download_thread_func(thread_id):
                                 break
                 if not select_status:
                     with lock_print_global:
-                        print('E: 邮箱', address_global[imap_index],
-                              '的文件夹', mailbox_raw, '选择失败,已跳过.', flush=True)
+                        print('\rE: 邮箱', address_global[imap_index],
+                              '的文件夹', mailbox_raw, '选择失败,已跳过.',ltk.indent(4), flush=True)
                         log_global.error(
                             '邮箱 "'+address_global[imap_index]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
                     continue
@@ -1289,7 +1289,7 @@ def download_thread_func(thread_id):
                         if not fetch_status_last:
                             with lock_print_global:
                                 print(
-                                    'E: 邮箱', address_global[imap_index], '有邮件数据获取失败,已跳过.', flush=True)
+                                    '\rE: 邮箱', address_global[imap_index], '有邮件数据获取失败,已跳过.',ltk.indent(4), flush=True)
                                 log_global.error(
                                     '邮箱 "'+address_global[imap_index]+'" 有邮件数据获取失败.')
                         else:
@@ -1633,7 +1633,7 @@ def download_thread_func(thread_id):
                                 with lock_print_global:
                                     if not req_status_last:
                                         print(
-                                            'E: 邮箱', address_global[imap_index], '有附件下载失败,该邮件已跳过.', flush=True)
+                                            '\rE: 邮箱', address_global[imap_index], '有附件下载失败,该邮件已跳过.',ltk.indent(4), flush=True)
                                         log_global.error(
                                             '邮箱 "'+address_global[imap_index]+'" 有附件下载失败.')
                                         if setting_rollback_when_download_failed_global:
