@@ -10,10 +10,10 @@ log = false
 # path: 日志输出文件夹路径; relative_to_program: 路径相对于程序/工作目录; overwrite: 是否覆写文件(覆写/追加)
 # log={path='log',relative_to_program=true,overwrite=false}
 
-[mail]
+[mailbox]
 # 邮箱数据
 # host: IMAP服务器地址; address: 邮箱地址; password:邮箱授权码/密码(根据邮箱选择)
-user_data = [
+account = [
     { host = 'imap.example1.com', address = 'mail1@example1.com', password = 'your_password1' },
     { host = 'imap.example1.com', address = 'mail2@example1.com', password = 'your_password2' },
     { host = 'imap.example2.com', address = 'mail3@example2.com', password = 'your_password3' },
@@ -23,7 +23,7 @@ user_data = [
 # 检索的邮件文件夹;留空为默认文件夹(INBOX)
 # 可以使用"查看邮箱文件夹"命令来查看文件夹名称
 # 由于每种邮箱同种类型的文件夹名称可能不同,不允许额外设置默认文件夹
-mailbox = [
+folder = [
     # ['已发送'],#mail1
     # []#mail2留空,所以为默认文件夹
     # (mail3也为默认文件夹)
@@ -85,7 +85,7 @@ thread_count = 4
 # 设置下载时显示和记录的邮件信息
 [download.display]
 # 邮箱名称
-mail = true
+mailbox = true
 
 # 邮件主题、时间
 subject_and_time = true
@@ -110,5 +110,5 @@ mime_type_classfication = [
 # exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应); extenstion: 匹配名为扩展名(不需要写.号)/文件名; path: 下载文件夹路径; relative_to_download_path: 路径相对于下载目录/工作目录
 #优先级高于按MIME-TYPE分类
 file_name_classfication = [
-    # {type={exp=[],flag=[]},extension=true,path='2',relative_to_download_path=true}
+    # {name={exp=[],flag=[]},extension=true,path='2',relative_to_download_path=true}
 ]

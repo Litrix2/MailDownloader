@@ -1,7 +1,9 @@
 .*
 __*__
 ancient/
+build/
 config/
+dist/
 download/
 log/
 test/
@@ -9,3 +11,5 @@ config.toml
 config_new.toml
 note.md
 *.bat
+*.exe
+*.spec
