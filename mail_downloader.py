@@ -21,7 +21,7 @@ import threading
 import traceback
 import urllib.parse
 
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 _depend_toolkit_version = '1.0.0'
 __status__ = 0
 __author__ = 'Litrix'
