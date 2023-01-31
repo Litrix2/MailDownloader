@@ -94,7 +94,7 @@ config_primary_data = {
         'log': False
     },
     'mail': {
-        'user_data': []
+        'account': []
     },
     'search': {
         'mailbox': [],
@@ -192,14 +192,14 @@ def operation_load_config():
             host_global = []
             address_global = []
             password_global = []
-            user_data = config_file_data['mail']['user_data']
-            assert isinstance(user_data, list)
-            for user_data_splited in user_data:
-                assert isinstance(user_data_splited, dict) and isinstance(user_data_splited['host'], str) and isinstance(
-                    user_data_splited['address'], str) and isinstance(user_data_splited['password'], str)
-                host_global.append(user_data_splited['host'])
-                address_global.append(user_data_splited['address'])
-                password_global.append(user_data_splited['password'])
+            account = config_file_data['mail']['account']
+            assert isinstance(account, list)
+            for account_splited in account:
+                assert isinstance(account_splited, dict) and isinstance(account_splited['host'], str) and isinstance(
+                    account_splited['address'], str) and isinstance(account_splited['password'], str)
+                host_global.append(account_splited['host'])
+                address_global.append(account_splited['address'])
+                password_global.append(account_splited['password'])
 
             mailbox = config_file_data['search']['mailbox']
             assert isinstance(mailbox, list)
