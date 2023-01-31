@@ -913,8 +913,11 @@ def program_download_main():
             log_global.info(
                 '共 '+str(len(ltk.extract_nested_list(msg_list_global)))+' 封邮件')
             start_time = time.time()
-            print('开始处理...\n', end='', flush=True)
+            print('开始处理...', flush=True)
             log_global.info('开始处理...')
+            if len(ltk.extract_nested_list(setting_filter_sender_global)) or len(ltk.extract_nested_list(setting_filter_subject_global)):
+                print('N: 过滤器已开启.',flush=True)
+                log_global.info('过滤器已开启.')
             msg_total_count_global = len(
                 ltk.extract_nested_list(msg_list_global))
             thread_list_global = []
