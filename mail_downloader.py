@@ -93,11 +93,11 @@ config_primary_data = {
         'silent_download_mode': False,
         'log': False
     },
-    'mail': {
+    'mailbox': {
         'account': []
     },
     'search': {
-        'mailbox': [],
+        'folder': [],
         'search_mail_type': 1,
         'date': {
             'manual_input_search_date': True,
@@ -116,7 +116,7 @@ config_primary_data = {
         'sign_unseen_flag_after_downloading': True,
         'thread_count': 4,
         'display': {
-            'mail': True,
+            'mailbox': True,
             'subject_and_time': True,
             'mime_type': False
         },
@@ -136,7 +136,7 @@ def operation_load_config():
     global log_file_handler_global
     global host_global, address_global, password_global
     global setting_silent_download_mode_global
-    global setting_search_mailbox_global
+    global setting_search_folder_global
     global setting_search_mails_type_global
     global setting_manual_input_search_date_global
     global setting_min_search_date_global, setting_max_search_date_global
@@ -192,7 +192,7 @@ def operation_load_config():
             host_global = []
             address_global = []
             password_global = []
-            account = config_file_data['mail']['account']
+            account = config_file_data['mailbox']['account']
             assert isinstance(account, list)
             for account_splited in account:
                 assert isinstance(account_splited, dict) and isinstance(account_splited['host'], str) and isinstance(
@@ -201,13 +201,13 @@ def operation_load_config():
                 address_global.append(account_splited['address'])
                 password_global.append(account_splited['password'])
 
-            mailbox = config_file_data['search']['mailbox']
-            assert isinstance(mailbox, list)
-            for j in mailbox:
+            folder = config_file_data['search']['folder']
+            assert isinstance(folder, list)
+            for j in folder:
                 assert isinstance(j, list)
-            search_mailbox = operation_parse_config_data1(
-                mailbox, True, 'INBOX')[1]
-            setting_search_mailbox_global = search_mailbox
+            search_folder = operation_parse_config_data1(
+                folder, True, 'INBOX')[1]
+            setting_search_folder_global = search_folder
 
             setting_search_mails_type_global = config_file_data['search']['search_mail_type']
             assert isinstance(setting_search_mails_type_global,
@@ -340,7 +340,7 @@ def operation_load_config():
             assert isinstance(setting_reconnect_max_times_global, int)
 
             assert isinstance(config_file_data['download']['display'], dict)
-            setting_display_mail = config_file_data['download']['display']['mail']
+            setting_display_mail = config_file_data['download']['display']['mailbox']
             assert isinstance(setting_display_mail, bool)
 
             setting_display_subject_and_time = config_file_data[
@@ -585,7 +585,7 @@ def init(func):
             file_download_path_global.append([])
             largefile_undownloadable_link_list_global.append([])
             largefile_undownloadable_code_list_global.append([])
-            for _ in range(len(setting_search_mailbox_global[i])):
+            for _ in range(len(setting_search_folder_global[i])):
                 msg_list_global[-1].append([])
                 msg_with_undownloadable_attachments_list_global[-1].append([])
                 msg_overdueanddeleted_list_global[-1].append([])
@@ -858,20 +858,20 @@ def program_download_main():
                                ) if setting_max_search_date_global.enabled else ''
             search_command += ' ' if setting_max_search_date_global.enabled or setting_min_search_date_global.enabled else ''
             search_command += 'ALL' if setting_search_mails_type_global == 0 else 'UNSEEN' if setting_search_mails_type_global == 1 else 'SEEN'
-            for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index])):
-                mailbox_raw = setting_search_mailbox_global[
-                    imap_index][mailbox_index_int]
-                mailbox = b'"'+ltk.imap_utf7_bytes_encode(mailbox_raw)+b'"'
+            for folder_index_int in range(len(setting_search_folder_global[imap_index])):
+                folder_raw = setting_search_folder_global[
+                    imap_index][folder_index_int]
+                folder = b'"'+ltk.imap_utf7_bytes_encode(folder_raw)+b'"'
                 try:
                     select_status, _ = imap_list_global[imap_index].select(
-                        mailbox)
+                        folder)
                 except Exception:
                     select_status = 'NO'
                 if select_status == 'NO':
                     print('E: 邮箱', address_global[imap_index],
-                          '的收件箱', mailbox_raw, '选择失败,已跳过.', flush=True)
+                          '的收件箱', folder_raw, '选择失败,已跳过.', flush=True)
                     log_global.error(
-                        '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + mailbox_raw + '" 选择失败.')
+                        '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + folder_raw + '" 选择失败.')
                     continue
                 search_status_last = False
                 for _ in range(setting_reconnect_max_times_global+1):
@@ -886,19 +886,19 @@ def program_download_main():
                                 host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
                             if imap_list_global[imap_index] != None:
                                 imap_list_global[imap_index].select(
-                                    mailbox)
+                                    folder)
                                 break
                 if not search_status_last:
                     print('E: 邮箱', address_global[imap_index],
-                          '的收件箱', mailbox_raw, '搜索失败,已跳过.', flush=True)
+                          '的收件箱', folder_raw, '搜索失败,已跳过.', flush=True)
                     log_global.error(
-                        '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + mailbox_raw + '" 搜索失败.')
+                        '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + folder_raw + '" 搜索失败.')
                     if not ltk.safe_list_find(imap_connect_failed_index_list_global, imap_index):
                         imap_connect_failed_index_list_global.append(
                             imap_index)
                     continue
                 msg_list = list(reversed(msg_data_index_raw[0].split()))
-                msg_list_global[imap_index][mailbox_index_int] = msg_list
+                msg_list_global[imap_index][folder_index_int] = msg_list
             print(
                 '\r邮箱: ', address_global[imap_index], ltk.indent(3), sep='', flush=True)
             print(ltk.indent(1), '搜索到 ', len(ltk.extract_nested_list(
@@ -972,13 +972,13 @@ def program_download_main():
                         log_global.error(ltk.indent(1)+'"' +
                                          address_global[imap_connect_failed_index]+'"')
                 for imap_index, msg_list_global_splited in enumerate(msg_list_global):
-                    for mailbox_index_int, msg_list_global_splited2 in enumerate(msg_list_global_splited):
+                    for folder_index_int, msg_list_global_splited2 in enumerate(msg_list_global_splited):
                         if len(msg_list_global_splited2) > 0:
                             if ltk.safe_list_find(imap_fetch_failed_index_list_global, imap_index) == -1:
                                 imap_fetch_failed_index_list_global.append(
                                     imap_index)
                             msg_fetch_failed_list_global[imap_index][
-                                mailbox_index_int] += msg_list_global_splited2
+                                folder_index_int] += msg_list_global_splited2
                 if len(imap_fetch_failed_index_list_global):
                     print('E: 以下邮件处理失败,请尝试重新下载:', flush=True)
                     log_global.error('以下邮件处理失败,请尝试重新下载:')
@@ -1000,20 +1000,20 @@ def program_download_main():
                             1), '邮箱: ', address_global[imap_download_failed_index], sep='', flush=True)
                         log_global.error(ltk.indent(
                             1) + '邮箱: "' + address_global[imap_download_failed_index]+'"')
-                        for mailbox_index_int, msg_download_failed_list_global_splited in enumerate(msg_download_failed_list_global[imap_download_failed_index]):
+                        for folder_index_int, msg_download_failed_list_global_splited in enumerate(msg_download_failed_list_global[imap_download_failed_index]):
                             if not len(msg_download_failed_list_global_splited):
                                 continue
                             print(ltk.indent(
-                                2), '文件夹: ', setting_search_mailbox_global[imap_download_failed_index][mailbox_index_int], sep='', flush=True)
+                                2), '文件夹: ', setting_search_folder_global[imap_download_failed_index][folder_index_int], sep='', flush=True)
                             log_global.error(ltk.indent(
-                                2) + '文件夹: "' + setting_search_mailbox_global[imap_download_failed_index][mailbox_index_int]+'"')
-                            for subject_index_int, subject in enumerate(subject_download_failed_list_global[imap_download_failed_index][mailbox_index_int]):
+                                2) + '文件夹: "' + setting_search_folder_global[imap_download_failed_index][folder_index_int]+'"')
+                            for subject_index_int, subject in enumerate(subject_download_failed_list_global[imap_download_failed_index][folder_index_int]):
                                 print(ltk.indent(3), msg_download_failed_counted_count+1, ' 标题-时间: ',
-                                      subject, ' - ', send_time_download_failed_list_global[imap_download_failed_index][mailbox_index_int][subject_index_int], sep='', flush=True)
+                                      subject, ' - ', send_time_download_failed_list_global[imap_download_failed_index][folder_index_int][subject_index_int], sep='', flush=True)
                                 log_global.error(ltk.indent(3) + str(msg_download_failed_counted_count+1) + ' 标题: "' +
-                                                 subject_download_failed_list_global[imap_download_failed_index][mailbox_index_int][subject_index_int]+'"')
+                                                 subject_download_failed_list_global[imap_download_failed_index][folder_index_int][subject_index_int]+'"')
                                 log_global.error(ltk.indent(
-                                    4)+'时间: '+send_time_download_failed_list_global[imap_download_failed_index][mailbox_index_int][subject_index_int])
+                                    4)+'时间: '+send_time_download_failed_list_global[imap_download_failed_index][folder_index_int][subject_index_int])
                                 msg_download_failed_counted_count += 1
                 if len(ltk.extract_nested_list(msg_with_undownloadable_attachments_list_global)):
                     msg_with_undownloadable_attachments_counted_count = 0
@@ -1025,27 +1025,27 @@ def program_download_main():
                             1), '邮箱: ', address_global[imap_with_undownloadable_attachments_index], sep='', flush=True)
                         log_global.warning(ltk.indent(
                             1) + '邮箱: "' + address_global[imap_with_undownloadable_attachments_index]+'"')
-                        for mailbox_index_int, msg_with_undownloadable_attachments_list_global_splited in enumerate(msg_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index]):
+                        for folder_index_int, msg_with_undownloadable_attachments_list_global_splited in enumerate(msg_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index]):
                             if not len(msg_with_undownloadable_attachments_list_global_splited):
                                 continue
                             print(ltk.indent(
-                                2), '文件夹: ', setting_search_mailbox_global[imap_with_undownloadable_attachments_index][mailbox_index_int], sep='', flush=True)
+                                2), '文件夹: ', setting_search_folder_global[imap_with_undownloadable_attachments_index][folder_index_int], sep='', flush=True)
                             log_global.warning(ltk.indent(
-                                2) + '文件夹: "' + setting_search_mailbox_global[imap_with_undownloadable_attachments_index][mailbox_index_int]+'"')
-                            for subject_index_int, subject in enumerate(subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][mailbox_index_int]):
+                                2) + '文件夹: "' + setting_search_folder_global[imap_with_undownloadable_attachments_index][folder_index_int]+'"')
+                            for subject_index_int, subject in enumerate(subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][folder_index_int]):
                                 print(ltk.indent(3), msg_with_undownloadable_attachments_counted_count+1, ' 标题-时间: ',
-                                      subject, ' - ', send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][mailbox_index_int][subject_index_int], sep='', flush=True)
+                                      subject, ' - ', send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][folder_index_int][subject_index_int], sep='', flush=True)
                                 log_global.warning(ltk.indent(3) + str(msg_with_undownloadable_attachments_counted_count+1) + ' 标题: "' +
                                                    subject+'"')
                                 log_global.warning(ltk.indent(
-                                    4)+'时间: '+send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][mailbox_index_int][subject_index_int])
-                                for link_index_int, link in enumerate(largefile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index][mailbox_index_int][subject_index_int]):
+                                    4)+'时间: '+send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][folder_index_int][subject_index_int])
+                                for link_index_int, link in enumerate(largefile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index][folder_index_int][subject_index_int]):
                                     print(ltk.indent(
                                         4), largefile_undownloadable_link_counted_count+1, ' 链接: ', link, sep='', flush=True)
                                     log_global.warning(ltk.indent(
                                         4) + str(largefile_undownloadable_link_counted_count+1) + ' 链接: "' + link+'"')
                                     largefile_download_code = largefile_undownloadable_code_list_global[
-                                        imap_with_undownloadable_attachments_index][mailbox_index_int][subject_index_int][link_index_int]
+                                        imap_with_undownloadable_attachments_index][folder_index_int][subject_index_int][link_index_int]
                                     if largefile_download_code != 0:
                                         print(ltk.indent(5), '错误代码: ',
                                               largefile_download_code, sep='', flush=True)
@@ -1063,15 +1063,15 @@ def program_download_main():
                             msg_with_downloadable_attachments_signed_count = 0
                             print('\r正在标记...', end='', flush=True)
                             for imap_index in imap_with_undownloadable_attachments_index_list_global:
-                                for mailbox_index_int, msg_with_undownloadable_attachments_list_global_splited in enumerate(msg_with_undownloadable_attachments_list_global[imap_index]):
+                                for folder_index_int, msg_with_undownloadable_attachments_list_global_splited in enumerate(msg_with_undownloadable_attachments_list_global[imap_index]):
                                     if not len(msg_with_undownloadable_attachments_list_global_splited):
                                         continue
-                                    mailbox = b'"'+ltk.imap_utf7_bytes_encode(
-                                        setting_search_mailbox_global[imap_index][mailbox_index_int])+b'"'
+                                    folder = b'"'+ltk.imap_utf7_bytes_encode(
+                                        setting_search_folder_global[imap_index][folder_index_int])+b'"'
                                     for _ in range(setting_reconnect_max_times_global+1):
                                         try:
                                             imap_list_global[imap_index].select(
-                                                mailbox)
+                                                folder)
                                             break
                                         except Exception:
                                             for _ in range(setting_reconnect_max_times_global):
@@ -1110,34 +1110,34 @@ def program_download_main():
                             1), '邮箱: ', address_global[imap_overdueanddeleted_index], sep='', flush=True)
                         log_global.info(ltk.indent(
                             1) + '邮箱: "' + address_global[imap_overdueanddeleted_index]+'"')
-                        for mailbox_index_int, msg_overdueanddeleted_list_global_splited in enumerate(msg_overdueanddeleted_list_global[imap_overdueanddeleted_index]):
+                        for folder_index_int, msg_overdueanddeleted_list_global_splited in enumerate(msg_overdueanddeleted_list_global[imap_overdueanddeleted_index]):
                             if not len(msg_overdueanddeleted_list_global_splited):
                                 continue
                             print(ltk.indent(
-                                2), '文件夹: ', setting_search_mailbox_global[imap_overdueanddeleted_index][mailbox_index_int], sep='', flush=True)
+                                2), '文件夹: ', setting_search_folder_global[imap_overdueanddeleted_index][folder_index_int], sep='', flush=True)
                             log_global.info(ltk.indent(
-                                2) + '文件夹: "' + setting_search_mailbox_global[imap_overdueanddeleted_index][mailbox_index_int]+'"')
-                            for subject_index_int, subject in enumerate(subject_overdueanddeleted_list_global[imap_overdueanddeleted_index][mailbox_index_int]):
+                                2) + '文件夹: "' + setting_search_folder_global[imap_overdueanddeleted_index][folder_index_int]+'"')
+                            for subject_index_int, subject in enumerate(subject_overdueanddeleted_list_global[imap_overdueanddeleted_index][folder_index_int]):
                                 print(ltk.indent(3), msg_overdueanddeleted_counted_count+1, ' 标题-时间: ',
-                                      subject, ' - ', send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index][mailbox_index_int][subject_index_int], sep='', flush=True)
+                                      subject, ' - ', send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index][folder_index_int][subject_index_int], sep='', flush=True)
                                 log_global.info(ltk.indent(3) + str(msg_overdueanddeleted_counted_count+1) + ' 标题: "' +
                                                 subject+'"')
                                 log_global.warning(ltk.indent(
-                                    4)+'时间: '+send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index][mailbox_index_int][subject_index_int])
+                                    4)+'时间: '+send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index][folder_index_int][subject_index_int])
                                 msg_overdueanddeleted_counted_count += 1
                     if setting_sign_unseen_flag_after_downloading_global and setting_search_mails_type_global != 2:
                         if setting_silent_download_mode_global or ltk.input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='y', end=':') == 'y':
                             print('\r正在标记...', end='', flush=True)
                             for imap_index in imap_overdueanddeleted_index_list_global:
-                                for mailbox_index_int, msg_overdueanddeleted_list_global_splited in enumerate(msg_overdueanddeleted_list_global[imap_index]):
+                                for folder_index_int, msg_overdueanddeleted_list_global_splited in enumerate(msg_overdueanddeleted_list_global[imap_index]):
                                     if not len(msg_overdueanddeleted_list_global_splited):
                                         continue
-                                    mailbox = b'"'+ltk.imap_utf7_bytes_encode(
-                                        setting_search_mailbox_global[imap_index][mailbox_index_int])+b'"'
+                                    folder = b'"'+ltk.imap_utf7_bytes_encode(
+                                        setting_search_folder_global[imap_index][folder_index_int])+b'"'
                                     for _ in range(setting_reconnect_max_times_global+1):
                                         try:
                                             imap_list_global[imap_index].select(
-                                                mailbox)
+                                                folder)
                                             break
                                         except Exception:
                                             for _ in range(setting_reconnect_max_times_global):
@@ -1188,16 +1188,16 @@ def download_thread_func(thread_id):
                     break
             if imap == None:
                 continue
-            for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index])):
-                if not len(msg_list_global[imap_index][mailbox_index_int]):
+            for folder_index_int in range(len(setting_search_folder_global[imap_index])):
+                if not len(msg_list_global[imap_index][folder_index_int]):
                     continue
-                mailbox_raw = setting_search_mailbox_global[
-                    imap_index][mailbox_index_int]
-                mailbox = b'"'+ltk.imap_utf7_bytes_encode(mailbox_raw)+b'"'
+                folder_raw = setting_search_folder_global[
+                    imap_index][folder_index_int]
+                folder = b'"'+ltk.imap_utf7_bytes_encode(folder_raw)+b'"'
                 select_status = False
                 for _ in range(setting_reconnect_max_times_global+1):
                     try:
-                        imap.select(mailbox)
+                        imap.select(folder)
                         select_status = True
                     except Exception:
                         for _ in range(setting_reconnect_max_times_global):
@@ -1208,14 +1208,14 @@ def download_thread_func(thread_id):
                 if not select_status:
                     with lock_print_global:
                         print('\rE: 邮箱', address_global[imap_index],
-                              '的文件夹', mailbox_raw, '选择失败,已跳过.', ltk.indent(4), flush=True)
+                              '的文件夹', folder_raw, '选择失败,已跳过.', ltk.indent(4), flush=True)
                         log_global.error(
-                            '邮箱 "'+address_global[imap_index]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
+                            '邮箱 "'+address_global[imap_index]+'" 的文件夹 "'+folder_raw+'" 选择失败.')
                     continue
                 while True:
                     lock_var_global.acquire()
-                    if len(msg_list_global[imap_index][mailbox_index_int]):
-                        msg_index = msg_list_global[imap_index][mailbox_index_int].pop(
+                    if len(msg_list_global[imap_index][folder_index_int]):
+                        msg_index = msg_list_global[imap_index][folder_index_int].pop(
                             0)
                         lock_var_global.release()
                         file_download_count = 0
@@ -1294,7 +1294,7 @@ def download_thread_func(thread_id):
                                                 imap = operation_login_imap_server(
                                                     host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
                                                 if imap != None:
-                                                    imap.select(mailbox)
+                                                    imap.select(folder)
                                                     break
                                             except Exception:
                                                 pass
@@ -1674,7 +1674,7 @@ def download_thread_func(thread_id):
                                                                 host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
                                                             if imap != None:
                                                                 imap.select(
-                                                                    mailbox)
+                                                                    folder)
                                                                 break
                                                         except Exception:
                                                             pass
@@ -1682,42 +1682,42 @@ def download_thread_func(thread_id):
                                     if ltk.safe_list_find(imap_with_undownloadable_attachments_index_list_global, imap_index) == -1:
                                         imap_with_undownloadable_attachments_index_list_global.append(
                                             imap_index)
-                                    msg_with_undownloadable_attachments_list_global[imap_index][mailbox_index_int].append(
+                                    msg_with_undownloadable_attachments_list_global[imap_index][folder_index_int].append(
                                         msg_index)
-                                    send_time_with_undownloadable_attachments_list_global[imap_index][mailbox_index_int].append(
+                                    send_time_with_undownloadable_attachments_list_global[imap_index][folder_index_int].append(
                                         send_time)
-                                    subject_with_undownloadable_attachments_list_global[imap_index][mailbox_index_int].append(
+                                    subject_with_undownloadable_attachments_list_global[imap_index][folder_index_int].append(
                                         subject)
-                                    largefile_undownloadable_link_list_global[imap_index][mailbox_index_int].append(
+                                    largefile_undownloadable_link_list_global[imap_index][folder_index_int].append(
                                         largefile_undownloadable_link_list)
-                                    largefile_undownloadable_code_list_global[imap_index][mailbox_index_int].append(
+                                    largefile_undownloadable_code_list_global[imap_index][folder_index_int].append(
                                         largefile_undownloadable_code_list)
                                 elif download_status_last == 2:
                                     if ltk.safe_list_find(imap_overdueanddeleted_index_list_global, imap_index) == -1:
                                         imap_overdueanddeleted_index_list_global.append(
                                             imap_index)
-                                    msg_overdueanddeleted_list_global[imap_index][mailbox_index_int].append(
+                                    msg_overdueanddeleted_list_global[imap_index][folder_index_int].append(
                                         msg_index)
-                                    send_time_overdueanddeleted_list_global[imap_index][mailbox_index_int].append(
+                                    send_time_overdueanddeleted_list_global[imap_index][folder_index_int].append(
                                         send_time)
-                                    subject_overdueanddeleted_list_global[imap_index][mailbox_index_int].append(
+                                    subject_overdueanddeleted_list_global[imap_index][folder_index_int].append(
                                         subject)
                                 elif download_status_last == -2:
                                     if ltk.safe_list_find(imap_download_failed_index_list_global, imap_index) == -1:
                                         imap_download_failed_index_list_global.append(
                                             imap_index)
-                                    msg_download_failed_list_global[imap_index][mailbox_index_int].append(
+                                    msg_download_failed_list_global[imap_index][folder_index_int].append(
                                         msg_index)
-                                    send_time_download_failed_list_global[imap_index][mailbox_index_int].append(
+                                    send_time_download_failed_list_global[imap_index][folder_index_int].append(
                                         send_time)
-                                    subject_download_failed_list_global[imap_index][mailbox_index_int].append(
+                                    subject_download_failed_list_global[imap_index][folder_index_int].append(
                                         subject)
                                 msg_processed_count_global += 1
                             else:
                                 if ltk.safe_list_find(imap_fetch_failed_index_list_global, imap_index) == -1:
                                     imap_fetch_failed_index_list_global.append(
                                         imap_index)
-                                msg_fetch_failed_list_global[imap_index][mailbox_index_int].append(
+                                msg_fetch_failed_list_global[imap_index][folder_index_int].append(
                                     msg_index)
                             operation_fresh_thread_status(thread_id, 0)
                     else:
