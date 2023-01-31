@@ -414,11 +414,11 @@ def operation_load_config():
             assert isinstance(file_name_classfication_raw, list)
             if len(host_global):
                 for file_name_classfication_splited in file_name_classfication_raw:
-                    assert isinstance(file_name_classfication_splited, dict) and isinstance(file_name_classfication_splited['type'], dict) and isinstance(file_name_classfication_splited['path'], str) and isinstance(
+                    assert isinstance(file_name_classfication_splited, dict) and isinstance(file_name_classfication_splited['name'], dict) and isinstance(file_name_classfication_splited['path'], str) and isinstance(
                         file_name_classfication_splited['extension'], bool) and isinstance(file_name_classfication_splited['relative_to_download_path'], bool)
                     setting_file_name_classfication_path_global.append([])
                     file_name_classfication_splited_expression = file_name_classfication_splited[
-                        'type']['exp']
+                        'name']['exp']
                     assert isinstance(
                         file_name_classfication_splited_expression, list)
                     for j in file_name_classfication_splited_expression:
@@ -426,7 +426,7 @@ def operation_load_config():
                     file_name_classfication_splited_expression = operation_parse_config_data1(
                         file_name_classfication_splited_expression)[1]
                     file_name_classfication_splited_flag = file_name_classfication_splited[
-                        'type']['flag']
+                        'name']['flag']
                     for j in file_name_classfication_splited_flag:
                         assert isinstance(j, str)
                     file_name_classfication_splited_flag = operation_parse_config_data1(

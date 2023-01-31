@@ -110,5 +110,5 @@ mime_type_classfication = [
 # exp: 匹配的正则表达式; flag: 表达式标签(与表达式排列一一对应); extenstion: 匹配名为扩展名(不需要写.号)/文件名; path: 下载文件夹路径; relative_to_download_path: 路径相对于下载目录/工作目录
 #优先级高于按MIME-TYPE分类
 file_name_classfication = [
-    # {type={exp=[],flag=[]},extension=true,path='2',relative_to_download_path=true}
+    # {name={exp=[],flag=[]},extension=true,path='2',relative_to_download_path=true}
 ]
