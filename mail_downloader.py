@@ -1750,55 +1750,56 @@ def program_tool_list_mail_folders_main():
     if not len(imap_succeed_index_list_global):
         print('E: 无法执行该操作.原因: 没有可用邮箱.', flush=True)
         log_global.error('列出邮箱文件夹 操作无法执行. 原因: 没有可用邮箱.')
-    for imap_index_int, imap_index in enumerate(imap_succeed_index_list_global):
-        list_status = False
-        print('正在读取... (', imap_index_int+1, '/',
-              len(imap_succeed_index_list_global), ')', sep='', end='')
-        for _ in range(setting_reconnect_max_times_global+1):
-            try:
-                _, list_data_raw = imap_list_global[imap_index].list(
-                )
-                list_status = True
-                break
-            except Exception:
-                for _ in range(setting_reconnect_max_times_global):
-                    imap_list_global[imap_index] = operation_login_imap_server(
-                        host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
-                    if imap_list_global[imap_index] != None:
-                        break
-        if not list_status:
-            print('\rE: 邮箱 ', address_global[imap_index],
-                  ' 获取文件夹列表失败,已跳过.', ltk.indent(2), sep='', flush=True)
-            log_global.error('邮箱 "'+address_global[imap_index]+'" 获取文件夹列表失败.')
-        else:
-            print('\r邮箱: ', address_global[imap_index],
-                  ltk.indent(3), sep='', flush=True)
-            log_global.info('邮箱: "' + address_global[imap_index]+'"')
-            for folder in list_data_raw:
+    else:
+        for imap_index_int, imap_index in enumerate(imap_succeed_index_list_global):
+            list_status = False
+            print('正在读取... (', imap_index_int+1, '/',
+                len(imap_succeed_index_list_global), ')', sep='', end='')
+            for _ in range(setting_reconnect_max_times_global+1):
                 try:
-                    folder_name = ltk.imap_utf7_bytes_decode(
-                        re.compile(rb'(?<=/" ").+(?=")').findall(folder)[0])
-                    folder_flag = re.compile(
-                        rb'(?<=\().+(?=\))').findall(folder)
-                    print(ltk.indent(1), '文件夹: ',
-                          folder_name, sep='', flush=True)
-                    log_global.info(ltk.indent(1)+'文件夹: "'+folder_name+'"')
-                    if len(folder_flag):
-                        folder_flag = ltk.imap_utf7_bytes_decode(
-                            folder_flag[0])
-                        print(ltk.indent(2), '标签: ',
-                              folder_flag, sep='', flush=True)
-                        log_global.info(ltk.indent(2)+'标签: "'+folder_flag+'"')
-                    else:
-                        print(ltk.indent(2), '没有标签', sep='', flush=True)
-                        log_global.info(ltk.indent(2)+'没有标签')
-                except UnicodeError:
-                    print('\rE: 邮箱 ', address_global[imap_index], ' 有文件夹信息解码失败,已跳过.', ltk.indent(
-                        2), sep='', flush=True)
-                    log_global.error(
-                        '邮箱 "'+address_global[imap_index]+'" 有文件夹信息解码失败.')
+                    _, list_data_raw = imap_list_global[imap_index].list(
+                    )
+                    list_status = True
+                    break
+                except Exception:
+                    for _ in range(setting_reconnect_max_times_global):
+                        imap_list_global[imap_index] = operation_login_imap_server(
+                            host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
+                        if imap_list_global[imap_index] != None:
+                            break
+            if not list_status:
+                print('\rE: 邮箱 ', address_global[imap_index],
+                    ' 获取文件夹列表失败,已跳过.', ltk.indent(2), sep='', flush=True)
+                log_global.error('邮箱 "'+address_global[imap_index]+'" 获取文件夹列表失败.')
+            else:
+                print('\r邮箱: ', address_global[imap_index],
+                    ltk.indent(3), sep='', flush=True)
+                log_global.info('邮箱: "' + address_global[imap_index]+'"')
+                for folder in list_data_raw:
+                    try:
+                        folder_name = ltk.imap_utf7_bytes_decode(
+                            re.compile(rb'(?<=/" ").+(?=")').findall(folder)[0])
+                        folder_flag = re.compile(
+                            rb'(?<=\().+(?=\))').findall(folder)
+                        print(ltk.indent(1), '文件夹: ',
+                            folder_name, sep='', flush=True)
+                        log_global.info(ltk.indent(1)+'文件夹: "'+folder_name+'"')
+                        if len(folder_flag):
+                            folder_flag = ltk.imap_utf7_bytes_decode(
+                                folder_flag[0])
+                            print(ltk.indent(2), '标签: ',
+                                folder_flag, sep='', flush=True)
+                            log_global.info(ltk.indent(2)+'标签: "'+folder_flag+'"')
+                        else:
+                            print(ltk.indent(2), '没有标签', sep='', flush=True)
+                            log_global.info(ltk.indent(2)+'没有标签')
+                    except UnicodeError:
+                        print('\rE: 邮箱 ', address_global[imap_index], ' 有文件夹信息解码失败,已跳过.', ltk.indent(
+                            2), sep='', flush=True)
+                        log_global.error(
+                            '邮箱 "'+address_global[imap_index]+'" 有文件夹信息解码失败.')
+        print(flush=True)
     log_global.info('-'*3+'列出邮箱文件夹操作完成'+'-'*3)
-    print(flush=True)
 
 
 @check_config_load_status
