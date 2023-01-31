@@ -1708,11 +1708,6 @@ def download_thread_func(thread_id):
                                 msg_fetch_failed_list_global[imap_index][mailbox_index_int].append(
                                     msg_index)
                             operation_fresh_thread_status(thread_id, 0)
-                        try:
-                            imap.close()
-                            imap.logout()
-                        except Exception:
-                            pass
                     else:
                         lock_var_global.release()
                         break
