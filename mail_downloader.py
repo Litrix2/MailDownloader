@@ -22,7 +22,7 @@ import traceback
 import urllib.parse
 
 __version__ = '1.4.3'
-_depend_toolkit_version = '1.0.0'
+_depend_toolkit_version = '1.0.1'
 __status__ = 0
 __author__ = 'Litrix'
 
@@ -1820,7 +1820,7 @@ if ltk.__version__ != _depend_toolkit_version:
     print('F: littoolkit 版本不符合要求.\n    依赖版本: '+_depend_toolkit_version +
           '\n    当前版本: '+ltk.__version__, flush=True)
     time.sleep(5)
-    exit(1)
+    sys.exit(1)
 
 # 读取参数
 # -c: 配置文件路径; -r: 路径相对于程序父目录,否则路径相对于工作目录
@@ -1855,7 +1855,7 @@ try:
         time.sleep(4.5)
         log_global.info('='*10+'程序退出'+'='*10)
         time.sleep(0.5)
-        exit(0)
+        sys.exit(0)
     else:
         while True:
             command = ltk.input_option(

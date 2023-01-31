@@ -1,7 +1,8 @@
 """小工具合集."""
 import base64
 import os
-__version__ = '1.0.0'
+import sys
+__version__ = '1.0.1'
 __author__ = 'Litrix'
 
 
@@ -135,4 +136,4 @@ def input_option(prompt: str, *options: str, allow_undefind_input: bool = False,
 def pause_exit(code: int = 0) -> None:
     """先暂停再退出."""
     input_option('按回车键退出 ', allow_undefind_input=True)
-    exit(code)
+    sys.exit(code)
