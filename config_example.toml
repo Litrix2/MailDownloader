@@ -95,7 +95,7 @@ mime_type = false
 
 [download.path]
 # 默认下载文件夹路径
-default_path = ''
+default_path = 'download'
 
 # 按照MIME-TYPE选择不同下载路径;若不需要,设为[]
 # 输入正则表达式(多个表达式关系为或)
