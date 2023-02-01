@@ -7,8 +7,8 @@ silent_download_mode = false
 # 输出日志;若不需要,设为false
 # 警告: 日志会在本地记录你的邮箱名、部分邮件信息,请注意隐私!
 log = false
-# path: 日志输出文件夹路径; relative_to_program: 路径相对于程序/工作目录; overwrite: 是否覆写文件(覆写/追加)
-# log={path='log',relative_to_program=true,overwrite=false}
+# path: 日志输出文件夹路径; overwrite: 是否覆写文件(覆写/追加)
+# log={path='log',overwrite=false}
 
 [mailbox]
 # 邮箱数据
@@ -94,9 +94,8 @@ subject_and_time = true
 mime_type = false
 
 [download.path]
-# 下载默认路径
-# path: 下载文件夹路径; relative_to_program: 路径相对于程序/工作目录
-default = { path = 'download', relative_to_program = true }
+# 默认下载文件夹路径
+default_path = ''
 
 # 按照MIME-TYPE选择不同下载路径;若不需要,设为[]
 # 输入正则表达式(多个表达式关系为或)
