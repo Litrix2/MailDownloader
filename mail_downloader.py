@@ -858,6 +858,7 @@ def program_download_main():
                         select_status, _ = imap_list_global[imap_index].select(
                             folder)
                         search_status_last = True
+                        break
                     except Exception:
                         for _ in range(setting_reconnect_max_times_global):
                             imap_list_global[imap_index] = operation_login_imap_server(
@@ -1198,6 +1199,7 @@ def download_thread_func(thread_id):
                     try:
                         imap.select(folder)
                         select_status = True
+                        break
                     except Exception:
                         for _ in range(setting_reconnect_max_times_global):
                             imap = operation_login_imap_server(
