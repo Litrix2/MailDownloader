@@ -739,14 +739,14 @@ def operation_set_time():
 def operation_get_download_path(file_name_raw, mime_type):
     download_path = None
     for j in setting_mime_type_classfication_path_global:
-        for i in range(len(j[0])):
-            if len(re.compile(j[0][i], j[1][i]).findall(mime_type)):
+        for i,j2 in enumerate(j[0]):
+            if len(re.compile(j2, j[1][i]).findall(mime_type)):
                 download_path = j[2]
     file_name_main, file_name_extension = operation_parse_file_name(
         file_name_raw)
     for j in setting_file_name_classfication_path_global:
-        for i in range(len(j[0])):
-            if len(re.compile(j[0][i], j[1][i]).findall(file_name_extension if j[2] else file_name_main)):
+        for i,j2 in enumerate(j[0]):
+            if len(re.compile(j2, j[1][i]).findall(file_name_extension if j[2] else file_name_main)):
                 download_path = j[3]
     if download_path == None:
         download_path = setting_deafult_download_path_global
