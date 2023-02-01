@@ -42,6 +42,7 @@ manual_input_search_date = true
 min_search_date = []
 
 # 截止搜索日期([年,月,日]);若不需要,设为[]
+# 截止搜索日期不包含当天
 # 当manual_input_search_date为true时,作为缺省值
 max_search_date = []
 
