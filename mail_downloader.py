@@ -68,9 +68,9 @@ log_global.addHandler(logging.NullHandler())
 
 
 class Date():
-    year = 0
-    month = 0
-    day = 0
+    year = 1
+    month = 1
+    day = 1
     enabled = False
 
     def __init__(self, enabled=False, year=0, month=0, day=0):
@@ -219,7 +219,7 @@ def operation_load_config():
     global setting_search_folder_global
     global setting_search_mails_type_global
     global setting_manual_input_search_date_global
-    global setting_min_search_date_global, setting_max_search_date_global
+    global setting_default_min_search_date_global, setting_default_max_search_date_global
     global setting_filter_sender_global, setting_filter_sender_flag_global, setting_filter_subject_global, setting_filter_subject_flag_global
     global setting_download_thread_count_global
     global setting_rollback_when_download_failed_global
@@ -292,43 +292,37 @@ def operation_load_config():
                 'search']['date']['manual_input_search_date']
             assert isinstance(setting_manual_input_search_date_global, bool)
 
-            setting_min_search_date_global = Date()
+            setting_default_min_search_date_global = [0, 0, 0]
             min_search_date = config_file_data['search']['date']['min_search_date']
             assert isinstance(min_search_date, list)
             if len(min_search_date) > 0:
                 assert isinstance(
                     min_search_date[0], int) and min_search_date[0] >= 1
-                setting_min_search_date_global.enabled = True
-                setting_min_search_date_global.year = min_search_date[0]
+                setting_default_min_search_date_global[0] = min_search_date[0]
             if len(min_search_date) > 1:
                 assert isinstance(
                     min_search_date[1], int) and 1 <= min_search_date[1] <= 12
-                setting_min_search_date_global.enabled = True
-                setting_min_search_date_global.month = min_search_date[1]
+                setting_default_min_search_date_global[1] = min_search_date[1]
             if len(min_search_date) > 2:
                 assert isinstance(
                     min_search_date[2], int) and 1 <= min_search_date[2] <= 31
-                setting_min_search_date_global.enabled = True
-                setting_min_search_date_global.day = min_search_date[2]
+                setting_default_min_search_date_global[2] = min_search_date[2]
 
-            setting_max_search_date_global = Date()
+            setting_default_max_search_date_global = [0, 0, 0]
             max_search_date = config_file_data['search']['date']['max_search_date']
             assert isinstance(max_search_date, list)
             if len(max_search_date) > 0:
                 assert isinstance(
                     max_search_date[0], int) and max_search_date[0] >= 1
-                setting_max_search_date_global.enabled = True
-                setting_max_search_date_global.year = max_search_date[0]
+                setting_default_max_search_date_global[0] = max_search_date[0]
             if len(max_search_date) > 1:
                 assert isinstance(
                     max_search_date[1], int) and 1 <= max_search_date[1] <= 12
-                setting_max_search_date_global.enabled = True
-                setting_max_search_date_global.month = max_search_date[1]
+                setting_default_max_search_date_global[1] = max_search_date[1]
             if len(max_search_date) > 2:
                 assert isinstance(
                     max_search_date[2], int) and 1 <= max_search_date[2] <= 31
-                setting_max_search_date_global.enabled = True
-                setting_max_search_date_global.day = max_search_date[2]
+                setting_default_max_search_date_global[2] = max_search_date[2]
 
             setting_filter_sender_global = []
             setting_filter_sender_flag_global = []
@@ -671,52 +665,75 @@ def operation_login_all_imapserver():
 
 
 def operation_set_time():
-    setting_min_search_date_global.enabled = False
-    setting_max_search_date_global.enabled = False
-    if ltk.input_option('是否设置检索开始日期?', 'y', 'n', default_option='y', end=':') == 'y':
-        setting_min_search_date_global.enabled = True
-        status = 0
-        while True:
-            try:
-                if status == 0:
-                    setting_min_search_date_global.year = int(ltk.input_option(
-                        '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year) if setting_min_search_date_global.year == 0 else str(setting_min_search_date_global.year), end=':'))
-                    assert setting_min_search_date_global.year >= 1
-                    status = 1
-                elif status == 1:
-                    setting_min_search_date_global.month = int(ltk.input_option(
-                        '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month) if setting_min_search_date_global.month == 0 else str(setting_min_search_date_global.month), end=':'))
-                    assert 1 <= setting_min_search_date_global.month <= 12
-                    status = 2
-                elif status == 2:
-                    setting_min_search_date_global.day = int(ltk.input_option(
-                        '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day) if setting_min_search_date_global.day == 0 else str(setting_min_search_date_global.day), end=':'))
-                    assert 1 <= setting_min_search_date_global.day <= 31
-                    break
-            except Exception:
-                print('无效选项,请重新输入.', flush=True)
-    if ltk.input_option('是否设置检索截止日期?', 'y', 'n', default_option='n', end=':') == 'y':
-        setting_max_search_date_global.enabled = True
-        status = 0
-        while True:
-            try:
-                if status == 0:
-                    setting_max_search_date_global.year = int(ltk.input_option(
-                        '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year) if setting_max_search_date_global.year == 0 else str(setting_max_search_date_global.year), end=':'))
-                    assert setting_max_search_date_global.year >= 1
-                    status = 1
-                elif status == 1:
-                    setting_max_search_date_global.month = int(ltk.input_option(
-                        '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month) if setting_max_search_date_global.month == 0 else str(setting_max_search_date_global.month), end=':'))
-                    assert 1 <= setting_max_search_date_global.month <= 12
-                    status = 2
-                elif status == 2:
-                    setting_max_search_date_global.day = int(ltk.input_option(
-                        '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day) if setting_max_search_date_global.day == 0 else str(setting_max_search_date_global.day), end=':'))
-                    assert 1 <= setting_max_search_date_global.day <= 31
-                    break
-            except Exception:
-                print('无效选项,请重新输入.', flush=True)
+    global setting_min_search_date_global, setting_max_search_date_global
+    setting_min_search_date_global = Date()
+    setting_max_search_date_global = Date()
+    if setting_manual_input_search_date_global:
+        if ltk.input_option('是否设置检索开始日期?', 'y', 'n', default_option='y', end=':') == 'y':
+            setting_min_search_date_global.enabled = True
+            status = 0
+            while True:
+                try:
+                    if status == 0:
+                        setting_min_search_date_global.year = int(ltk.input_option(
+                            '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year if setting_default_min_search_date_global[0] == 0 else setting_default_min_search_date_global[0]), end=':'))
+                        assert setting_min_search_date_global.year >= 1
+                        status = 1
+                    elif status == 1:
+                        setting_min_search_date_global.month = int(ltk.input_option(
+                            '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month if setting_default_min_search_date_global[1] == 0 else setting_default_min_search_date_global[1]), end=':'))
+                        assert 1 <= setting_min_search_date_global.month <= 12
+                        status = 2
+                    elif status == 2:
+                        setting_min_search_date_global.day = int(ltk.input_option(
+                            '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day if setting_default_min_search_date_global[2] == 0 else setting_default_min_search_date_global[2]), end=':'))
+                        assert 1 <= setting_min_search_date_global.day <= 31
+                        break
+                except Exception:
+                    print('无效选项,请重新输入.', flush=True)
+        if ltk.input_option('是否设置检索截止日期?', 'y', 'n', default_option='n', end=':') == 'y':
+            setting_max_search_date_global.enabled = True
+            status = 0
+            while True:
+                try:
+                    if status == 0:
+                        setting_max_search_date_global.year = int(ltk.input_option(
+                            '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year if setting_default_max_search_date_global[0] == 0 else setting_default_max_search_date_global[0]), end=':'))
+                        assert setting_max_search_date_global.year >= 1
+                        status = 1
+                    elif status == 1:
+                        setting_max_search_date_global.month = int(ltk.input_option(
+                            '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month if setting_default_max_search_date_global[1] == 0 else setting_default_max_search_date_global[1]), end=':'))
+                        assert 1 <= setting_max_search_date_global.month <= 12
+                        status = 2
+                    elif status == 2:
+                        setting_max_search_date_global.day = int(ltk.input_option(
+                            '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day if setting_default_max_search_date_global[2] == 0 else setting_default_max_search_date_global[2]), end=':'))
+                        assert 1 <= setting_max_search_date_global.day <= 31
+                        break
+                except Exception:
+                    print('无效选项,请重新输入.', flush=True)
+    else:
+        for _, j in enumerate(setting_default_min_search_date_global):
+            if j > 0:
+                setting_min_search_date_global.enabled = True
+        for _, j in enumerate(setting_default_max_search_date_global):
+            if j > 0:
+                setting_max_search_date_global.enabled = True
+        if setting_min_search_date_global.enabled:
+            setting_min_search_date_global.year = datetime.datetime.now(
+            ).year if setting_default_min_search_date_global[0] == 0 else setting_default_min_search_date_global[0]
+            setting_min_search_date_global.month = datetime.datetime.now(
+            ).month if setting_default_min_search_date_global[1] == 0 else setting_default_min_search_date_global[1]
+            setting_min_search_date_global.day = datetime.datetime.now(
+            ).day if setting_default_min_search_date_global[2] == 0 else setting_default_min_search_date_global[2]
+        if setting_max_search_date_global.enabled:
+            setting_max_search_date_global.year = datetime.datetime.now(
+            ).year if setting_default_max_search_date_global[0] == 0 else setting_default_max_search_date_global[0]
+            setting_max_search_date_global.month = datetime.datetime.now(
+            ).month if setting_default_max_search_date_global[1] == 0 else setting_default_max_search_date_global[1]
+            setting_max_search_date_global.day = datetime.datetime.now(
+            ).day if setting_default_max_search_date_global[2] == 0 else setting_default_max_search_date_global[2]
 
 
 def operation_get_download_path(file_name_raw, mime_type):
@@ -804,20 +821,7 @@ def program_download_main():
     global msg_list_global, msg_total_count_global, msg_processed_count_global
     operation_login_all_imapserver()
     if len(imap_succeed_index_list_global):
-        if setting_manual_input_search_date_global:
-            operation_set_time()
-        setting_min_search_date_global.year = max(
-            1, setting_min_search_date_global.year)
-        setting_min_search_date_global.month = max(
-            1, setting_min_search_date_global.month)
-        setting_min_search_date_global.day = max(
-            1, setting_min_search_date_global.day)
-        setting_max_search_date_global.year = max(
-            1, setting_max_search_date_global.year)
-        setting_max_search_date_global.month = max(
-            1, setting_max_search_date_global.month)
-        setting_max_search_date_global.day = max(
-            1, setting_max_search_date_global.day)
+        operation_set_time()
         prompt = ''
         if not (setting_min_search_date_global.enabled or setting_max_search_date_global.enabled):
             if setting_search_mails_type_global == 0:
@@ -834,6 +838,7 @@ def program_download_main():
                 setting_max_search_date_global.time()+' 截止')) if not setting_min_search_date_global.enabled and setting_max_search_date_global.enabled else ' 到 '
             prompt += setting_max_search_date_global.time(
             ) if setting_min_search_date_global.enabled and setting_max_search_date_global.enabled else ''
+            prompt += ' ' if setting_min_search_date_global.enabled and setting_max_search_date_global.enabled else ''
             prompt += '的邮件' if setting_search_mails_type_global == 0 else '的未读邮件' if setting_search_mails_type_global == 1 else '的已读邮件'
         print(prompt, sep='', flush=True)
         log_global.info(prompt)
@@ -848,14 +853,14 @@ def program_download_main():
                                ) if setting_max_search_date_global.enabled else ''
             search_command += ' ' if setting_max_search_date_global.enabled or setting_min_search_date_global.enabled else ''
             search_command += 'ALL' if setting_search_mails_type_global == 0 else 'UNSEEN' if setting_search_mails_type_global == 1 else 'SEEN'
-            for folder_index,folder_raw in enumerate(setting_search_folder_global[imap_index]):
+            for folder_index, folder_raw in enumerate(setting_search_folder_global[imap_index]):
                 folder = b'"'+ltk.imap_utf7_bytes_encode(folder_raw)+b'"'
-                search_status_last = False
+                select_status_last = False
                 for _ in range(setting_reconnect_max_times_global+1):
                     try:
                         select_status, _ = imap_list_global[imap_index].select(
                             folder)
-                        search_status_last = True
+                        select_status_last = True
                         break
                     except Exception:
                         for _ in range(setting_reconnect_max_times_global):
@@ -865,7 +870,7 @@ def program_download_main():
                                 imap_list_global[imap_index].select(
                                     folder)
                                 break
-                if not search_status_last or select_status == 'NO':
+                if not select_status_last or select_status == 'NO':
                     print('\rE: 邮箱', address_global[imap_index],
                           '的收件箱', folder_raw, '选择失败,已跳过.', ltk.indent(3), flush=True)
                     log_global.error(
@@ -877,6 +882,8 @@ def program_download_main():
                         _, msg_data_index_raw = imap_list_global[imap_index].search(
                             None, search_command)
                         search_status_last = True
+                        break
+                    except imaplib.IMAP4.error:
                         break
                     except Exception:
                         for _ in range(setting_reconnect_max_times_global):
