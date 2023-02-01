@@ -818,7 +818,6 @@ def program_download_main():
             1, setting_max_search_date_global.month)
         setting_max_search_date_global.day = max(
             1, setting_max_search_date_global.day)
-        start_time = time.time()
         prompt = ''
         if not (setting_min_search_date_global.enabled or setting_max_search_date_global.enabled):
             if setting_search_mails_type_global == 0:
@@ -838,7 +837,9 @@ def program_download_main():
             prompt += '的邮件' if setting_search_mails_type_global == 0 else '的未读邮件' if setting_search_mails_type_global == 1 else '的已读邮件'
         print(prompt, sep='', flush=True)
         log_global.info(prompt)
-        for imap_index, imap_index in enumerate(imap_succeed_index_list_global):
+        for imap_index_int, imap_index in enumerate(imap_succeed_index_list_global):
+            print('正在搜索... (', imap_index_int+1, '/',
+                  len(imap_succeed_index_list_global), ')', sep='', end='', flush=True)
             search_command = ''
             search_command += ('since '+setting_min_search_date_global.time()
                                ) if setting_min_search_date_global.enabled else ''
@@ -851,14 +852,23 @@ def program_download_main():
                 folder_raw = setting_search_folder_global[
                     imap_index][folder_index_int]
                 folder = b'"'+ltk.imap_utf7_bytes_encode(folder_raw)+b'"'
-                try:
-                    select_status, _ = imap_list_global[imap_index].select(
-                        folder)
-                except Exception:
-                    select_status = 'NO'
-                if select_status == 'NO':
-                    print('E: 邮箱', address_global[imap_index],
-                          '的收件箱', folder_raw, '选择失败,已跳过.', flush=True)
+                search_status_last = False
+                for _ in range(setting_reconnect_max_times_global+1):
+                    try:
+                        select_status, _ = imap_list_global[imap_index].select(
+                            folder)
+                        search_status_last = True
+                    except Exception:
+                        for _ in range(setting_reconnect_max_times_global):
+                            imap_list_global[imap_index] = operation_login_imap_server(
+                                host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
+                            if imap_list_global[imap_index] != None:
+                                imap_list_global[imap_index].select(
+                                    folder)
+                                break
+                if not search_status_last or select_status == 'NO':
+                    print('\rE: 邮箱', address_global[imap_index],
+                          '的收件箱', folder_raw, '选择失败,已跳过.', ltk.indent(3), flush=True)
                     log_global.error(
                         '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + folder_raw + '" 选择失败.')
                     continue
@@ -878,8 +888,8 @@ def program_download_main():
                                     folder)
                                 break
                 if not search_status_last:
-                    print('E: 邮箱', address_global[imap_index],
-                          '的收件箱', folder_raw, '搜索失败,已跳过.', flush=True)
+                    print('\rE: 邮箱', address_global[imap_index],
+                          '的收件箱', folder_raw, '搜索失败,已跳过.', ltk.indent(3), flush=True)
                     log_global.error(
                         '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + folder_raw + '" 搜索失败.')
                     if not ltk.safe_list_find(imap_connect_failed_index_list_global, imap_index):
