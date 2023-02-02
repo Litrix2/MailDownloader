@@ -1404,7 +1404,7 @@ def download_thread_func(thread_id):
                                                     # 去除邮件无附件标记或全部过期标记
                                                     if download_status_last == -1 or download_status_last == 2:
                                                         download_status_last = 0
-                                            if msg_data_splited.get_content_type() == 'text/html':
+                                            elif msg_data_splited.get_content_type() == 'text/html':
                                                 msg_data_splited_charset = msg_data_splited.get_content_charset()
                                                 msg_data_splited_data_raw = msg_data_splited.get_payload(
                                                     decode=True)
@@ -1647,6 +1647,7 @@ def download_thread_func(thread_id):
                                                                 if download_status_last == -1 or download_status_last == 2:
                                                                     download_status_last = 0
                                     except Exception as e:
+                                        raise e
                                         if lock_io_global.locked():
                                             lock_io_global.release()
                                         with lock_print_global:
