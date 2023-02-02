@@ -21,8 +21,8 @@ import threading
 import traceback
 import urllib.parse
 
-__version__ = '1.4.2'
-_depend_toolkit_version = '1.0.0'
+__version__ = '1.4.5'
+_depend_toolkit_version = '1.0.1'
 __status__ = 0
 __author__ = 'Litrix'
 
@@ -45,13 +45,12 @@ _month_dict = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May',
                6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 
 config_custom_path_global = None
-is_config_path_relative_to_program_global = False
 
-authentication = ['name', 'MailDownloader', 'version', __version__]
+authentication_global = ['name', 'MailDownloader', 'version', __version__]
 available_largefile_website_list_global = [
-    'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动!
+    'wx.mail.qq.com', 'mail.qq.com', 'dashi.163.com', 'mail.163.com', 'mail.sina.com.cn']  # 先后顺序不要动
 unavailable_largefile_website_list_global = []
-website_blacklist = ['fs.163.com', 'u.163.com']
+website_blacklist_global = ['fs.163.com', 'u.163.com']
 
 thread_excepion_list_global = []
 
@@ -69,9 +68,9 @@ log_global.addHandler(logging.NullHandler())
 
 
 class Date():
-    year = 0
-    month = 0
-    day = 0
+    year = 1
+    month = 1
+    day = 1
     enabled = False
 
     def __init__(self, enabled=False, year=0, month=0, day=0):
@@ -88,16 +87,16 @@ class Date():
 
 
 config_load_status_global = False
-config_primary_data = {
+config_primary_data_global = {
     'program': {
         'silent_download_mode': False,
         'log': False
     },
-    'mail': {
-        'user_data': []
+    'mailbox': {
+        'account': []
     },
     'search': {
-        'mailbox': [],
+        'folder': [],
         'search_mail_type': 1,
         'date': {
             'manual_input_search_date': True,
@@ -116,419 +115,17 @@ config_primary_data = {
         'sign_unseen_flag_after_downloading': True,
         'thread_count': 4,
         'display': {
-            'mail': True,
+            'mailbox': True,
             'subject_and_time': True,
             'mime_type': False
         },
         'path': {
-            'default': {
-                'path': '',
-                'relative_to_program': True
-            },
+            'default_path': '',
             'mime_type_classfication': [],
             'file_name_classfication': []
         }
     }
 }
-
-
-def operation_load_config():
-    global log_file_handler_global
-    global host_global, address_global, password_global
-    global setting_silent_download_mode_global
-    global setting_search_mailbox_global
-    global setting_search_mails_type_global
-    global setting_manual_input_search_date_global
-    global setting_min_search_date_global, setting_max_search_date_global
-    global setting_filter_sender_global, setting_filter_sender_flag_global, setting_filter_subject_global, setting_filter_subject_flag_global
-    global setting_download_thread_count_global
-    global setting_rollback_when_download_failed_global
-    global setting_sign_unseen_flag_after_downloading_global
-    global setting_reconnect_max_times_global
-    global setting_display_mail, setting_display_subject_and_time, setting_display_mime_type
-    global setting_deafult_download_path_global, setting_mime_type_classfication_path_global, setting_file_name_classfication_path_global
-
-    print('正在读取配置文件...', flush=True)
-    try:
-        if config_custom_path_global:
-            if is_config_path_relative_to_program_global:
-                config_path = os.path.join(
-                    get_path(), config_custom_path_global)
-            else:
-                config_path = config_custom_path_global
-        else:
-            config_path = os.path.join(get_path(), 'config.toml')
-        with open(config_path, 'rb') as config_file:
-            config_file_data = rtoml.load(
-                bytes.decode(config_file.read(), 'UTF-8'))
-
-            setting_silent_download_mode_global = config_file_data['program']['silent_download_mode']
-            assert isinstance(setting_silent_download_mode_global, bool)
-
-            log = config_file_data['program']['log']
-            if log_file_handler_global != None:
-                log_global.removeHandler(log_file_handler_global)
-            if log != False:
-                assert isinstance(log, dict) and isinstance(log['path'], str) and isinstance(
-                    log['relative_to_program'], bool) and isinstance(log['overwrite'], bool)
-                log_write_type = 'w' if log['overwrite'] else 'a'
-                log_path = os.path.join(
-                    get_path(), log['path']) if log['relative_to_program'] else log['path']
-                log_name = datetime.datetime.strftime(
-                    datetime.datetime.now(), '%Y-%m-%d')+'.log'
-                try:
-                    if not os.path.exists(log_path):
-                        os.makedirs(log_path)
-                    log_file_handler_global = logging.FileHandler(
-                        os.path.join(log_path, log_name), log_write_type, 'UTF-8')
-                    log_file_handler_global.setLevel(logging.DEBUG)
-                    log_file_handler_global.setFormatter(logging.Formatter(
-                        '[%(asctime)s %(levelname)8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
-                    log_global.addHandler(log_file_handler_global)
-                except OSError as e:
-                    print('E: 日志文件创建错误.', flush=True)
-                    raise e
-
-            host_global = []
-            address_global = []
-            password_global = []
-            user_data = config_file_data['mail']['user_data']
-            assert isinstance(user_data, list)
-            for user_data_splited in user_data:
-                assert isinstance(user_data_splited, dict) and isinstance(user_data_splited['host'], str) and isinstance(
-                    user_data_splited['address'], str) and isinstance(user_data_splited['password'], str)
-                host_global.append(user_data_splited['host'])
-                address_global.append(user_data_splited['address'])
-                password_global.append(user_data_splited['password'])
-
-            mailbox = config_file_data['search']['mailbox']
-            assert isinstance(mailbox, list)
-            for j in mailbox:
-                assert isinstance(j, list)
-            search_mailbox = operation_parse_config_data1(
-                mailbox, True, 'INBOX')[1]
-            setting_search_mailbox_global = search_mailbox
-
-            setting_search_mails_type_global = config_file_data['search']['search_mail_type']
-            assert isinstance(setting_search_mails_type_global,
-                              int) and 0 <= setting_search_mails_type_global <= 2
-
-            setting_manual_input_search_date_global = config_file_data[
-                'search']['date']['manual_input_search_date']
-            assert isinstance(setting_manual_input_search_date_global, bool)
-
-            setting_min_search_date_global = Date()
-            min_search_date = config_file_data['search']['date']['min_search_date']
-            assert isinstance(min_search_date, list)
-            if len(min_search_date) > 0:
-                assert isinstance(
-                    min_search_date[0], int) and min_search_date[0] >= 1
-                setting_min_search_date_global.enabled = True
-                setting_min_search_date_global.year = min_search_date[0]
-            if len(min_search_date) > 1:
-                assert isinstance(
-                    min_search_date[1], int) and 1 <= min_search_date[1] <= 12
-                setting_min_search_date_global.enabled = True
-                setting_min_search_date_global.month = min_search_date[1]
-            if len(min_search_date) > 2:
-                assert isinstance(
-                    min_search_date[2], int) and 1 <= min_search_date[2] <= 31
-                setting_min_search_date_global.enabled = True
-                setting_min_search_date_global.day = min_search_date[2]
-
-            setting_max_search_date_global = Date()
-            max_search_date = config_file_data['search']['date']['max_search_date']
-            assert isinstance(max_search_date, list)
-            if len(max_search_date) > 0:
-                assert isinstance(
-                    max_search_date[0], int) and max_search_date[0] >= 1
-                setting_max_search_date_global.enabled = True
-                setting_max_search_date_global.year = max_search_date[0]
-            if len(max_search_date) > 1:
-                assert isinstance(
-                    max_search_date[1], int) and 1 <= max_search_date[1] <= 12
-                setting_max_search_date_global.enabled = True
-                setting_max_search_date_global.month = max_search_date[1]
-            if len(max_search_date) > 2:
-                assert isinstance(
-                    max_search_date[2], int) and 1 <= max_search_date[2] <= 31
-                setting_max_search_date_global.enabled = True
-                setting_max_search_date_global.day = max_search_date[2]
-
-            setting_filter_sender_global = []
-            setting_filter_sender_flag_global = []
-            sender_name_raw = config_file_data['search']['filter']['sender_name']
-            assert isinstance(sender_name_raw, list)
-            setting_filter_sender_global.append([])
-            setting_filter_sender_flag_global.append([])
-            for sender_name_splited in sender_name_raw:
-                assert isinstance(sender_name_splited, dict)
-                sender_name_expression = sender_name_splited['exp']
-                assert isinstance(sender_name_expression, list)
-                sender_name_flag = sender_name_splited['flag']
-                assert isinstance(sender_name_flag, list)
-                filter_sender_name = operation_parse_config_data1(
-                    sender_name_expression)[1]
-                filter_sender_name_flag = operation_parse_config_data1(
-                    sender_name_flag, False, '')[1]
-                filter_sender_name_flag = operation_parse_regex_flag(
-                    filter_sender_name_flag, filter_sender_name)
-                assert operation_validate_regex(
-                    filter_sender_name, filter_sender_name_flag)
-                setting_filter_sender_global[-1].append(filter_sender_name)
-                setting_filter_sender_flag_global[-1].append(
-                    filter_sender_name_flag)
-
-            sender_address_raw = config_file_data['search']['filter']['sender_address']
-            assert isinstance(sender_address_raw, list)
-            setting_filter_sender_global.append([])
-            setting_filter_sender_flag_global.append([])
-            for sender_address_splited in sender_address_raw:
-                assert isinstance(sender_address_splited, dict)
-                sender_address_expression = sender_address_splited['exp']
-                assert isinstance(sender_address_expression, list)
-                sender_address_flag = sender_address_splited['flag']
-                assert isinstance(sender_address_flag, list)
-                filter_sender_address = operation_parse_config_data1(
-                    sender_address_expression)[1]
-                filter_sender_address_flag = operation_parse_config_data1(
-                    sender_address_flag, False, '')[1]
-                filter_sender_address_flag = operation_parse_regex_flag(
-                    filter_sender_address_flag, filter_sender_address)
-                assert operation_validate_regex(
-                    filter_sender_address, filter_sender_address_flag)
-                setting_filter_sender_global[-1].append(filter_sender_address)
-                setting_filter_sender_flag_global[-1].append(
-                    filter_sender_address_flag)
-
-            setting_filter_subject_global = []
-            setting_filter_subject_flag_global = []
-            subject_raw = config_file_data['search']['filter']['subject']
-            assert isinstance(subject_raw, list)
-            for subject_splited in subject_raw:
-                assert isinstance(subject_splited, dict)
-                subject_expression = subject_splited['exp']
-                assert isinstance(subject_expression, list)
-                subject_flag = subject_splited['flag']
-                assert isinstance(subject_flag, list)
-                filter_subject = operation_parse_config_data1(subject_expression)[
-                    1]
-                filter_subject_flag = operation_parse_config_data1(
-                    subject_flag, False, '')[1]
-                filter_subject_flag = operation_parse_regex_flag(
-                    filter_subject_flag, filter_subject)
-                assert operation_validate_regex(
-                    filter_subject, filter_subject_flag)
-                setting_filter_subject_global.append(filter_subject)
-                setting_filter_subject_flag_global.append(filter_subject_flag)
-
-            setting_download_thread_count_global = config_file_data['download']['thread_count']
-            assert isinstance(setting_download_thread_count_global,
-                              int) and setting_download_thread_count_global > 0
-
-            setting_rollback_when_download_failed_global = config_file_data[
-                'download']['rollback_when_download_failed']
-            assert isinstance(
-                setting_rollback_when_download_failed_global, bool)
-
-            setting_sign_unseen_flag_after_downloading_global = config_file_data[
-                'download']['sign_unseen_flag_after_downloading']
-            assert isinstance(
-                setting_sign_unseen_flag_after_downloading_global, bool)
-
-            setting_reconnect_max_times_global = config_file_data['download']['reconnect_max_times']
-            assert isinstance(setting_reconnect_max_times_global, int)
-
-            assert isinstance(config_file_data['download']['display'], dict)
-            setting_display_mail = config_file_data['download']['display']['mail']
-            assert isinstance(setting_display_mail, bool)
-
-            setting_display_subject_and_time = config_file_data[
-                'download']['display']['subject_and_time']
-            assert isinstance(setting_display_subject_and_time, bool)
-
-            setting_display_mime_type = config_file_data['download']['display']['mime_type']
-            assert isinstance(setting_display_mime_type, bool)
-
-            default_download_path_raw = config_file_data['download']['path']['default']
-            assert isinstance(default_download_path_raw, dict) and isinstance(
-                default_download_path_raw['path'], str) and isinstance(default_download_path_raw['relative_to_program'], bool)
-            default_download_path = os.path.join(get_path(
-            ), default_download_path_raw['path']) if default_download_path_raw['relative_to_program'] else default_download_path_raw['path']
-            try:
-                if not os.path.exists(default_download_path):
-                    os.makedirs(default_download_path)
-            except OSError as e:
-                print('E: 路径创建错误.', flush=True)
-                raise e
-            setting_deafult_download_path_global = default_download_path
-
-            setting_mime_type_classfication_path_global = []
-            mime_type_classfication_raw = config_file_data['download']['path']['mime_type_classfication']
-            assert isinstance(mime_type_classfication_raw, list)
-            if len(host_global):
-                for mime_type_classfication_splited in mime_type_classfication_raw:
-                    assert isinstance(mime_type_classfication_splited, dict) and isinstance(mime_type_classfication_splited['type'], dict) and isinstance(
-                        mime_type_classfication_splited['path'], str) and isinstance(mime_type_classfication_splited['relative_to_download_path'], bool)
-                    setting_mime_type_classfication_path_global.append([])
-                    mime_type_classfication_splited_expression = mime_type_classfication_splited[
-                        'type']['exp']
-                    assert isinstance(
-                        mime_type_classfication_splited_expression, list)
-                    for j in mime_type_classfication_splited_expression:
-                        assert isinstance(j, str)
-                    mime_type_classfication_splited_expression = operation_parse_config_data1(
-                        mime_type_classfication_splited_expression)[1]
-                    mime_type_classfication_splited_flag = mime_type_classfication_splited[
-                        'type']['flag']
-                    for j in mime_type_classfication_splited_flag:
-                        assert isinstance(j, str)
-                    mime_type_classfication_splited_flag = operation_parse_config_data1(
-                        mime_type_classfication_splited_flag, False, '')[1]
-                    mime_type_classfication_splited_flag = operation_parse_regex_flag(
-                        mime_type_classfication_splited_flag, mime_type_classfication_splited_expression)
-                    assert operation_validate_regex(
-                        mime_type_classfication_splited_expression, mime_type_classfication_splited_flag)
-                    mime_type_classfication_splited_expression = mime_type_classfication_splited_expression[
-                        0]
-                    mime_type_classfication_splited_flag = mime_type_classfication_splited_flag[
-                        0]
-                    mime_type_classfication_splited_download_path = os.path.join(
-                        default_download_path, mime_type_classfication_splited['path']) if mime_type_classfication_splited['relative_to_download_path'] else mime_type_classfication_splited['path']
-                    try:
-                        if not os.path.exists(mime_type_classfication_splited_download_path):
-                            os.makedirs(
-                                mime_type_classfication_splited_download_path)
-                    except OSError as e:
-                        print('E: 路径创建错误.', flush=True)
-                        raise e
-                    setting_mime_type_classfication_path_global[-1].append(
-                        mime_type_classfication_splited_expression)
-                    setting_mime_type_classfication_path_global[-1].append(
-                        mime_type_classfication_splited_flag)
-                    setting_mime_type_classfication_path_global[-1].append(
-                        mime_type_classfication_splited_download_path)
-
-            setting_file_name_classfication_path_global = []
-            file_name_classfication_raw = config_file_data['download']['path']['file_name_classfication']
-            assert isinstance(file_name_classfication_raw, list)
-            if len(host_global):
-                for file_name_classfication_splited in file_name_classfication_raw:
-                    assert isinstance(file_name_classfication_splited, dict) and isinstance(file_name_classfication_splited['type'], dict) and isinstance(file_name_classfication_splited['path'], str) and isinstance(
-                        file_name_classfication_splited['extension'], bool) and isinstance(file_name_classfication_splited['relative_to_download_path'], bool)
-                    setting_file_name_classfication_path_global.append([])
-                    file_name_classfication_splited_expression = file_name_classfication_splited[
-                        'type']['exp']
-                    assert isinstance(
-                        file_name_classfication_splited_expression, list)
-                    for j in file_name_classfication_splited_expression:
-                        assert isinstance(j, str)
-                    file_name_classfication_splited_expression = operation_parse_config_data1(
-                        file_name_classfication_splited_expression)[1]
-                    file_name_classfication_splited_flag = file_name_classfication_splited[
-                        'type']['flag']
-                    for j in file_name_classfication_splited_flag:
-                        assert isinstance(j, str)
-                    file_name_classfication_splited_flag = operation_parse_config_data1(
-                        file_name_classfication_splited_flag, False, '')[1]
-                    file_name_classfication_splited_flag = operation_parse_regex_flag(
-                        file_name_classfication_splited_flag, file_name_classfication_splited_expression)
-                    assert operation_validate_regex(
-                        file_name_classfication_splited_expression, file_name_classfication_splited_flag)
-                    file_name_classfication_splited_expression = file_name_classfication_splited_expression[
-                        0]
-                    file_name_classfication_splited_flag = file_name_classfication_splited_flag[
-                        0]
-                    file_name_classfication_splited_download_path = os.path.join(
-                        default_download_path, file_name_classfication_splited['path']) if file_name_classfication_splited['relative_to_download_path'] else file_name_classfication_splited['path']
-                    try:
-                        if not os.path.exists(file_name_classfication_splited_download_path):
-                            os.makedirs(
-                                file_name_classfication_splited_download_path)
-                    except OSError as e:
-                        print('E: 路径创建错误.', flush=True)
-                        raise e
-                    setting_file_name_classfication_path_global[-1].append(
-                        file_name_classfication_splited_expression)
-                    setting_file_name_classfication_path_global[-1].append(
-                        file_name_classfication_splited_flag)
-                    setting_file_name_classfication_path_global[-1].append(
-                        file_name_classfication_splited['extension'])
-                    setting_file_name_classfication_path_global[-1].append(
-                        file_name_classfication_splited_download_path)
-    except Exception as e:
-        if str(e):
-            print('E: 读取配置文件时错误,信息如下:', flush=True)
-            if debug_mode_global:
-                traceback.print_exc()
-            else:
-                print(repr(e), flush=True)
-        else:
-            print('E: 读取配置文件时错误.', flush=True)
-        return False
-    else:
-        print('配置加载成功.', flush=True)
-        log_global.info('='*10+'开始记录'+'='*10)
-        return True
-
-
-def operation_parse_config_data1(source, ignore_empty_str=True, *default):
-    """整理正则表达式项顺序."""
-    target = [[], []]
-    processed_count = 0
-    for _, j in enumerate(source):
-        if isinstance(j, list):
-            if processed_count == len(host_global):
-                continue
-            target[1].append([])
-            for j2 in j:
-                assert isinstance(j2, str)
-                if j2 or not ignore_empty_str:
-                    target[1][-1].append(j2)
-            if not len(target[1][-1]):
-                target[1][-1] = target[0]
-            processed_count += 1
-        elif isinstance(j, str):
-            if j or not ignore_empty_str:
-                target[0].append(j)
-        else:
-            raise ValueError
-    for _ in range(len(host_global)-processed_count):
-        target[1].append(target[0])
-
-    if not len(target[0]) and len(default):
-        for j in default:
-            target[0].append(j)
-    return target
-
-
-def operation_parse_regex_flag(source, compare):
-    """将正则表达式模式项与表达式项对齐并转成数字形式."""
-    target = []
-    for i, j in enumerate(compare):
-        target.append([])
-        for i2 in range(min(len(source[i]), len(j))):
-            target[-1].append(source[i][i2])
-        for _ in range(len(j)-len(source[i])):
-            target[-1].append('')
-    for i, j in enumerate(target):
-        for i2, j2 in enumerate(j):
-            regex_flag = 0
-            for j3 in j2:
-                regex_flag |= int(_regex_flag_dict[j3])
-            target[i][i2] = regex_flag
-    return target
-
-
-def operation_validate_regex(expression, flag):
-    """验证正则表达式是否正确."""
-    for i, j in enumerate(expression):
-        for i2, j2 in enumerate(j):
-            try:
-                re.compile(j2, flag[i][i2])
-            except re.error:
-                return False
-    return True
 
 
 def init(func):
@@ -585,7 +182,7 @@ def init(func):
             file_download_path_global.append([])
             largefile_undownloadable_link_list_global.append([])
             largefile_undownloadable_code_list_global.append([])
-            for _ in range(len(setting_search_mailbox_global[i])):
+            for _ in range(len(setting_search_folder_global[i])):
                 msg_list_global[-1].append([])
                 msg_with_undownloadable_attachments_list_global[-1].append([])
                 msg_overdueanddeleted_list_global[-1].append([])
@@ -615,6 +212,392 @@ def check_config_load_status(func):
     return wrapper
 
 
+def operation_load_config():
+    global log_file_handler_global
+    global host_global, address_global, password_global
+    global setting_silent_download_mode_global
+    global setting_search_folder_global
+    global setting_search_mails_type_global
+    global setting_manual_input_search_date_global
+    global setting_default_min_search_date_global, setting_default_max_search_date_global
+    global setting_filter_sender_global, setting_filter_sender_flag_global, setting_filter_subject_global, setting_filter_subject_flag_global
+    global setting_download_thread_count_global
+    global setting_rollback_when_download_failed_global
+    global setting_sign_unseen_flag_after_downloading_global
+    global setting_reconnect_max_times_global
+    global setting_display_mailbox, setting_display_subject_and_time, setting_display_mime_type
+    global setting_deafult_download_path_global, setting_mime_type_classfication_path_global, setting_file_name_classfication_path_global
+
+    print('正在读取配置文件...', flush=True)
+    try:
+        if config_custom_path_global:
+            config_path = os.path.join(os.getcwd(), config_custom_path_global)
+        else:
+            config_path = os.path.join(os.getcwd(), 'config.toml')
+        with open(config_path, 'rb') as config_file:
+            config_file_data = rtoml.load(
+                bytes.decode(config_file.read(), 'UTF-8'))
+
+            setting_silent_download_mode_global = config_file_data['program']['silent_download_mode']
+            assert isinstance(setting_silent_download_mode_global, bool)
+
+            log = config_file_data['program']['log']
+            if log_file_handler_global != None:
+                log_global.removeHandler(log_file_handler_global)
+            if log != False:
+                assert isinstance(log, dict) and isinstance(
+                    log['path'], str) and isinstance(log['overwrite'], bool)
+                log_write_type = 'w' if log['overwrite'] else 'a'
+                log_path = os.path.join(os.getcwd(), log['path'])
+                log_name = datetime.datetime.strftime(
+                    datetime.datetime.now(), '%Y-%m-%d')+'.log'
+                try:
+                    if not os.path.exists(log_path):
+                        os.makedirs(log_path)
+                    log_file_handler_global = logging.FileHandler(
+                        os.path.join(log_path, log_name), log_write_type, 'UTF-8')
+                    log_file_handler_global.setLevel(logging.DEBUG)
+                    log_file_handler_global.setFormatter(logging.Formatter(
+                        '[%(asctime)s %(levelname)8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+                    log_global.addHandler(log_file_handler_global)
+                except OSError as e:
+                    print('E: 日志文件创建错误.', flush=True)
+                    raise e
+
+            host_global = []
+            address_global = []
+            password_global = []
+            account = config_file_data['mailbox']['account']
+            assert isinstance(account, list)
+            for account_splited in account:
+                assert isinstance(account_splited, dict) and isinstance(account_splited['host'], str) and isinstance(
+                    account_splited['address'], str) and isinstance(account_splited['password'], str)
+                host_global.append(account_splited['host'])
+                address_global.append(account_splited['address'])
+                password_global.append(account_splited['password'])
+
+            folder = config_file_data['search']['folder']
+            assert isinstance(folder, list)
+            for j in folder:
+                assert isinstance(j, list)
+            search_folder = operation_fetch_config_data1(
+                folder, True, 'INBOX')[1]
+            setting_search_folder_global = search_folder
+
+            setting_search_mails_type_global = config_file_data['search']['search_mail_type']
+            assert isinstance(setting_search_mails_type_global,
+                              int) and 0 <= setting_search_mails_type_global <= 2
+
+            setting_manual_input_search_date_global = config_file_data[
+                'search']['date']['manual_input_search_date']
+            assert isinstance(setting_manual_input_search_date_global, bool)
+
+            setting_default_min_search_date_global = [0, 0, 0]
+            min_search_date = config_file_data['search']['date']['min_search_date']
+            assert isinstance(min_search_date, list)
+            if len(min_search_date) > 0:
+                assert isinstance(
+                    min_search_date[0], int) and min_search_date[0] >= 1
+                setting_default_min_search_date_global[0] = min_search_date[0]
+            if len(min_search_date) > 1:
+                assert isinstance(
+                    min_search_date[1], int) and 1 <= min_search_date[1] <= 12
+                setting_default_min_search_date_global[1] = min_search_date[1]
+            if len(min_search_date) > 2:
+                assert isinstance(
+                    min_search_date[2], int) and 1 <= min_search_date[2] <= 31
+                setting_default_min_search_date_global[2] = min_search_date[2]
+
+            setting_default_max_search_date_global = [0, 0, 0]
+            max_search_date = config_file_data['search']['date']['max_search_date']
+            assert isinstance(max_search_date, list)
+            if len(max_search_date) > 0:
+                assert isinstance(
+                    max_search_date[0], int) and max_search_date[0] >= 1
+                setting_default_max_search_date_global[0] = max_search_date[0]
+            if len(max_search_date) > 1:
+                assert isinstance(
+                    max_search_date[1], int) and 1 <= max_search_date[1] <= 12
+                setting_default_max_search_date_global[1] = max_search_date[1]
+            if len(max_search_date) > 2:
+                assert isinstance(
+                    max_search_date[2], int) and 1 <= max_search_date[2] <= 31
+                setting_default_max_search_date_global[2] = max_search_date[2]
+
+            setting_filter_sender_global = []
+            setting_filter_sender_flag_global = []
+            sender_name_raw = config_file_data['search']['filter']['sender_name']
+            assert isinstance(sender_name_raw, list)
+            setting_filter_sender_global.append([])
+            setting_filter_sender_flag_global.append([])
+            for sender_name_splited in sender_name_raw:
+                assert isinstance(sender_name_splited, dict)
+                sender_name_expression = sender_name_splited['exp']
+                assert isinstance(sender_name_expression, list)
+                sender_name_flag = sender_name_splited['flag']
+                assert isinstance(sender_name_flag, list)
+                filter_sender_name = operation_fetch_config_data1(
+                    sender_name_expression)[1]
+                filter_sender_name_flag = operation_fetch_config_data1(
+                    sender_name_flag, False, '')[1]
+                filter_sender_name_flag = operation_parse_regex_flag(
+                    filter_sender_name_flag, filter_sender_name)
+                assert operation_validate_regex(
+                    filter_sender_name, filter_sender_name_flag)
+                setting_filter_sender_global[-1].append(filter_sender_name)
+                setting_filter_sender_flag_global[-1].append(
+                    filter_sender_name_flag)
+
+            sender_address_raw = config_file_data['search']['filter']['sender_address']
+            assert isinstance(sender_address_raw, list)
+            setting_filter_sender_global.append([])
+            setting_filter_sender_flag_global.append([])
+            for sender_address_splited in sender_address_raw:
+                assert isinstance(sender_address_splited, dict)
+                sender_address_expression = sender_address_splited['exp']
+                assert isinstance(sender_address_expression, list)
+                sender_address_flag = sender_address_splited['flag']
+                assert isinstance(sender_address_flag, list)
+                filter_sender_address = operation_fetch_config_data1(
+                    sender_address_expression)[1]
+                filter_sender_address_flag = operation_fetch_config_data1(
+                    sender_address_flag, False, '')[1]
+                filter_sender_address_flag = operation_parse_regex_flag(
+                    filter_sender_address_flag, filter_sender_address)
+                assert operation_validate_regex(
+                    filter_sender_address, filter_sender_address_flag)
+                setting_filter_sender_global[-1].append(filter_sender_address)
+                setting_filter_sender_flag_global[-1].append(
+                    filter_sender_address_flag)
+
+            setting_filter_subject_global = []
+            setting_filter_subject_flag_global = []
+            subject_raw = config_file_data['search']['filter']['subject']
+            assert isinstance(subject_raw, list)
+            for subject_splited in subject_raw:
+                assert isinstance(subject_splited, dict)
+                subject_expression = subject_splited['exp']
+                assert isinstance(subject_expression, list)
+                subject_flag = subject_splited['flag']
+                assert isinstance(subject_flag, list)
+                filter_subject = operation_fetch_config_data1(subject_expression)[
+                    1]
+                filter_subject_flag = operation_fetch_config_data1(
+                    subject_flag, False, '')[1]
+                filter_subject_flag = operation_parse_regex_flag(
+                    filter_subject_flag, filter_subject)
+                assert operation_validate_regex(
+                    filter_subject, filter_subject_flag)
+                setting_filter_subject_global.append(filter_subject)
+                setting_filter_subject_flag_global.append(filter_subject_flag)
+
+            setting_download_thread_count_global = config_file_data['download']['thread_count']
+            assert isinstance(setting_download_thread_count_global,
+                              int) and setting_download_thread_count_global > 0
+
+            setting_rollback_when_download_failed_global = config_file_data[
+                'download']['rollback_when_download_failed']
+            assert isinstance(
+                setting_rollback_when_download_failed_global, bool)
+
+            setting_sign_unseen_flag_after_downloading_global = config_file_data[
+                'download']['sign_unseen_flag_after_downloading']
+            assert isinstance(
+                setting_sign_unseen_flag_after_downloading_global, bool)
+
+            setting_reconnect_max_times_global = config_file_data['download']['reconnect_max_times']
+            assert isinstance(setting_reconnect_max_times_global, int)
+
+            assert isinstance(config_file_data['download']['display'], dict)
+            setting_display_mailbox = config_file_data['download']['display']['mailbox']
+            assert isinstance(setting_display_mailbox, bool)
+
+            setting_display_subject_and_time = config_file_data[
+                'download']['display']['subject_and_time']
+            assert isinstance(setting_display_subject_and_time, bool)
+
+            setting_display_mime_type = config_file_data['download']['display']['mime_type']
+            assert isinstance(setting_display_mime_type, bool)
+
+            default_download_path = os.path.join(
+                os.getcwd(), config_file_data['download']['path']['default_path'])
+            assert isinstance(default_download_path, str)
+            try:
+                if not os.path.exists(default_download_path):
+                    os.makedirs(default_download_path)
+            except OSError as e:
+                print('E: 路径创建错误.', flush=True)
+                raise e
+            setting_deafult_download_path_global = default_download_path
+
+            setting_mime_type_classfication_path_global = []
+            mime_type_classfication_raw = config_file_data['download']['path']['mime_type_classfication']
+            assert isinstance(mime_type_classfication_raw, list)
+            if len(host_global):
+                for mime_type_classfication_splited in mime_type_classfication_raw:
+                    assert isinstance(mime_type_classfication_splited, dict) and isinstance(mime_type_classfication_splited['type'], dict) and isinstance(
+                        mime_type_classfication_splited['path'], str) and isinstance(mime_type_classfication_splited['relative_to_download_path'], bool)
+                    setting_mime_type_classfication_path_global.append([])
+                    mime_type_classfication_splited_expression = mime_type_classfication_splited[
+                        'type']['exp']
+                    assert isinstance(
+                        mime_type_classfication_splited_expression, list)
+                    for j in mime_type_classfication_splited_expression:
+                        assert isinstance(j, str)
+                    mime_type_classfication_splited_expression = operation_fetch_config_data1(
+                        mime_type_classfication_splited_expression)[1]
+                    mime_type_classfication_splited_flag = mime_type_classfication_splited[
+                        'type']['flag']
+                    for j in mime_type_classfication_splited_flag:
+                        assert isinstance(j, str)
+                    mime_type_classfication_splited_flag = operation_fetch_config_data1(
+                        mime_type_classfication_splited_flag, False, '')[1]
+                    mime_type_classfication_splited_flag = operation_parse_regex_flag(
+                        mime_type_classfication_splited_flag, mime_type_classfication_splited_expression)
+                    assert operation_validate_regex(
+                        mime_type_classfication_splited_expression, mime_type_classfication_splited_flag)
+                    mime_type_classfication_splited_expression = mime_type_classfication_splited_expression[
+                        0]
+                    mime_type_classfication_splited_flag = mime_type_classfication_splited_flag[
+                        0]
+                    mime_type_classfication_splited_download_path = os.path.join(
+                        default_download_path, mime_type_classfication_splited['path']) if mime_type_classfication_splited['relative_to_download_path'] else os.path.join(os.getcwd(), mime_type_classfication_splited['path'])
+                    try:
+                        if not os.path.exists(mime_type_classfication_splited_download_path):
+                            os.makedirs(
+                                mime_type_classfication_splited_download_path)
+                    except OSError as e:
+                        print('E: 路径创建错误.', flush=True)
+                        raise e
+                    setting_mime_type_classfication_path_global[-1].append(
+                        mime_type_classfication_splited_expression)
+                    setting_mime_type_classfication_path_global[-1].append(
+                        mime_type_classfication_splited_flag)
+                    setting_mime_type_classfication_path_global[-1].append(
+                        mime_type_classfication_splited_download_path)
+
+            setting_file_name_classfication_path_global = []
+            file_name_classfication_raw = config_file_data['download']['path']['file_name_classfication']
+            assert isinstance(file_name_classfication_raw, list)
+            if len(host_global):
+                for file_name_classfication_splited in file_name_classfication_raw:
+                    assert isinstance(file_name_classfication_splited, dict) and isinstance(file_name_classfication_splited['name'], dict) and isinstance(file_name_classfication_splited['path'], str) and isinstance(
+                        file_name_classfication_splited['extension'], bool) and isinstance(file_name_classfication_splited['relative_to_download_path'], bool)
+                    setting_file_name_classfication_path_global.append([])
+                    file_name_classfication_splited_expression = file_name_classfication_splited[
+                        'name']['exp']
+                    assert isinstance(
+                        file_name_classfication_splited_expression, list)
+                    for j in file_name_classfication_splited_expression:
+                        assert isinstance(j, str)
+                    file_name_classfication_splited_expression = operation_fetch_config_data1(
+                        file_name_classfication_splited_expression)[1]
+                    file_name_classfication_splited_flag = file_name_classfication_splited[
+                        'name']['flag']
+                    for j in file_name_classfication_splited_flag:
+                        assert isinstance(j, str)
+                    file_name_classfication_splited_flag = operation_fetch_config_data1(
+                        file_name_classfication_splited_flag, False, '')[1]
+                    file_name_classfication_splited_flag = operation_parse_regex_flag(
+                        file_name_classfication_splited_flag, file_name_classfication_splited_expression)
+                    assert operation_validate_regex(
+                        file_name_classfication_splited_expression, file_name_classfication_splited_flag)
+                    file_name_classfication_splited_expression = file_name_classfication_splited_expression[
+                        0]
+                    file_name_classfication_splited_flag = file_name_classfication_splited_flag[
+                        0]
+                    file_name_classfication_splited_download_path = os.path.join(
+                        default_download_path, file_name_classfication_splited['path']) if file_name_classfication_splited['relative_to_download_path'] else os.path.join(os.getcwd(), file_name_classfication_splited['path'])
+                    try:
+                        if not os.path.exists(file_name_classfication_splited_download_path):
+                            os.makedirs(
+                                file_name_classfication_splited_download_path)
+                    except OSError as e:
+                        print('E: 路径创建错误.', flush=True)
+                        raise e
+                    setting_file_name_classfication_path_global[-1].append(
+                        file_name_classfication_splited_expression)
+                    setting_file_name_classfication_path_global[-1].append(
+                        file_name_classfication_splited_flag)
+                    setting_file_name_classfication_path_global[-1].append(
+                        file_name_classfication_splited['extension'])
+                    setting_file_name_classfication_path_global[-1].append(
+                        file_name_classfication_splited_download_path)
+    except Exception as e:
+        if str(e):
+            print('E: 读取配置文件时错误,信息如下:', flush=True)
+            if debug_mode_global:
+                traceback.print_exc()
+            else:
+                print(repr(e), flush=True)
+        else:
+            print('E: 读取配置文件时错误.', flush=True)
+        return False
+    else:
+        print('配置加载成功.', flush=True)
+        log_global.info('='*10+'开始记录'+'='*10)
+        return True
+
+
+def operation_fetch_config_data1(source, ignore_empty_str=True, *default):
+    """整理配置中与邮箱一一对应的选项的数据,并添加默认选项."""
+    target = [[], []]
+    processed_count = 0
+    for _, j in enumerate(source):
+        if isinstance(j, list):
+            if processed_count == len(host_global):
+                continue
+            target[1].append([])
+            for j2 in j:
+                assert isinstance(j2, str)
+                if j2 or not ignore_empty_str:
+                    target[1][-1].append(j2)
+            if not len(target[1][-1]):
+                target[1][-1] = target[0]
+            processed_count += 1
+        elif isinstance(j, str):
+            if j or not ignore_empty_str:
+                target[0].append(j)
+        else:
+            raise ValueError
+    for _ in range(len(host_global)-processed_count):
+        target[1].append(target[0])
+
+    if not len(target[0]) and len(default):
+        for j in default:
+            target[0].append(j)
+    return target
+
+
+def operation_parse_regex_flag(source, compare):
+    """将正则表达式标志项与表达式项对齐并转成数字形式."""
+    target = []
+    for i, j in enumerate(compare):
+        target.append([])
+        for i2 in range(min(len(source[i]), len(j))):
+            target[-1].append(source[i][i2])
+        for _ in range(len(j)-len(source[i])):
+            target[-1].append('')
+    for i, j in enumerate(target):
+        for i2, j2 in enumerate(j):
+            regex_flag = 0
+            for j3 in j2:
+                regex_flag |= int(_regex_flag_dict[j3])
+            target[i][i2] = regex_flag
+    return target
+
+
+def operation_validate_regex(expression, flag):
+    """验证正则表达式是否正确."""
+    for i, j in enumerate(expression):
+        for i2, j2 in enumerate(j):
+            try:
+                re.compile(j2, flag[i][i2])
+            except re.error:
+                return False
+    return True
+
+
 def operation_login_imap_server(host, address, password, display=True):
     is_login_succeed = False
     try:
@@ -634,7 +617,7 @@ def operation_login_imap_server(host, address, password, display=True):
                   ' 登录成功', ltk.indent(3), sep='', flush=True)
             log_global.info('"'+address+'" 登录成功.')
         imap._simple_command(
-            'ID', '("' + '" "'.join(authentication) + '")')  # 发送ID
+            'ID', '("' + '" "'.join(authentication_global) + '")')  # 发送ID
     except imaplib.IMAP4.error:
         if display:
             print('\nE: 用户名或密码错误.', flush=True)
@@ -656,24 +639,24 @@ def operation_login_imap_server(host, address, password, display=True):
 
 
 def operation_login_all_imapserver():
-    for imap_index_int in range(len(host_global)):
+    for imap_index in range(len(host_global)):
         imap = operation_login_imap_server(
-            host_global[imap_index_int], address_global[imap_index_int], password_global[imap_index_int])
+            host_global[imap_index], address_global[imap_index], password_global[imap_index])
         imap_list_global.append(imap)
         if imap != None:
-            imap_succeed_index_list_global.append(imap_index_int)
+            imap_succeed_index_list_global.append(imap_index)
         else:
-            imap_connect_failed_index_list_global.append(imap_index_int)
+            imap_connect_failed_index_list_global.append(imap_index)
     if len(host_global):
         if len(imap_succeed_index_list_global):
             print('已成功连接的邮箱:', flush=True)
-            for imap_succeed_index_int in imap_succeed_index_list_global:
+            for imap_succeed_index in imap_succeed_index_list_global:
                 print(
-                    ltk.indent(1), address_global[imap_succeed_index_int], sep='')
+                    ltk.indent(1), address_global[imap_succeed_index], sep='')
             if len(imap_succeed_index_list_global) < len(host_global):
                 print('E: 以下邮箱未能连接:', flush=True)
-                for imap_connect_failed_index_int in imap_connect_failed_index_list_global:
-                    print(ltk.indent(1), address_global[imap_connect_failed_index_int],
+                for imap_connect_failed_index in imap_connect_failed_index_list_global:
+                    print(ltk.indent(1), address_global[imap_connect_failed_index],
                           sep='', flush=True)
         else:
             print('E: 没有成功连接的邮箱.', flush=True)
@@ -682,65 +665,88 @@ def operation_login_all_imapserver():
 
 
 def operation_set_time():
-    setting_min_search_date_global.enabled = False
-    setting_max_search_date_global.enabled = False
-    if ltk.input_option('是否设置检索开始日期?', 'y', 'n', default_option='y', end=':') == 'y':
-        setting_min_search_date_global.enabled = True
-        status = 0
-        while True:
-            try:
-                if status == 0:
-                    setting_min_search_date_global.year = int(ltk.input_option(
-                        '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year) if setting_min_search_date_global.year == 0 else str(setting_min_search_date_global.year), end=':'))
-                    assert setting_min_search_date_global.year >= 1
-                    status = 1
-                elif status == 1:
-                    setting_min_search_date_global.month = int(ltk.input_option(
-                        '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month) if setting_min_search_date_global.month == 0 else str(setting_min_search_date_global.month), end=':'))
-                    assert 1 <= setting_min_search_date_global.month <= 12
-                    status = 2
-                elif status == 2:
-                    setting_min_search_date_global.day = int(ltk.input_option(
-                        '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day) if setting_min_search_date_global.day == 0 else str(setting_min_search_date_global.day), end=':'))
-                    assert 1 <= setting_min_search_date_global.day <= 31
-                    break
-            except Exception:
-                print('无效选项,请重新输入.', flush=True)
-    if ltk.input_option('是否设置检索截止日期?', 'y', 'n', default_option='n', end=':') == 'y':
-        setting_max_search_date_global.enabled = True
-        status = 0
-        while True:
-            try:
-                if status == 0:
-                    setting_max_search_date_global.year = int(ltk.input_option(
-                        '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year) if setting_max_search_date_global.year == 0 else str(setting_max_search_date_global.year), end=':'))
-                    assert setting_max_search_date_global.year >= 1
-                    status = 1
-                elif status == 1:
-                    setting_max_search_date_global.month = int(ltk.input_option(
-                        '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month) if setting_max_search_date_global.month == 0 else str(setting_max_search_date_global.month), end=':'))
-                    assert 1 <= setting_max_search_date_global.month <= 12
-                    status = 2
-                elif status == 2:
-                    setting_max_search_date_global.day = int(ltk.input_option(
-                        '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day) if setting_max_search_date_global.day == 0 else str(setting_max_search_date_global.day), end=':'))
-                    assert 1 <= setting_max_search_date_global.day <= 31
-                    break
-            except Exception:
-                print('无效选项,请重新输入.', flush=True)
+    global setting_min_search_date_global, setting_max_search_date_global
+    setting_min_search_date_global = Date()
+    setting_max_search_date_global = Date()
+    if setting_manual_input_search_date_global:
+        if ltk.input_option('是否设置检索开始日期?', 'y', 'n', default_option='y', end=':') == 'y':
+            setting_min_search_date_global.enabled = True
+            status = 0
+            while True:
+                try:
+                    if status == 0:
+                        setting_min_search_date_global.year = int(ltk.input_option(
+                            '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year if setting_default_min_search_date_global[0] == 0 else setting_default_min_search_date_global[0]), end=':'))
+                        assert setting_min_search_date_global.year >= 1
+                        status = 1
+                    elif status == 1:
+                        setting_min_search_date_global.month = int(ltk.input_option(
+                            '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month if setting_default_min_search_date_global[1] == 0 else setting_default_min_search_date_global[1]), end=':'))
+                        assert 1 <= setting_min_search_date_global.month <= 12
+                        status = 2
+                    elif status == 2:
+                        setting_min_search_date_global.day = int(ltk.input_option(
+                            '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day if setting_default_min_search_date_global[2] == 0 else setting_default_min_search_date_global[2]), end=':'))
+                        assert 1 <= setting_min_search_date_global.day <= 31
+                        break
+                except Exception:
+                    print('无效选项,请重新输入.', flush=True)
+        if ltk.input_option('是否设置检索截止日期?', 'y', 'n', default_option='n', end=':') == 'y':
+            setting_max_search_date_global.enabled = True
+            status = 0
+            while True:
+                try:
+                    if status == 0:
+                        setting_max_search_date_global.year = int(ltk.input_option(
+                            '输入年份', allow_undefind_input=True, default_option=str(datetime.datetime.now().year if setting_default_max_search_date_global[0] == 0 else setting_default_max_search_date_global[0]), end=':'))
+                        assert setting_max_search_date_global.year >= 1
+                        status = 1
+                    elif status == 1:
+                        setting_max_search_date_global.month = int(ltk.input_option(
+                            '输入月份', allow_undefind_input=True, default_option=str(datetime.datetime.now().month if setting_default_max_search_date_global[1] == 0 else setting_default_max_search_date_global[1]), end=':'))
+                        assert 1 <= setting_max_search_date_global.month <= 12
+                        status = 2
+                    elif status == 2:
+                        setting_max_search_date_global.day = int(ltk.input_option(
+                            '输入日期', allow_undefind_input=True, default_option=str(datetime.datetime.now().day if setting_default_max_search_date_global[2] == 0 else setting_default_max_search_date_global[2]), end=':'))
+                        assert 1 <= setting_max_search_date_global.day <= 31
+                        break
+                except Exception:
+                    print('无效选项,请重新输入.', flush=True)
+    else:
+        for _, j in enumerate(setting_default_min_search_date_global):
+            if j > 0:
+                setting_min_search_date_global.enabled = True
+        for _, j in enumerate(setting_default_max_search_date_global):
+            if j > 0:
+                setting_max_search_date_global.enabled = True
+        if setting_min_search_date_global.enabled:
+            setting_min_search_date_global.year = datetime.datetime.now(
+            ).year if setting_default_min_search_date_global[0] == 0 else setting_default_min_search_date_global[0]
+            setting_min_search_date_global.month = datetime.datetime.now(
+            ).month if setting_default_min_search_date_global[1] == 0 else setting_default_min_search_date_global[1]
+            setting_min_search_date_global.day = datetime.datetime.now(
+            ).day if setting_default_min_search_date_global[2] == 0 else setting_default_min_search_date_global[2]
+        if setting_max_search_date_global.enabled:
+            setting_max_search_date_global.year = datetime.datetime.now(
+            ).year if setting_default_max_search_date_global[0] == 0 else setting_default_max_search_date_global[0]
+            setting_max_search_date_global.month = datetime.datetime.now(
+            ).month if setting_default_max_search_date_global[1] == 0 else setting_default_max_search_date_global[1]
+            setting_max_search_date_global.day = datetime.datetime.now(
+            ).day if setting_default_max_search_date_global[2] == 0 else setting_default_max_search_date_global[2]
 
 
 def operation_get_download_path(file_name_raw, mime_type):
     download_path = None
     for j in setting_mime_type_classfication_path_global:
-        for i in range(len(j[0])):
-            if len(re.compile(j[0][i], j[1][i]).findall(mime_type)):
+        for i, j2 in enumerate(j[0]):
+            if len(re.compile(j2, j[1][i]).findall(mime_type)):
                 download_path = j[2]
     file_name_main, file_name_extension = operation_parse_file_name(
         file_name_raw)
     for j in setting_file_name_classfication_path_global:
-        for i in range(len(j[0])):
-            if len(re.compile(j[0][i], j[1][i]).findall(file_name_extension if j[2] else file_name_main)):
+        for i, j2 in enumerate(j[0]):
+            if len(re.compile(j2, j[1][i]).findall(file_name_extension if j[2] else file_name_main)):
                 download_path = j[3]
     if download_path == None:
         download_path = setting_deafult_download_path_global
@@ -764,15 +770,15 @@ def operation_fetch_file_name(file_name_raw, download_path):
         os.makedirs(download_path)
     if os.path.exists(os.path.join(download_path, file_name_raw)):
         i = 2
-        dot_index_int = len(
+        dot_index = len(
             file_name_raw)-file_name_raw[::-1].find('.')-1 if '.' in file_name_raw else -1
         while True:
-            if dot_index_int == -1:
+            if dot_index == -1:
                 file_name = file_name_raw + \
                     ' ('+str(i)+')'
             else:
                 file_name = '.'.join(
-                    [file_name_raw[0:dot_index_int]+'('+str(i)+')', file_name_raw[dot_index_int+1:]])
+                    [file_name_raw[0:dot_index]+'('+str(i)+')', file_name_raw[dot_index+1:]])
             if not os.path.exists(os.path.join(download_path, file_name)):
                 break
             i += 1
@@ -797,10 +803,10 @@ def operation_rollback(file_name_list, file_download_path_list, file_name=None, 
                 largefile_download_path, largefile_name_tmp))
             log_global.error('已回滚 "'+os.path.join(
                 largefile_download_path, largefile_name_tmp)+'"')
-    for file_mixed_name_index_int in range(len(file_name_list)):
-        if os.path.isfile(os.path.join(file_download_path_list[file_mixed_name_index_int], file_name_list[file_mixed_name_index_int])):
+    for file_mixed_name_index in range(len(file_name_list)):
+        if os.path.isfile(os.path.join(file_download_path_list[file_mixed_name_index], file_name_list[file_mixed_name_index])):
             os.remove(os.path.join(
-                file_download_path_list[file_mixed_name_index_int], file_name_list[file_mixed_name_index_int]))
+                file_download_path_list[file_mixed_name_index], file_name_list[file_mixed_name_index]))
             with lock_var_global:
                 file_download_count_global -= 1
 
@@ -815,21 +821,7 @@ def program_download_main():
     global msg_list_global, msg_total_count_global, msg_processed_count_global
     operation_login_all_imapserver()
     if len(imap_succeed_index_list_global):
-        if setting_manual_input_search_date_global:
-            operation_set_time()
-        setting_min_search_date_global.year = max(
-            1, setting_min_search_date_global.year)
-        setting_min_search_date_global.month = max(
-            1, setting_min_search_date_global.month)
-        setting_min_search_date_global.day = max(
-            1, setting_min_search_date_global.day)
-        setting_max_search_date_global.year = max(
-            1, setting_max_search_date_global.year)
-        setting_max_search_date_global.month = max(
-            1, setting_max_search_date_global.month)
-        setting_max_search_date_global.day = max(
-            1, setting_max_search_date_global.day)
-        start_time = time.time()
+        operation_set_time()
         prompt = ''
         if not (setting_min_search_date_global.enabled or setting_max_search_date_global.enabled):
             if setting_search_mails_type_global == 0:
@@ -846,10 +838,13 @@ def program_download_main():
                 setting_max_search_date_global.time()+' 截止')) if not setting_min_search_date_global.enabled and setting_max_search_date_global.enabled else ' 到 '
             prompt += setting_max_search_date_global.time(
             ) if setting_min_search_date_global.enabled and setting_max_search_date_global.enabled else ''
+            prompt += ' ' if setting_min_search_date_global.enabled and setting_max_search_date_global.enabled else ''
             prompt += '的邮件' if setting_search_mails_type_global == 0 else '的未读邮件' if setting_search_mails_type_global == 1 else '的已读邮件'
         print(prompt, sep='', flush=True)
         log_global.info(prompt)
-        for imap_index, imap_index in enumerate(imap_succeed_index_list_global):
+        for imap_index_index, imap_index in enumerate(imap_succeed_index_list_global):
+            print('正在搜索... (', imap_index_index+1, '/',
+                  len(imap_succeed_index_list_global), ')', sep='', end='', flush=True)
             search_command = ''
             search_command += ('since '+setting_min_search_date_global.time()
                                ) if setting_min_search_date_global.enabled else ''
@@ -858,20 +853,28 @@ def program_download_main():
                                ) if setting_max_search_date_global.enabled else ''
             search_command += ' ' if setting_max_search_date_global.enabled or setting_min_search_date_global.enabled else ''
             search_command += 'ALL' if setting_search_mails_type_global == 0 else 'UNSEEN' if setting_search_mails_type_global == 1 else 'SEEN'
-            for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index])):
-                mailbox_raw = setting_search_mailbox_global[
-                    imap_index][mailbox_index_int]
-                mailbox = b'"'+ltk.imap_utf7_bytes_encode(mailbox_raw)+b'"'
-                try:
-                    select_status, _ = imap_list_global[imap_index].select(
-                        mailbox)
-                except Exception:
-                    select_status = 'NO'
-                if select_status == 'NO':
-                    print('E: 邮箱', address_global[imap_index],
-                          '的收件箱', mailbox_raw, '选择失败,已跳过.', flush=True)
+            for folder_index, folder_raw in enumerate(setting_search_folder_global[imap_index]):
+                folder = b'"'+ltk.imap_utf7_bytes_encode(folder_raw)+b'"'
+                select_status_last = False
+                for _ in range(setting_reconnect_max_times_global+1):
+                    try:
+                        select_status, _ = imap_list_global[imap_index].select(
+                            folder)
+                        select_status_last = True
+                        break
+                    except Exception:
+                        for _ in range(setting_reconnect_max_times_global):
+                            imap_list_global[imap_index] = operation_login_imap_server(
+                                host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
+                            if imap_list_global[imap_index] != None:
+                                imap_list_global[imap_index].select(
+                                    folder)
+                                break
+                if not select_status_last or select_status == 'NO':
+                    print('\rE: 邮箱', address_global[imap_index],
+                          '的收件箱', folder_raw, '选择失败,已跳过.', ltk.indent(3), flush=True)
                     log_global.error(
-                        '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + mailbox_raw + '" 选择失败.')
+                        '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + folder_raw + '" 选择失败.')
                     continue
                 search_status_last = False
                 for _ in range(setting_reconnect_max_times_global+1):
@@ -880,25 +883,27 @@ def program_download_main():
                             None, search_command)
                         search_status_last = True
                         break
+                    except imaplib.IMAP4.error:
+                        break
                     except Exception:
                         for _ in range(setting_reconnect_max_times_global):
                             imap_list_global[imap_index] = operation_login_imap_server(
                                 host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
                             if imap_list_global[imap_index] != None:
                                 imap_list_global[imap_index].select(
-                                    mailbox)
+                                    folder)
                                 break
                 if not search_status_last:
-                    print('E: 邮箱', address_global[imap_index],
-                          '的收件箱', mailbox_raw, '搜索失败,已跳过.', flush=True)
+                    print('\rE: 邮箱', address_global[imap_index],
+                          '的收件箱', folder_raw, '搜索失败,已跳过.', ltk.indent(3), flush=True)
                     log_global.error(
-                        '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + mailbox_raw + '" 搜索失败.')
+                        '邮箱 "'+address_global[imap_index]+'" 的收件箱 "' + folder_raw + '" 搜索失败.')
                     if not ltk.safe_list_find(imap_connect_failed_index_list_global, imap_index):
                         imap_connect_failed_index_list_global.append(
                             imap_index)
                     continue
                 msg_list = list(reversed(msg_data_index_raw[0].split()))
-                msg_list_global[imap_index][mailbox_index_int] = msg_list
+                msg_list_global[imap_index][folder_index] = msg_list
             print(
                 '\r邮箱: ', address_global[imap_index], ltk.indent(3), sep='', flush=True)
             print(ltk.indent(1), '搜索到 ', len(ltk.extract_nested_list(
@@ -916,7 +921,7 @@ def program_download_main():
             print('开始处理...', flush=True)
             log_global.info('开始处理...')
             if len(ltk.extract_nested_list(setting_filter_sender_global)) or len(ltk.extract_nested_list(setting_filter_subject_global)):
-                print('N: 过滤器已开启.',flush=True)
+                print('N: 过滤器已开启.', flush=True)
                 log_global.info('过滤器已开启.')
             msg_total_count_global = len(
                 ltk.extract_nested_list(msg_list_global))
@@ -972,13 +977,13 @@ def program_download_main():
                         log_global.error(ltk.indent(1)+'"' +
                                          address_global[imap_connect_failed_index]+'"')
                 for imap_index, msg_list_global_splited in enumerate(msg_list_global):
-                    for mailbox_index_int, msg_list_global_splited2 in enumerate(msg_list_global_splited):
+                    for folder_index, msg_list_global_splited2 in enumerate(msg_list_global_splited):
                         if len(msg_list_global_splited2) > 0:
                             if ltk.safe_list_find(imap_fetch_failed_index_list_global, imap_index) == -1:
                                 imap_fetch_failed_index_list_global.append(
                                     imap_index)
                             msg_fetch_failed_list_global[imap_index][
-                                mailbox_index_int] += msg_list_global_splited2
+                                folder_index] += msg_list_global_splited2
                 if len(imap_fetch_failed_index_list_global):
                     print('E: 以下邮件处理失败,请尝试重新下载:', flush=True)
                     log_global.error('以下邮件处理失败,请尝试重新下载:')
@@ -1000,20 +1005,20 @@ def program_download_main():
                             1), '邮箱: ', address_global[imap_download_failed_index], sep='', flush=True)
                         log_global.error(ltk.indent(
                             1) + '邮箱: "' + address_global[imap_download_failed_index]+'"')
-                        for mailbox_index_int, msg_download_failed_list_global_splited in enumerate(msg_download_failed_list_global[imap_download_failed_index]):
+                        for folder_index, msg_download_failed_list_global_splited in enumerate(msg_download_failed_list_global[imap_download_failed_index]):
                             if not len(msg_download_failed_list_global_splited):
                                 continue
                             print(ltk.indent(
-                                2), '文件夹: ', setting_search_mailbox_global[imap_download_failed_index][mailbox_index_int], sep='', flush=True)
+                                2), '文件夹: ', setting_search_folder_global[imap_download_failed_index][folder_index], sep='', flush=True)
                             log_global.error(ltk.indent(
-                                2) + '文件夹: "' + setting_search_mailbox_global[imap_download_failed_index][mailbox_index_int]+'"')
-                            for subject_index_int, subject in enumerate(subject_download_failed_list_global[imap_download_failed_index][mailbox_index_int]):
+                                2) + '文件夹: "' + setting_search_folder_global[imap_download_failed_index][folder_index]+'"')
+                            for subject_index, subject in enumerate(subject_download_failed_list_global[imap_download_failed_index][folder_index]):
                                 print(ltk.indent(3), msg_download_failed_counted_count+1, ' 标题-时间: ',
-                                      subject, ' - ', send_time_download_failed_list_global[imap_download_failed_index][mailbox_index_int][subject_index_int], sep='', flush=True)
+                                      subject, ' - ', send_time_download_failed_list_global[imap_download_failed_index][folder_index][subject_index], sep='', flush=True)
                                 log_global.error(ltk.indent(3) + str(msg_download_failed_counted_count+1) + ' 标题: "' +
-                                                 subject_download_failed_list_global[imap_download_failed_index][mailbox_index_int][subject_index_int]+'"')
+                                                 subject_download_failed_list_global[imap_download_failed_index][folder_index][subject_index]+'"')
                                 log_global.error(ltk.indent(
-                                    4)+'时间: '+send_time_download_failed_list_global[imap_download_failed_index][mailbox_index_int][subject_index_int])
+                                    4)+'时间: '+send_time_download_failed_list_global[imap_download_failed_index][folder_index][subject_index])
                                 msg_download_failed_counted_count += 1
                 if len(ltk.extract_nested_list(msg_with_undownloadable_attachments_list_global)):
                     msg_with_undownloadable_attachments_counted_count = 0
@@ -1025,27 +1030,27 @@ def program_download_main():
                             1), '邮箱: ', address_global[imap_with_undownloadable_attachments_index], sep='', flush=True)
                         log_global.warning(ltk.indent(
                             1) + '邮箱: "' + address_global[imap_with_undownloadable_attachments_index]+'"')
-                        for mailbox_index_int, msg_with_undownloadable_attachments_list_global_splited in enumerate(msg_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index]):
+                        for folder_index, msg_with_undownloadable_attachments_list_global_splited in enumerate(msg_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index]):
                             if not len(msg_with_undownloadable_attachments_list_global_splited):
                                 continue
                             print(ltk.indent(
-                                2), '文件夹: ', setting_search_mailbox_global[imap_with_undownloadable_attachments_index][mailbox_index_int], sep='', flush=True)
+                                2), '文件夹: ', setting_search_folder_global[imap_with_undownloadable_attachments_index][folder_index], sep='', flush=True)
                             log_global.warning(ltk.indent(
-                                2) + '文件夹: "' + setting_search_mailbox_global[imap_with_undownloadable_attachments_index][mailbox_index_int]+'"')
-                            for subject_index_int, subject in enumerate(subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][mailbox_index_int]):
+                                2) + '文件夹: "' + setting_search_folder_global[imap_with_undownloadable_attachments_index][folder_index]+'"')
+                            for subject_index, subject in enumerate(subject_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][folder_index]):
                                 print(ltk.indent(3), msg_with_undownloadable_attachments_counted_count+1, ' 标题-时间: ',
-                                      subject, ' - ', send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][mailbox_index_int][subject_index_int], sep='', flush=True)
+                                      subject, ' - ', send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][folder_index][subject_index], sep='', flush=True)
                                 log_global.warning(ltk.indent(3) + str(msg_with_undownloadable_attachments_counted_count+1) + ' 标题: "' +
                                                    subject+'"')
                                 log_global.warning(ltk.indent(
-                                    4)+'时间: '+send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][mailbox_index_int][subject_index_int])
-                                for link_index_int, link in enumerate(largefile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index][mailbox_index_int][subject_index_int]):
+                                    4)+'时间: '+send_time_with_undownloadable_attachments_list_global[imap_with_undownloadable_attachments_index][folder_index][subject_index])
+                                for link_index, link in enumerate(largefile_undownloadable_link_list_global[imap_with_undownloadable_attachments_index][folder_index][subject_index]):
                                     print(ltk.indent(
                                         4), largefile_undownloadable_link_counted_count+1, ' 链接: ', link, sep='', flush=True)
                                     log_global.warning(ltk.indent(
                                         4) + str(largefile_undownloadable_link_counted_count+1) + ' 链接: "' + link+'"')
                                     largefile_download_code = largefile_undownloadable_code_list_global[
-                                        imap_with_undownloadable_attachments_index][mailbox_index_int][subject_index_int][link_index_int]
+                                        imap_with_undownloadable_attachments_index][folder_index][subject_index][link_index]
                                     if largefile_download_code != 0:
                                         print(ltk.indent(5), '错误代码: ',
                                               largefile_download_code, sep='', flush=True)
@@ -1063,15 +1068,15 @@ def program_download_main():
                             msg_with_downloadable_attachments_signed_count = 0
                             print('\r正在标记...', end='', flush=True)
                             for imap_index in imap_with_undownloadable_attachments_index_list_global:
-                                for mailbox_index_int, msg_with_undownloadable_attachments_list_global_splited in enumerate(msg_with_undownloadable_attachments_list_global[imap_index]):
+                                for folder_index, msg_with_undownloadable_attachments_list_global_splited in enumerate(msg_with_undownloadable_attachments_list_global[imap_index]):
                                     if not len(msg_with_undownloadable_attachments_list_global_splited):
                                         continue
-                                    mailbox = b'"'+ltk.imap_utf7_bytes_encode(
-                                        setting_search_mailbox_global[imap_index][mailbox_index_int])+b'"'
+                                    folder = b'"'+ltk.imap_utf7_bytes_encode(
+                                        setting_search_folder_global[imap_index][folder_index])+b'"'
                                     for _ in range(setting_reconnect_max_times_global+1):
                                         try:
                                             imap_list_global[imap_index].select(
-                                                mailbox)
+                                                folder)
                                             break
                                         except Exception:
                                             for _ in range(setting_reconnect_max_times_global):
@@ -1110,34 +1115,34 @@ def program_download_main():
                             1), '邮箱: ', address_global[imap_overdueanddeleted_index], sep='', flush=True)
                         log_global.info(ltk.indent(
                             1) + '邮箱: "' + address_global[imap_overdueanddeleted_index]+'"')
-                        for mailbox_index_int, msg_overdueanddeleted_list_global_splited in enumerate(msg_overdueanddeleted_list_global[imap_overdueanddeleted_index]):
+                        for folder_index, msg_overdueanddeleted_list_global_splited in enumerate(msg_overdueanddeleted_list_global[imap_overdueanddeleted_index]):
                             if not len(msg_overdueanddeleted_list_global_splited):
                                 continue
                             print(ltk.indent(
-                                2), '文件夹: ', setting_search_mailbox_global[imap_overdueanddeleted_index][mailbox_index_int], sep='', flush=True)
+                                2), '文件夹: ', setting_search_folder_global[imap_overdueanddeleted_index][folder_index], sep='', flush=True)
                             log_global.info(ltk.indent(
-                                2) + '文件夹: "' + setting_search_mailbox_global[imap_overdueanddeleted_index][mailbox_index_int]+'"')
-                            for subject_index_int, subject in enumerate(subject_overdueanddeleted_list_global[imap_overdueanddeleted_index][mailbox_index_int]):
+                                2) + '文件夹: "' + setting_search_folder_global[imap_overdueanddeleted_index][folder_index]+'"')
+                            for subject_index, subject in enumerate(subject_overdueanddeleted_list_global[imap_overdueanddeleted_index][folder_index]):
                                 print(ltk.indent(3), msg_overdueanddeleted_counted_count+1, ' 标题-时间: ',
-                                      subject, ' - ', send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index][mailbox_index_int][subject_index_int], sep='', flush=True)
+                                      subject, ' - ', send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index][folder_index][subject_index], sep='', flush=True)
                                 log_global.info(ltk.indent(3) + str(msg_overdueanddeleted_counted_count+1) + ' 标题: "' +
                                                 subject+'"')
                                 log_global.warning(ltk.indent(
-                                    4)+'时间: '+send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index][mailbox_index_int][subject_index_int])
+                                    4)+'时间: '+send_time_overdueanddeleted_list_global[imap_overdueanddeleted_index][folder_index][subject_index])
                                 msg_overdueanddeleted_counted_count += 1
                     if setting_sign_unseen_flag_after_downloading_global and setting_search_mails_type_global != 2:
                         if setting_silent_download_mode_global or ltk.input_option('要将以上邮件设为已读吗?', 'y', 'n', default_option='y', end=':') == 'y':
                             print('\r正在标记...', end='', flush=True)
                             for imap_index in imap_overdueanddeleted_index_list_global:
-                                for mailbox_index_int, msg_overdueanddeleted_list_global_splited in enumerate(msg_overdueanddeleted_list_global[imap_index]):
+                                for folder_index, msg_overdueanddeleted_list_global_splited in enumerate(msg_overdueanddeleted_list_global[imap_index]):
                                     if not len(msg_overdueanddeleted_list_global_splited):
                                         continue
-                                    mailbox = b'"'+ltk.imap_utf7_bytes_encode(
-                                        setting_search_mailbox_global[imap_index][mailbox_index_int])+b'"'
+                                    folder = b'"'+ltk.imap_utf7_bytes_encode(
+                                        setting_search_folder_global[imap_index][folder_index])+b'"'
                                     for _ in range(setting_reconnect_max_times_global+1):
                                         try:
                                             imap_list_global[imap_index].select(
-                                                mailbox)
+                                                folder)
                                             break
                                         except Exception:
                                             for _ in range(setting_reconnect_max_times_global):
@@ -1188,17 +1193,18 @@ def download_thread_func(thread_id):
                     break
             if imap == None:
                 continue
-            for mailbox_index_int in range(len(setting_search_mailbox_global[imap_index])):
-                if not len(msg_list_global[imap_index][mailbox_index_int]):
+            for folder_index in range(len(setting_search_folder_global[imap_index])):
+                if not len(msg_list_global[imap_index][folder_index]):
                     continue
-                mailbox_raw = setting_search_mailbox_global[
-                    imap_index][mailbox_index_int]
-                mailbox = b'"'+ltk.imap_utf7_bytes_encode(mailbox_raw)+b'"'
+                folder_raw = setting_search_folder_global[
+                    imap_index][folder_index]
+                folder = b'"'+ltk.imap_utf7_bytes_encode(folder_raw)+b'"'
                 select_status = False
                 for _ in range(setting_reconnect_max_times_global+1):
                     try:
-                        imap.select(mailbox)
+                        imap.select(folder)
                         select_status = True
+                        break
                     except Exception:
                         for _ in range(setting_reconnect_max_times_global):
                             imap = operation_login_imap_server(
@@ -1208,14 +1214,14 @@ def download_thread_func(thread_id):
                 if not select_status:
                     with lock_print_global:
                         print('\rE: 邮箱', address_global[imap_index],
-                              '的文件夹', mailbox_raw, '选择失败,已跳过.', ltk.indent(4), flush=True)
+                              '的文件夹', folder_raw, '选择失败,已跳过.', ltk.indent(4), flush=True)
                         log_global.error(
-                            '邮箱 "'+address_global[imap_index]+'" 的文件夹 "'+mailbox_raw+'" 选择失败.')
+                            '邮箱 "'+address_global[imap_index]+'" 的文件夹 "'+folder_raw+'" 选择失败.')
                     continue
                 while True:
                     lock_var_global.acquire()
-                    if len(msg_list_global[imap_index][mailbox_index_int]):
-                        msg_index = msg_list_global[imap_index][mailbox_index_int].pop(
+                    if len(msg_list_global[imap_index][folder_index]):
+                        msg_index = msg_list_global[imap_index][folder_index].pop(
                             0)
                         lock_var_global.release()
                         file_download_count = 0
@@ -1247,20 +1253,20 @@ def download_thread_func(thread_id):
                                             True, True, True]
                                         if i < len(setting_filter_sender_global[0]) and len(ltk.extract_nested_list(setting_filter_sender_global[0][i][imap_index])):
                                             filter_status_last[0] = False
-                                            for filter_sender_name_index_int, filter_sender_name in enumerate(setting_filter_sender_global[0][i][imap_index]):
-                                                if len(re.compile(filter_sender_name, setting_filter_sender_flag_global[0][i][imap_index][filter_sender_name_index_int]).findall(sender_name)):
+                                            for filter_sender_name_index, filter_sender_name in enumerate(setting_filter_sender_global[0][i][imap_index]):
+                                                if len(re.compile(filter_sender_name, setting_filter_sender_flag_global[0][i][imap_index][filter_sender_name_index]).findall(sender_name)):
                                                     filter_status_last[0] = True
                                                     break
                                         if i < len(setting_filter_sender_global[1]) and len(ltk.extract_nested_list(setting_filter_sender_global[1][i][imap_index])):
                                             filter_status_last[1] = False
-                                            for filter_sender_address_index_int, filter_sender_address in enumerate(setting_filter_sender_global[1][i][imap_index]):
-                                                if len(re.compile(filter_sender_address, setting_filter_sender_flag_global[1][i][imap_index][filter_sender_address_index_int]).findall(sender_address)):
+                                            for filter_sender_address_index, filter_sender_address in enumerate(setting_filter_sender_global[1][i][imap_index]):
+                                                if len(re.compile(filter_sender_address, setting_filter_sender_flag_global[1][i][imap_index][filter_sender_address_index]).findall(sender_address)):
                                                     filter_status_last[1] = True
                                                     break
                                         if i < len(setting_filter_subject_global) and len(ltk.extract_nested_list(setting_filter_subject_global[i][imap_index])):
                                             filter_status_last[2] = False
-                                            for filter_subject_index_int, filter_subject in enumerate(setting_filter_subject_global[i][imap_index]):
-                                                if len(re.compile(filter_subject, setting_filter_subject_flag_global[i][imap_index][filter_subject_index_int]).findall(subject)):
+                                            for filter_subject_index, filter_subject in enumerate(setting_filter_subject_global[i][imap_index]):
+                                                if len(re.compile(filter_subject, setting_filter_subject_flag_global[i][imap_index][filter_subject_index]).findall(subject)):
                                                     filter_status_last[2] = True
                                                     break
                                         if not False in filter_status_last:
@@ -1294,7 +1300,7 @@ def download_thread_func(thread_id):
                                                 imap = operation_login_imap_server(
                                                     host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
                                                 if imap != None:
-                                                    imap.select(mailbox)
+                                                    imap.select(folder)
                                                     break
                                             except Exception:
                                                 pass
@@ -1370,7 +1376,7 @@ def download_thread_func(thread_id):
                                                             ' <- '+file_name_raw)if file_name != file_name_raw else '', ltk.indent(8), sep='', flush=True)
                                                         log_global.info(str(file_download_count_global+1)+' 已下载 "' + file_name + ((
                                                             '" <- "'+file_name_raw+'"')if file_name != file_name_raw else '"'))
-                                                        if setting_display_mail:
+                                                        if setting_display_mailbox:
                                                             print(ltk.indent(
                                                                 1), '邮箱: ', address_global[imap_index], sep='', flush=True)
                                                             log_global.info(ltk.indent(
@@ -1533,7 +1539,7 @@ def download_thread_func(thread_id):
                                                                 largefile_undownloadable_code_list.append(
                                                                     largefile_download_code)
                                                                 download_status_last = 1
-                                                            elif ltk.find_list_substr(website_blacklist, largefile_link):
+                                                            elif ltk.find_list_substr(website_blacklist_global, largefile_link):
                                                                 continue
                                                             else:
                                                                 download_status_last = -2
@@ -1612,7 +1618,7 @@ def download_thread_func(thread_id):
                                                                         ' <- '+largefile_name_raw)if largefile_name != largefile_name_raw else '', ltk.indent(8), sep='', flush=True)
                                                                     log_global.info(str(file_download_count_global+1)+' 已下载 "' + largefile_name + ((
                                                                         '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '"'))
-                                                                    if setting_display_mail:
+                                                                    if setting_display_mailbox:
                                                                         print(ltk.indent(
                                                                             1), '邮箱: ', address_global[imap_index], sep='', flush=True)
                                                                         log_global.info(ltk.indent(
@@ -1674,7 +1680,7 @@ def download_thread_func(thread_id):
                                                                 host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
                                                             if imap != None:
                                                                 imap.select(
-                                                                    mailbox)
+                                                                    folder)
                                                                 break
                                                         except Exception:
                                                             pass
@@ -1682,42 +1688,42 @@ def download_thread_func(thread_id):
                                     if ltk.safe_list_find(imap_with_undownloadable_attachments_index_list_global, imap_index) == -1:
                                         imap_with_undownloadable_attachments_index_list_global.append(
                                             imap_index)
-                                    msg_with_undownloadable_attachments_list_global[imap_index][mailbox_index_int].append(
+                                    msg_with_undownloadable_attachments_list_global[imap_index][folder_index].append(
                                         msg_index)
-                                    send_time_with_undownloadable_attachments_list_global[imap_index][mailbox_index_int].append(
+                                    send_time_with_undownloadable_attachments_list_global[imap_index][folder_index].append(
                                         send_time)
-                                    subject_with_undownloadable_attachments_list_global[imap_index][mailbox_index_int].append(
+                                    subject_with_undownloadable_attachments_list_global[imap_index][folder_index].append(
                                         subject)
-                                    largefile_undownloadable_link_list_global[imap_index][mailbox_index_int].append(
+                                    largefile_undownloadable_link_list_global[imap_index][folder_index].append(
                                         largefile_undownloadable_link_list)
-                                    largefile_undownloadable_code_list_global[imap_index][mailbox_index_int].append(
+                                    largefile_undownloadable_code_list_global[imap_index][folder_index].append(
                                         largefile_undownloadable_code_list)
                                 elif download_status_last == 2:
                                     if ltk.safe_list_find(imap_overdueanddeleted_index_list_global, imap_index) == -1:
                                         imap_overdueanddeleted_index_list_global.append(
                                             imap_index)
-                                    msg_overdueanddeleted_list_global[imap_index][mailbox_index_int].append(
+                                    msg_overdueanddeleted_list_global[imap_index][folder_index].append(
                                         msg_index)
-                                    send_time_overdueanddeleted_list_global[imap_index][mailbox_index_int].append(
+                                    send_time_overdueanddeleted_list_global[imap_index][folder_index].append(
                                         send_time)
-                                    subject_overdueanddeleted_list_global[imap_index][mailbox_index_int].append(
+                                    subject_overdueanddeleted_list_global[imap_index][folder_index].append(
                                         subject)
                                 elif download_status_last == -2:
                                     if ltk.safe_list_find(imap_download_failed_index_list_global, imap_index) == -1:
                                         imap_download_failed_index_list_global.append(
                                             imap_index)
-                                    msg_download_failed_list_global[imap_index][mailbox_index_int].append(
+                                    msg_download_failed_list_global[imap_index][folder_index].append(
                                         msg_index)
-                                    send_time_download_failed_list_global[imap_index][mailbox_index_int].append(
+                                    send_time_download_failed_list_global[imap_index][folder_index].append(
                                         send_time)
-                                    subject_download_failed_list_global[imap_index][mailbox_index_int].append(
+                                    subject_download_failed_list_global[imap_index][folder_index].append(
                                         subject)
                                 msg_processed_count_global += 1
                             else:
                                 if ltk.safe_list_find(imap_fetch_failed_index_list_global, imap_index) == -1:
                                     imap_fetch_failed_index_list_global.append(
                                         imap_index)
-                                msg_fetch_failed_list_global[imap_index][mailbox_index_int].append(
+                                msg_fetch_failed_list_global[imap_index][folder_index].append(
                                     msg_index)
                             operation_fresh_thread_status(thread_id, 0)
                     else:
@@ -1750,55 +1756,58 @@ def program_tool_list_mail_folders_main():
     if not len(imap_succeed_index_list_global):
         print('E: 无法执行该操作.原因: 没有可用邮箱.', flush=True)
         log_global.error('列出邮箱文件夹 操作无法执行. 原因: 没有可用邮箱.')
-    for imap_index_int, imap_index in enumerate(imap_succeed_index_list_global):
-        list_status = False
-        print('正在读取... (', imap_index_int+1, '/',
-              len(imap_succeed_index_list_global), ')', sep='', end='')
-        for _ in range(setting_reconnect_max_times_global+1):
-            try:
-                _, list_data_raw = imap_list_global[imap_index].list(
-                )
-                list_status = True
-                break
-            except Exception:
-                for _ in range(setting_reconnect_max_times_global):
-                    imap_list_global[imap_index] = operation_login_imap_server(
-                        host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
-                    if imap_list_global[imap_index] != None:
-                        break
-        if not list_status:
-            print('\rE: 邮箱 ', address_global[imap_index],
-                  ' 获取文件夹列表失败,已跳过.', ltk.indent(2), sep='', flush=True)
-            log_global.error('邮箱 "'+address_global[imap_index]+'" 获取文件夹列表失败.')
-        else:
-            print('\r邮箱: ', address_global[imap_index],
-                  ltk.indent(3), sep='', flush=True)
-            log_global.info('邮箱: "' + address_global[imap_index]+'"')
-            for folder in list_data_raw:
+    else:
+        for imap_index_index, imap_index in enumerate(imap_succeed_index_list_global):
+            list_status = False
+            print('正在读取... (', imap_index_index+1, '/',
+                  len(imap_succeed_index_list_global), ')', sep='', end='')
+            for _ in range(setting_reconnect_max_times_global+1):
                 try:
-                    folder_name = ltk.imap_utf7_bytes_decode(
-                        re.compile(rb'(?<=/" ").+(?=")').findall(folder)[0])
-                    folder_flag = re.compile(
-                        rb'(?<=\().+(?=\))').findall(folder)
-                    print(ltk.indent(1), '文件夹: ',
-                          folder_name, sep='', flush=True)
-                    log_global.info(ltk.indent(1)+'文件夹: "'+folder_name+'"')
-                    if len(folder_flag):
-                        folder_flag = ltk.imap_utf7_bytes_decode(
-                            folder_flag[0])
-                        print(ltk.indent(2), '标签: ',
-                              folder_flag, sep='', flush=True)
-                        log_global.info(ltk.indent(2)+'标签: "'+folder_flag+'"')
-                    else:
-                        print(ltk.indent(2), '没有标签', sep='', flush=True)
-                        log_global.info(ltk.indent(2)+'没有标签')
-                except UnicodeError:
-                    print('\rE: 邮箱 ', address_global[imap_index], ' 有文件夹信息解码失败,已跳过.', ltk.indent(
-                        2), sep='', flush=True)
-                    log_global.error(
-                        '邮箱 "'+address_global[imap_index]+'" 有文件夹信息解码失败.')
+                    _, list_data_raw = imap_list_global[imap_index].list(
+                    )
+                    list_status = True
+                    break
+                except Exception:
+                    for _ in range(setting_reconnect_max_times_global):
+                        imap_list_global[imap_index] = operation_login_imap_server(
+                            host_global[imap_index], address_global[imap_index], password_global[imap_index], False)
+                        if imap_list_global[imap_index] != None:
+                            break
+            if not list_status:
+                print('\rE: 邮箱 ', address_global[imap_index],
+                      ' 获取文件夹列表失败,已跳过.', ltk.indent(2), sep='', flush=True)
+                log_global.error(
+                    '邮箱 "'+address_global[imap_index]+'" 获取文件夹列表失败.')
+            else:
+                print('\r邮箱: ', address_global[imap_index],
+                      ltk.indent(3), sep='', flush=True)
+                log_global.info('邮箱: "' + address_global[imap_index]+'"')
+                for folder in list_data_raw:
+                    try:
+                        folder_name = ltk.imap_utf7_bytes_decode(
+                            re.compile(rb'(?<=/" ").+(?=")').findall(folder)[0])
+                        folder_flag = re.compile(
+                            rb'(?<=\().+(?=\))').findall(folder)
+                        print(ltk.indent(1), '文件夹: ',
+                              folder_name, sep='', flush=True)
+                        log_global.info(ltk.indent(1)+'文件夹: "'+folder_name+'"')
+                        if len(folder_flag):
+                            folder_flag = ltk.imap_utf7_bytes_decode(
+                                folder_flag[0])
+                            print(ltk.indent(2), '标签: ',
+                                  folder_flag, sep='', flush=True)
+                            log_global.info(ltk.indent(
+                                2)+'标签: "'+folder_flag+'"')
+                        else:
+                            print(ltk.indent(2), '没有标签', sep='', flush=True)
+                            log_global.info(ltk.indent(2)+'没有标签')
+                    except UnicodeError:
+                        print('\rE: 邮箱 ', address_global[imap_index], ' 有文件夹信息解码失败,已跳过.', ltk.indent(
+                            2), sep='', flush=True)
+                        log_global.error(
+                            '邮箱 "'+address_global[imap_index]+'" 有文件夹信息解码失败.')
+        print(flush=True)
     log_global.info('-'*3+'列出邮箱文件夹操作完成'+'-'*3)
-    print(flush=True)
 
 
 @check_config_load_status
@@ -1809,24 +1818,18 @@ def program_tool_test_connection_main():
     log_global.info('-'*6+'测试连接操作完成'+'-'*6)
 
 
-def get_path():
-    return os.path.dirname(__file__)
-
-
 if ltk.__version__ != _depend_toolkit_version:
     print('F: littoolkit 版本不符合要求.\n    依赖版本: '+_depend_toolkit_version +
           '\n    当前版本: '+ltk.__version__, flush=True)
     time.sleep(5)
-    exit(1)
+    sys.exit(1)
 
 # 读取参数
-# -c: 配置文件路径; -r: 路径相对于程序父目录,否则路径相对于工作目录
+# -c: 配置文件路径
 try:
-    for opt, val in getopt.getopt(sys.argv[1:], 'c:r')[0]:
+    for opt, val in getopt.getopt(sys.argv[1:], 'c:')[0]:
         if opt == '-c':
             config_custom_path_global = val
-        elif opt == '-r':
-            is_config_path_relative_to_program_global = True
 except getopt.GetoptError:
     print('F: 程序参数错误.', flush=True)
     ltk.pause_exit(1)
@@ -1849,10 +1852,9 @@ try:
         log_global.warning('静默下载模式已开启.')
         program_download_main()
         print('程序将在 5 秒后退出.')
-        time.sleep(4.5)
+        time.sleep(5)
         log_global.info('='*10+'程序退出'+'='*10)
-        time.sleep(0.5)
-        exit(0)
+        sys.exit(0)
     else:
         while True:
             command = ltk.input_option(
@@ -1865,17 +1867,17 @@ try:
                 log_global.warning('='*10+'重载配置'+'='*10)
                 config_load_status_global = operation_load_config()
             elif command == 'n':
-                if ltk.input_option('此操作将在程序目录下生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
+                if ltk.input_option('此操作将在工作目录下生成 config_new.toml,是否继续?', 'y', 'n', default_option='n', end=':') == 'y':
                     log_global.info('-'*4+'新建配置文件操作开始'+'-'*4)
                     try:
-                        with open(os.path.join(get_path(), 'config_new.toml'), 'w') as config_new_file:
-                            rtoml.dump(config_primary_data,
+                        with open(os.path.join(os.getcwd(), 'config_new.toml'), 'w') as config_new_file:
+                            rtoml.dump(config_primary_data_global,
                                        config_new_file, pretty=True)
                         print('操作成功完成.', flush=True)
                         print(
                             'N: 有关配置文件的详细说明,请查看仓库中的示例配置文件;新配置文件的部分内容可能与示例配置文件不完全相同.', flush=True)
                         log_global.info('已生成新配置文件 "' +
-                                        os.path.join(get_path(), 'config_new.toml')+'"')
+                                        os.path.join(os.getcwd(), 'config_new.toml')+'"')
                     except OSError as e:
                         print('E: 操作失败,信息如下:', flush=True)
                         print(repr(e))
