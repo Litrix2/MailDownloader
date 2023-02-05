@@ -846,10 +846,10 @@ def program_download_main():
             print('正在搜索... (', imap_index_index+1, '/',
                   len(imap_succeed_index_list_global), ')', sep='', end='', flush=True)
             search_command = ''
-            search_command += ('since '+setting_min_search_date_global.time()
+            search_command += ('SINCE '+setting_min_search_date_global.time()
                                ) if setting_min_search_date_global.enabled else ''
             search_command += ' ' if setting_min_search_date_global.enabled and setting_max_search_date_global.enabled else ''
-            search_command += ('before ' + setting_max_search_date_global.time()
+            search_command += ('BEFORE ' + setting_max_search_date_global.time()
                                ) if setting_max_search_date_global.enabled else ''
             search_command += ' ' if setting_max_search_date_global.enabled or setting_min_search_date_global.enabled else ''
             search_command += 'ALL' if setting_search_mails_type_global == 0 else 'UNSEEN' if setting_search_mails_type_global == 1 else 'SEEN'
