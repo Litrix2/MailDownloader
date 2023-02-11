@@ -21,9 +21,9 @@ import threading
 import traceback
 import urllib.parse
 
-__version__ = '1.4.5'
+__version__ = '1.4.6'
 _depend_toolkit_version = '1.0.1'
-__status__ = 0
+__status__ = 1
 __author__ = 'Litrix'
 
 _status_dict = {
@@ -1441,9 +1441,9 @@ def download_thread_func(thread_id):
                                                                         'body > script:nth-child(2)').get_text()
                                                                     largefile_downloadable_link = re.compile(
                                                                         r'(?<=var url = ").+(?=")').findall(script)
-                                                                    if len(largefile_downloadable_link):
-                                                                        largefile_downloadable_link = largefile_downloadable_link[0].replace(
-                                                                            '\\x26', '&')
+                                                                    if largefile_downloadable_link:
+                                                                        largefile_downloadable_link = largefile_downloadable_link[
+                                                                            0]
                                                                         largefile_download_method = 0  # get
                                                                     else:
                                                                         if not has_downloadable_attachment and download_status_last != 1:
@@ -1548,6 +1548,8 @@ def download_thread_func(thread_id):
                                                                     largefile_downloadable_link)
                                                                 has_downloadable_attachment = True
                                                                 req_status_last = False
+                                                                largefile_downloadable_link = largefile_downloadable_link.replace(
+                                                                    '\\x26', '&').replace('+', ' ')
                                                                 for _ in range(setting_reconnect_max_times_global+1):
                                                                     try:
                                                                         if largefile_download_method == 0:
@@ -1561,6 +1563,7 @@ def download_thread_func(thread_id):
                                                                     except Exception:
                                                                         pass
                                                                 assert req_status_last
+                                                                assert 'X-Error-Code' not in largefile_data.headers
                                                                 mime_type = largefile_data.headers.get(
                                                                     'Content-Type')
                                                                 largefile_name_raw = largefile_data.headers.get(
@@ -1647,18 +1650,16 @@ def download_thread_func(thread_id):
                                                                 if download_status_last == -1 or download_status_last == 2:
                                                                     download_status_last = 0
                                     except Exception as e:
-                                        raise e
                                         if lock_io_global.locked():
                                             lock_io_global.release()
                                         with lock_print_global:
-                                            if not req_status_last:
-                                                print(
-                                                    '\rE: 邮箱', address_global[imap_index], '有附件下载失败,该邮件已跳过.', ltk.indent(4), flush=True)
-                                                log_global.error(
-                                                    '邮箱 "'+address_global[imap_index]+'" 有附件下载失败.')
-                                                if setting_rollback_when_download_failed_global:
-                                                    operation_rollback(
-                                                        thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
+                                            print(
+                                                '\rE: 邮箱', address_global[imap_index], '有附件下载失败,该邮件已跳过.', ltk.indent(4), flush=True)
+                                            log_global.error(
+                                                '邮箱 "'+address_global[imap_index]+'" 有附件下载失败.')
+                                            if setting_rollback_when_download_failed_global:
+                                                operation_rollback(
+                                                    thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
                                         download_status_last = -2
                         with lock_var_global:
                             if fetch_status_last:
