@@ -45,6 +45,7 @@ Mail Downloader是一个用于自动下载邮箱附件的程序,使用IMAP协议
 ## 第三方模块
 - bs4
 - lxml
+- requests
 - rtoml
 - pytz
 
