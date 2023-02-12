@@ -1231,7 +1231,6 @@ def download_thread_func(thread_id):
                         thread_file_download_path_list_global[thread_id] = []
                         largefile_undownloadable_code_list = []
                         has_downloadable_attachment = False
-                        largefile_downloadable_link_list = []
                         largefile_download_code = 0
                         largefile_undownloadable_link_list = []
                         with lock_var_global:
@@ -1544,8 +1543,6 @@ def download_thread_func(thread_id):
                                                             else:
                                                                 download_status_last = -2
                                                             if largefile_downloadable_link:
-                                                                largefile_downloadable_link_list.append(
-                                                                    largefile_downloadable_link)
                                                                 has_downloadable_attachment = True
                                                                 req_status_last = False
                                                                 largefile_downloadable_link = largefile_downloadable_link.replace(
@@ -1563,92 +1560,100 @@ def download_thread_func(thread_id):
                                                                     except Exception:
                                                                         pass
                                                                 assert req_status_last
-                                                                assert 'X-Error-Code' not in largefile_data.headers
-                                                                mime_type = largefile_data.headers.get(
-                                                                    'Content-Type')
-                                                                largefile_name_raw = largefile_data.headers.get(
-                                                                    'Content-Disposition')
-                                                                largefile_name_raw = largefile_name_raw.encode(
-                                                                    'ISO-8859-1').decode('UTF-8')  # 转码
-                                                                largefile_name_raw = largefile_name_raw.split(';')[
-                                                                    1]
-                                                                largefile_name_raw = re.compile(
-                                                                    r'(?<=").+(?=")').findall(largefile_name_raw)[0]
-                                                                with lock_var_global:
-                                                                    operation_fresh_thread_status(
-                                                                        thread_id, 2)
-                                                                if download_stop_flag_global:
-                                                                    if setting_rollback_when_download_failed_global:
-                                                                        with lock_io_global:
-                                                                            operation_rollback(
-                                                                                thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
-                                                                    return
-                                                                lock_io_global.acquire()
-                                                                largefile_download_path = operation_get_download_path(
-                                                                    largefile_name_raw, mime_type)
-                                                                largefile_name_tmp = operation_fetch_file_name(
-                                                                    largefile_name_raw+'.tmp', largefile_download_path)
-                                                                req_status_last = False
-                                                                for _ in range(setting_reconnect_max_times_global+1):
-                                                                    try:
-                                                                        with open(os.path.join(largefile_download_path, largefile_name_tmp), 'wb') as file:
-                                                                            lock_io_global.release()
-                                                                            for largefile_data_chunk in largefile_data.iter_content(1024):
-                                                                                if download_stop_flag_global:
-                                                                                    break
-                                                                                file.write(
-                                                                                    largefile_data_chunk)
-                                                                        req_status_last = True
-                                                                        break
-                                                                    except OSError as e:
-                                                                        raise e
-                                                                    except Exception:
-                                                                        pass
-                                                                assert req_status_last
-                                                                with lock_io_global:
-                                                                    largefile_name = operation_fetch_file_name(
-                                                                        largefile_name_raw, largefile_download_path)
-                                                                    os.renames(
-                                                                        os.path.join(largefile_download_path, largefile_name_tmp), os.path.join(largefile_download_path, largefile_name))
-                                                                if download_stop_flag_global:
-                                                                    if setting_rollback_when_download_failed_global:
-                                                                        with lock_io_global:
-                                                                            operation_rollback(
-                                                                                thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
-                                                                    return
-                                                                with lock_print_global, lock_var_global:
-                                                                    print('\r', file_download_count_global+1, ' 已下载 ', largefile_name, (
-                                                                        ' <- '+largefile_name_raw)if largefile_name != largefile_name_raw else '', ltk.indent(8), sep='', flush=True)
-                                                                    log_global.info(str(file_download_count_global+1)+' 已下载 "' + largefile_name + ((
-                                                                        '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '"'))
-                                                                    if setting_display_mailbox:
-                                                                        print(ltk.indent(
-                                                                            1), '邮箱: ', address_global[imap_index], sep='', flush=True)
-                                                                        log_global.info(ltk.indent(
-                                                                            1)+'邮箱: "'+address_global[imap_index]+'"')
-                                                                    if setting_display_subject_and_time:
-                                                                        print(ltk.indent(
-                                                                            1), '标题-时间: ', subject, ' - ', send_time, sep='', flush=True)
-                                                                        log_global.info(
-                                                                            ltk.indent(1)+'标题: "'+subject+'"')
-                                                                        log_global.info(
-                                                                            ltk.indent(1)+'时间: '+send_time)
-                                                                    if setting_display_mime_type:
-                                                                        print(
-                                                                            ltk.indent(1), 'MIME-TYPE: ', mime_type, sep='', flush=True)
-                                                                        log_global.info(
-                                                                            ltk.indent(1)+'MIME-TYPE: "'+mime_type+'"')
-                                                                    file_download_count_global += 1
-                                                                    file_download_count += 1
-                                                                    thread_file_name_list_global[thread_id].append(
-                                                                        largefile_name)
-                                                                    thread_file_download_path_list_global[thread_id].append(
-                                                                        largefile_download_path)
-                                                                    operation_fresh_thread_status(
-                                                                        thread_id, 0)
-                                                                # 去除邮件无附件标记或全部过期标记
-                                                                if download_status_last == -1 or download_status_last == 2:
-                                                                    download_status_last = 0
+                                                                if 'X-Error-Code' not in largefile_data.headers:
+                                                                    mime_type = largefile_data.headers.get(
+                                                                        'Content-Type')
+                                                                    largefile_name_raw = largefile_data.headers.get(
+                                                                        'Content-Disposition')
+                                                                    largefile_name_raw = largefile_name_raw.encode(
+                                                                        'ISO-8859-1').decode('UTF-8')  # 转码
+                                                                    largefile_name_raw = largefile_name_raw.split(';')[
+                                                                        1]
+                                                                    largefile_name_raw = re.compile(
+                                                                        r'(?<=").+(?=")').findall(largefile_name_raw)[0]
+                                                                    with lock_var_global:
+                                                                        operation_fresh_thread_status(
+                                                                            thread_id, 2)
+                                                                    if download_stop_flag_global:
+                                                                        if setting_rollback_when_download_failed_global:
+                                                                            with lock_io_global:
+                                                                                operation_rollback(
+                                                                                    thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
+                                                                        return
+                                                                    lock_io_global.acquire()
+                                                                    largefile_download_path = operation_get_download_path(
+                                                                        largefile_name_raw, mime_type)
+                                                                    largefile_name_tmp = operation_fetch_file_name(
+                                                                        largefile_name_raw+'.tmp', largefile_download_path)
+                                                                    req_status_last = False
+                                                                    for _ in range(setting_reconnect_max_times_global+1):
+                                                                        try:
+                                                                            with open(os.path.join(largefile_download_path, largefile_name_tmp), 'wb') as file:
+                                                                                lock_io_global.release()
+                                                                                for largefile_data_chunk in largefile_data.iter_content(1024):
+                                                                                    if download_stop_flag_global:
+                                                                                        break
+                                                                                    file.write(
+                                                                                        largefile_data_chunk)
+                                                                            req_status_last = True
+                                                                            break
+                                                                        except OSError as e:
+                                                                            raise e
+                                                                        except Exception:
+                                                                            pass
+                                                                    assert req_status_last
+                                                                    with lock_io_global:
+                                                                        largefile_name = operation_fetch_file_name(
+                                                                            largefile_name_raw, largefile_download_path)
+                                                                        os.renames(
+                                                                            os.path.join(largefile_download_path, largefile_name_tmp), os.path.join(largefile_download_path, largefile_name))
+                                                                    if download_stop_flag_global:
+                                                                        if setting_rollback_when_download_failed_global:
+                                                                            with lock_io_global:
+                                                                                operation_rollback(
+                                                                                    thread_file_name_list_global[thread_id], thread_file_download_path_list_global[thread_id], file_name, largefile_name, file_download_path, largefile_download_path, file_name_tmp, largefile_name_tmp)
+                                                                        return
+                                                                    with lock_print_global, lock_var_global:
+                                                                        print('\r', file_download_count_global+1, ' 已下载 ', largefile_name, (
+                                                                            ' <- '+largefile_name_raw)if largefile_name != largefile_name_raw else '', ltk.indent(8), sep='', flush=True)
+                                                                        log_global.info(str(file_download_count_global+1)+' 已下载 "' + largefile_name + ((
+                                                                            '" <- "'+largefile_name_raw+'"')if largefile_name != largefile_name_raw else '"'))
+                                                                        if setting_display_mailbox:
+                                                                            print(ltk.indent(
+                                                                                1), '邮箱: ', address_global[imap_index], sep='', flush=True)
+                                                                            log_global.info(ltk.indent(
+                                                                                1)+'邮箱: "'+address_global[imap_index]+'"')
+                                                                        if setting_display_subject_and_time:
+                                                                            print(ltk.indent(
+                                                                                1), '标题-时间: ', subject, ' - ', send_time, sep='', flush=True)
+                                                                            log_global.info(
+                                                                                ltk.indent(1)+'标题: "'+subject+'"')
+                                                                            log_global.info(
+                                                                                ltk.indent(1)+'时间: '+send_time)
+                                                                        if setting_display_mime_type:
+                                                                            print(
+                                                                                ltk.indent(1), 'MIME-TYPE: ', mime_type, sep='', flush=True)
+                                                                            log_global.info(
+                                                                                ltk.indent(1)+'MIME-TYPE: "'+mime_type+'"')
+                                                                        file_download_count_global += 1
+                                                                        file_download_count += 1
+                                                                        thread_file_name_list_global[thread_id].append(
+                                                                            largefile_name)
+                                                                        thread_file_download_path_list_global[thread_id].append(
+                                                                            largefile_download_path)
+                                                                        operation_fresh_thread_status(
+                                                                            thread_id, 0)
+                                                                    # 去除邮件无附件标记或全部过期标记
+                                                                    if download_status_last == -1 or download_status_last == 2:
+                                                                        download_status_last = 0
+                                                                else:
+                                                                    largefile_download_code = largefile_data.headers[
+                                                                        'X-Error-Code']
+                                                                    largefile_undownloadable_link_list.append(
+                                                                        largefile_downloadable_link)
+                                                                    largefile_undownloadable_code_list.append(
+                                                                        largefile_download_code)
+                                                                    download_status_last = 1
                                     except Exception as e:
                                         if lock_io_global.locked():
                                             lock_io_global.release()
