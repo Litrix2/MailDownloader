@@ -1412,6 +1412,9 @@ def download_thread_func(thread_id):
                                                 html_fetcher = BeautifulSoup(
                                                     msg_data_splited_data, 'lxml')
                                                 if '附件' in msg_data_splited_data:
+                                                    #debug
+                                                    with open('download/mail.html','w') as file:
+                                                        file.write(msg_data_splited_data)
                                                     with lock_var_global:
                                                         operation_fresh_thread_status(
                                                             thread_id, 1)
